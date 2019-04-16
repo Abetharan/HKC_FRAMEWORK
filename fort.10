@@ -1,0 +1,84 @@
+ $user_inp
+
+        switch_fo_Cee_on          = .true.
+        switch_f1_dt_on           = .true.
+        switch_fo_dt_on           = .true.
+        switch_Cee0_iter_on       = .FALSE. 
+        switch_initial_cond_on    = .false.
+        switch_heating_cooling_on = .TRUE.
+        switch_ei_coll_fix_on     = .true.
+        switch_displ_J_on         = .false.
+        switch_Cee0_Krook_on      = .false.
+
+        switch_disable_force_runtime_size_on = .false.
+
+        Bz_implicitness_param       =  1.0d0
+        switch_dvfo_centred_diff_on = .true.  
+        switch_dv2f1_centred_diff_on = .true.
+        switch_dBdt_centred_diff_on = .true.
+
+        switch_Ohmic_Fara_consis_on = .true.
+        switch_Ohmic_all_on         = .false.
+        switch_hydro_on           = .false.
+        switch_hydro_fo_on        = .false.
+        switch_hydro_f1_on        = .false.
+
+        wpe_over_nuei = 11.14576d0
+        c_over_vte    = 30.455466d0
+        atomic_Z      = 37.664907d0
+        atomic_A      = 70.0d0
+
+        p_SG      = 2.0d0
+        q_SG      = 2.0d0
+        p_SG_init = 2.0d0
+
+        nv = 300
+        nx = 6
+        ny = 1
+
+        dt   =     0.5d0
+        tmax =   750.0d0
+
+        x_bc_type     = 1
+        xmin          = 0.0d0
+        xmax          = 159424.7662d0
+        grid_x_type   = 3
+        grid_x_ratio  =  1.0d0
+        grid_x_alpha  =  0.0d0
+        grid_x_offset =  0.0d0
+
+        y_bc_type     = 0
+        ymin          = -3.0d3
+        ymax          = +3.0d3
+        grid_y_type   = 0
+        grid_y_ratio  = 1.0d0
+        grid_y_alpha  = 0.0d0
+        grid_y_offset = 0.0d0
+
+        vmax          = 30.0d0
+        grid_v_type   =  2
+        grid_v_ratio  = 30.0d0
+        grid_v_alpha  =  0.0d0
+        grid_v_offset =  0.0d0
+
+        do_user_prof_sub = .TRUE.
+
+        prof_Bz_ave    = 0.0d0
+
+        do_user_heating_sub = .TRUE.
+
+        switch_packed_sparse_on    = .true.
+        switch_precomp_mat_cols_on = .false.
+        matrix_solver              = 'PETSC'
+        matrix_solver_tol          = 1.0d-15
+        nonlin_tol                 = 1.0d-12
+        nonlin_itmax               = 25
+        CCee0_00_its_delta         = 10
+
+        initial_cond_rel_dt = 1.0d-2
+        initial_cond_nt     = 2
+
+        do_out_data_compress = .false.
+        op_time_mon_skip     = 10000
+        op_restart_freq      = 100
+ $end
