@@ -1,4 +1,13 @@
- $user_inp
+import os 
+def fort_generator(path, fort12_times):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    file10 = open(path + "fort.10", "w")
+    file12 = open(path + "fort.12", "w")
+    file14 = open(path + "fort.14", "w")
+
+    fort10 = """ $user_inp
 
     switch_fo_Cee_on          = $fo_Cee_on         
     switch_f1_dt_on           = $f1_dt_on          
@@ -82,4 +91,21 @@
     op_time_mon_skip     = 10000
     op_restart_freq      = 100
     $end
-    
+    """
+    fort12 =  fort12_times
+    #------  Create graphics output selection file, "fort.14" (NAMELIST)  -----
+    fort14 = """$user_gra_sel
+    op_save_on(20,1) = 1
+    op_save_on(20,3) = 1
+    op_save_on(21,3) = 1
+    op_save_on(22,3) = 1
+    op_save_on(23,3) = 1
+    op_save_on(24,3) = 1
+    op_save_on(33,3) = 1
+    $end 
+    """
+
+
+    file10.write(fort10)
+    file12.write(fort12)
+    file14.write(fort14)

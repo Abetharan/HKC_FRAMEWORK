@@ -1,13 +1,10 @@
- 
- $user_gra_sel
-
+$user_gra_sel
     op_save_on(20,1) = 1
     op_save_on(20,3) = 1
     op_save_on(21,3) = 1
     op_save_on(22,3) = 1
     op_save_on(23,3) = 1
     op_save_on(24,3) = 1
-
     op_save_on(33,3) = 1
-
- $end 
+    $end 
+    
