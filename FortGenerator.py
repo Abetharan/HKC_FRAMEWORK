@@ -3,7 +3,7 @@ def fort_generator(path, fort12_times):
     if not os.path.exists(path):
         os.makedirs(path)
 
-    file10 = open(path + "fort.10", "w")
+    file10 = open(path + "tmpfort.10", "w")
     file12 = open(path + "fort.12", "w")
     file14 = open(path + "fort.14", "w")
 

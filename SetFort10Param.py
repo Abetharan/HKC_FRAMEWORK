@@ -1,11 +1,66 @@
-def set_fort_10(tag, val):
-    if not 
-
-
-
-
+def set_fort_10(
+wpe_over_nuei,
+c_over_vte,
+atomic_Z,
+atomic_A,
+nv,
+nx,
+ny,
+dt,
+tmax, 
+fo_Cee_on  = ".true.",
+f1_dt_on = ".false." ,
+fo_dt_on = ".true." ,
+Cee0_iter_on = ".true." ,
+initial_cond_on = ".false." ,
+heating_cooling_on = ".false." ,
+ei_coll_fix_on = ".false." ,
+displ_J_on = ".true." ,
+Cee0_Krook_on = ".false." ,
+disable_force_runtime_size_on = ".false." ,
+dvfo_centred_diff_on = ".true." ,
+dv2f1_centred_diff_on = ".true." ,
+dBdt_centred_diff_on = ".true." ,
+Ohmic_Fara_consis_on = ".true." ,
+Ohmic_all_on = ".false." ,
+hydro_on = ".false." ,
+hydro_fo_on = ".false." ,
+hydro_f1_on = ".false." ,
+p_SG = "2.0d0" ,
+q_SG = "2.0d0",
+p_SG_init ="2.0d0" ,
+x_bc_type = "1",
+xmin = "0.0d0" ,
+xmax = "100.0d0",
+grid_x_type = "3",
+grid_x_ratio = "1.0d0",
+grid_x_alpha = "0.0d0",
+grid_x_offset = "0.0d0",
+y_bc_type = "0",
+ymin = "-3.0d3",
+ymax = "+3.0d3",
+grid_y_type = "0",
+grid_y_ratio = "1.0d0",
+grid_y_alpha ="0.0d0",
+grid_y_offset = "0.0d0",
+vmax = "10.0d0",
+grid_v_type = "2",
+grid_v_ratio = "10.0d0",
+grid_v_alpha = "0.0d0",
+grid_v_offset = "0.0d0" ,
+do_user_prof_sub = ".false.",
+prof_Bz_ave = "0.0d0",
+do_user_heating_sub = ".true.",
+matrix_solver = "'PETSC'",
+matrix_solver_tol = "1.0d-15",
+nonlin_tol = "1.0d-12",
+nonlin_itmax = "25",
+CCee0_00_its_delta = "10",
+initial_cond_rel_dt = "1.0d-2",
+initial_cond_nt = 2):
 
     kappa = {
+    'user_inp' : "$user_inp",
     'fo_Cee_on':fo_Cee_on,
     'f1_dt_on':f1_dt_on,
     'fo_dt_on':fo_dt_on,
@@ -64,6 +119,6 @@ def set_fort_10(tag, val):
     'CCee0_00_its_delta': CCee0_00_its_delta,
     'initial_cond_rel_dt': initial_cond_rel_dt,
     'initial_cond_nt': initial_cond_nt,
-    'list' : '\n'.join(list)
+    'end' : "$end"
     }
     return(kappa)
