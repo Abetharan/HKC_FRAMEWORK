@@ -1,7 +1,7 @@
 import os
 
 def setEnvVar(nx, ny, nv, np, runName, srcDir, baseDir = None):
-    os.environ["RUN"]="kappa"
+    os.environ["RUN"]=runName
     print(os.environ["RUN"])
     ## laptop
     os.environ["SRCDIR"]=srcDir

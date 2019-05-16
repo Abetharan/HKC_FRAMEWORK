@@ -49,16 +49,16 @@ def fileWriteFormat(tmpFileLocation, OpenFile, coord, varData):
     return(0)
 
 
-def HydroToImpact(path, Z, Ar):
+def HydroToImpact(path, Z, Ar, fluidNx):
 
         
     lastIndex = findLastIndex(path, "Coord")
-    fluid_x  = np.loadtxt(path + "/Coord_" + lastIndex + ".txt")
-    fluid_ne = np.loadtxt(path + "/NumberDensityE_" + lastIndex + ".txt")
-    fluid_ni = np.loadtxt(path + "/NumberDensityI_" + lastIndex + ".txt")
-    fluid_Te = np.loadtxt(path + "/TemperaturE_" + lastIndex + ".txt")
-    fluid_las_dep = np.loadtxt(path + "/InvBrem_" + lastIndex + ".txt")
-    fluid_brem = np.loadtxt(path + "/Brem_" + lastIndex + ".txt")
+    fluid_x  = np.loadtxt(path + "/Coord_" + str(lastIndex) + ".txt")
+    fluid_ne = np.loadtxt(path + "/NumberDensityE_" + str(lastIndex) + ".txt")
+    fluid_ni = np.loadtxt(path + "/NumberDensityI_" + str(lastIndex) + ".txt")
+    fluid_Te = np.loadtxt(path + "/TemperatureE_" + str(lastIndex) + ".txt")
+    fluid_las_dep = np.loadtxt(path + "/InverseBrem_" + str(lastIndex) + ".txt")
+    fluid_brem = np.loadtxt(path + "/Brem_" + str(lastIndex) + ".txt")
 
     avgNe = np.average(fluid_ne)
     avgTe = np.average(fluid_Te)
@@ -71,13 +71,13 @@ def HydroToImpact(path, Z, Ar):
     Te_norm = fluid_Te / ((e/kb)* normalised_values['Te'])
 
 
-    kinetic_x = np.linspace(x_norm[0], x_norm[-1], os.environ["NX"])
+    kinetic_x = np.linspace(x_norm[0], x_norm[-1], os.environ["NXM"])
                # np.geomspace(fluid_x[0, fluid_x[-1], nx)
                # np.logspace(fluid_x[0, fluid_x[-1], nx)
-
-    cs_ne = CubicSpline(x_norm, ne_norm)
-    cs_ni = CubicSpline(x_norm, ni_norm)
-    cs_Te = CubicSpline(x_norm, Te_norm)
+    centered_x = [(x_norm[i + 1] - x_norm[i])/2 for i in range(fluidNx)]
+    cs_ne = CubicSpline(centered_x, ne_norm)
+    cs_ni = CubicSpline(centered_x, ni_norm)
+    cs_Te = CubicSpline(centered_x, Te_norm)
 
     kinetic_ne = cs_ne(kinetic_x)
     kinetic_ni = cs_ni(kinetic_x)
