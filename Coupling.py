@@ -14,20 +14,34 @@ import HydroImpactIO as io
 kb  = 1.38E-23
 e = 1.6E-19
 # simulation domain sizes and number of processors to use 
-KINETIC_nx = 1
-KINETIC_ny = 2 
-KINETIC_nv = 3
+KINETIC_nx = 10
+KINETIC_ny = 1 
+KINETIC_nv = 30
 KINETIC_np = 4
 dt = 1 #as a ratio of collisional time i.e. 1 is collision time 
 tmax = 20 #Number of collision times 
 Atomic_Z = 60
 Atomic_Ar = 157
+
+#Fluid initial parameters 
+Cq = 2
+Gamma = 1.4
+CFL = 0.85
+LaserWavelength = 200e-9
+LaserPower = 1e18
+durOfLaser = 1e-10
+steps = 100
+tmax = 0
+initialDt = 1e-19
+OutputFrequency = 10
 #Set Environement variables for compiling
 runName = "Test_1"
 #rcDir = "/Users/shiki/Documents/Imperial_College_London/Ph.D./IMPACT/src"
-IMPACT_SRC_DIR_ = "/home/abetharan/IMPACT/src"
-FLUID_SRC_DIR_ = "/home/abetharan/HeadlessHydra/Source_Code/run"
-
+# IMPACT_SRC_DIR_ = "/home/abetharan/IMPACT/src"
+# FLUID_SRC_DIR_ = "/home/abetharan/HeadlessHydra/Source_Code/run"
+IMPACT_SRC_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./IMPACT/src"
+FLUID_SRC_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/Source_Code/run"
+INITIAL_CONDITIONS_FILE_PATH = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/init_data/"
 #Return path is Run directory
 path  = SetEnvVar.setEnvVar(KINETIC_nx, KINETIC_ny, KINETIC_nv, KINETIC_np, runName, IMPACT_SRC_DIR_)
 
@@ -55,7 +69,7 @@ shutil.copyfile(os.environ["BASEDIR"] + "/prof.f", path + "/" + runName + "_prof
 #----------------------------------------------------------------#
 #Start Coupling sequence
 os.chdir(os.environ['BASEDIR'])
-os.system('./hydra_kappa.sh')
+#os.system('./hydra_kappa.sh')
 #os.system('bash ' + os.environ['SRCDIR'] + "/fp2df1_compile_run.sh")
 # exit()
 
@@ -75,15 +89,15 @@ for i in range(1, no_cycles+1, 1):
     ##Set on the fly Fluid parameters
     Fluid_nx = 100
     if i == 1:
-        init = os.environ['BASEDIR'] + "/fluid_init_data/"
-        initPath =  cycle_dump_path + "/fluid_init_data/"
-        if not os.path.isdir(initPath):
-            shutil.copytree(init, cycle_dump_path + "/fluid_init_data")
+        init = INITIAL_CONDITIONS_FILE_PATH
+        cycle_init_path =  cycle_dump_path + "/fluid_init_data/"
+        if not os.path.isdir(cycle_init_path):
+            shutil.copytree(init, cycle_init_path)
     else:
-        initPath = cycle_dump_path + "/fluid_init_data/"
+        cycle_init_path = cycle_dump_path + "/fluid_init_data/"
 
-    hydroparam = SetHydro.set_hydro_init(Fluid_nx, Ar = Atomic_Ar, Z = Atomic_Z, Cq = 2, Gamma = 1.4, CFL = 0.85, LaserWavelength = 1e-9,  LaserPower = 1e18,
-    durOfLaser = 1e-10, steps = 100, tmax = 0, initialDt = 1e-19, OutputFrequency = 10, InitPath = initPath , OutPath = fluid_dump_path) 
+    hydroparam = SetHydro.set_hydro_init(Fluid_nx, Atomic_Ar, Atomic_Z, Cq, Gamma, CFL, LaserWavelength,  LaserPower,
+    durOfLaser, steps, tmax, initialDt, OutputFrequency, cycle_init_path, fluid_dump_path) 
  
     filein = open(os.environ['BASEDIR'] +'/tmpHydroParameterInit.txt', "r")
     src = Template(filein.read())
@@ -91,17 +105,17 @@ for i in range(1, no_cycles+1, 1):
     HydroInit = open(cycle_dump_path + "/HydroParameterInit.txt", "w")
     HydroInit.write(fluidTemplate)
     HydroInit.close()
-    ##need to give some output location 
-    subprocess.call([FLUID_SRC_DIR_ , '-p', cycle_dump_path+'/HydroParameterInit.txt'])
+    subprocess.call([FLUID_SRC_DIR_, '-p', cycle_dump_path+'/HydroParameterInit.txt'])
 
-    avgNe, avgTe = io.HydroToImpact(fluid_dump_path,Atomic_Z,Atomic_Ar, Fluid_nx)
+    nc, avgTe, normalised_values = io.HydroToImpact(fluid_dump_path, cycle_dump_path, Atomic_Z, Atomic_Ar, LaserWavelength, Fluid_nx)
     
     #NOTES ON PARAMETERS
-    # IF COULOMB PARAMETER < 3 FOKKER-PLANK NOT IDLE I.E. VFP PROB NOT BEST TO USE. 
+    # IF COUL
+    # OMB PARAMETER < 3 FOKKER-PLANK NOT IDLE I.E. VFP PROB NOT BEST TO USE. 
     # IF VALUES ARE NEGATIVE MOST LIKELY COULOMB PARAMETER IS NOT BEING CALCULATED CORRECTLY
     # I.E. PLASMA TO COLD .. Make sure skin depth is of order < 1 as well.. 
 
-    ne = avgNe*1e-6 #1.0e+19 #Note that NE is in cm^3 i.e. times M^3 by 10^-6 to convert 
+    ne = nc #1.0e+19 #Note that NE is in cm^3 i.e. times M^3 by 10^-6 to convert 
     Te = avgTe / (e/kb) #eV
     Z = Atomic_Z 
     Bz = 0.0 #Tesla
@@ -110,7 +124,7 @@ for i in range(1, no_cycles+1, 1):
     c_over_vte = normalised_values['c_over_vte']
     #on the fly parameter changes
     fort10Param = setFort10.set_fort_10(wpe_over_nuei = wpe_over_nuei, c_over_vte = c_over_vte, 
-                                        atomic_Z = Z, atomic_A = Bz, nv = KINETIC_nv, nx = KINETIC_nx ,ny = KINETIC_ny,dt = dt, tmax = tmax)
+                                        atomic_Z = Z, atomic_A = Bz, nv = KINETIC_nv, nx = KINETIC_nx, ny = KINETIC_ny, dt = dt, tmax = tmax)
 
     filein = open(path +'/tmpfort.10', "r")
     src = Template(filein.read())
