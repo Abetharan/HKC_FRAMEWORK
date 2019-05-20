@@ -14,10 +14,10 @@ import HydroImpactIO as io
 kb  = 1.38E-23
 e = 1.6E-19
 # simulation domain sizes and number of processors to use 
-KINETIC_nx = 10
+KINETIC_nx = 30
 KINETIC_ny = 1 
-KINETIC_nv = 30
-KINETIC_np = 4
+KINETIC_nv = 300
+KINETIC_np = 1
 dt = 1 #as a ratio of collisional time i.e. 1 is collision time 
 tmax = 20 #Number of collision times 
 Atomic_Z = 60
@@ -37,11 +37,12 @@ OutputFrequency = 10
 #Set Environement variables for compiling
 runName = "Test_1"
 #rcDir = "/Users/shiki/Documents/Imperial_College_London/Ph.D./IMPACT/src"
-# IMPACT_SRC_DIR_ = "/home/abetharan/IMPACT/src"
-# FLUID_SRC_DIR_ = "/home/abetharan/HeadlessHydra/Source_Code/run"
-IMPACT_SRC_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./IMPACT/src"
-FLUID_SRC_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/Source_Code/run"
-INITIAL_CONDITIONS_FILE_PATH = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/init_data/"
+IMPACT_SRC_DIR_ = "/home/abetharan/IMPACT/src"
+FLUID_SRC_DIR_ = "/home/abetharan/HeadlessHydra/Source_Code/run"
+#IMPACT_SRC_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./IMPACT/src"
+#FLUID_SRC_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/Source_Code/run"
+#INITIAL_CONDITIONS_FILE_PATH = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/init_data/"
+INITIAL_CONDITIONS_FILE_PATH = "/home/abetharan/HeadlessHydra/init_data/"
 #Return path is Run directory
 path  = SetEnvVar.setEnvVar(KINETIC_nx, KINETIC_ny, KINETIC_nv, KINETIC_np, runName, IMPACT_SRC_DIR_)
 
@@ -68,10 +69,10 @@ shutil.copyfile(os.environ["BASEDIR"] + "/prof.f", path + "/" + runName + "_prof
 
 #----------------------------------------------------------------#
 #Start Coupling sequence
-os.chdir(os.environ['BASEDIR'])
-#os.system('./hydra_kappa.sh')
+#os.chdir(os.environ['BASEDIR'])
+os.system('./hydra_kappa.sh')
 #os.system('bash ' + os.environ['SRCDIR'] + "/fp2df1_compile_run.sh")
-# exit()
+#exit()
 
 
 
@@ -135,8 +136,9 @@ for i in range(1, no_cycles+1, 1):
 
     ##### Launch Impact
     os.chdir(path)
-    os.system('mpirun -np $NP ./fp2df1_run')
-
+    #os.system('mpirun -np $NP ./fp2df1_run')
+    p = subprocess.Popen(["mpirun", "-np" , str(KINETIC_np), "./fp2df1_run"])
+    
     for file in os.listdir(path):
         filename, extension = os.path.splitext(file)
         if extension == ".xy" or ".xyz" or ".xyv":

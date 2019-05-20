@@ -25,7 +25,7 @@ def setEnvVar(nx, ny, nv, np, runName, srcDir, baseDir = None):
     #-----  Specify behaviour of this run script -os.environ["IS_RESTART
     # os.environ["OVERWRITE_RUN"]
     # os.environ["DONT_COMIPLE"]
-    #os.environ["DONT_RUN"] = ""
+    os.environ["DONT_RUN"] = ""
     # os.environ["RUN_IN_QUEUE"]  
 
     #------  os.environ["COMPILE-TIME ARRAY DIMENSIONS   ------
