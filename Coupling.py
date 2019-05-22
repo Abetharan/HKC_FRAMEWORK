@@ -56,39 +56,41 @@ if os.path.exists(RunPath):
 
 #Data location save
 no_cycles  = 2
+Fluid_nx = 100
 
 for i in range(1, no_cycles+1, 1):
     #Cycle dump
     cycle_dump_path = RunPath + "cycle_" + str(i)
     if not os.path.exists(cycle_dump_path):
         os.makedirs(cycle_dump_path)
-    
-    if i  > 1:
-        io.ImpactToHydro(cycle_dump_path, normalised_values)
-
-    #Fluid Dump 
-    fluid_dump_path = cycle_dump_path + "/fluid_out/"
-    if not os.path.isdir(fluid_dump_path):
-        os.makedirs(fluid_dump_path)
-    
-    kinetic_dump_path = cycle_dump_path + "/kinetic_out"
-    if not os.path.isdir(kinetic_dump_path):
-        os.makedirs(kinetic_dump_path)
 
     ##Set on the fly Fluid parameters
-    Fluid_nx = 100
     if i == 1:
         init = INITIAL_CONDITIONS_FILE_PATH
         cycle_init_path =  cycle_dump_path + "/fluid_init_data/"
         if not os.path.isdir(cycle_init_path):
             shutil.copytree(init, cycle_init_path)
     else:
-        cycle_init_path = cycle_dump_path + "/fluid_init_data/"
+        cycle_init_path = cycle_dump_path + "/fluid_init_data/"    
+        io.ImpactToHydro(cycle_dump_path, normalised_values, Z, Ar, i, Gamma, LaserWavelength, LaserPower, Fluid_nx)
+
+
+    #Create Fluid Dump Folder
+    fluid_dump_path = cycle_dump_path + "/fluid_out/"
+    if not os.path.isdir(fluid_dump_path):
+        os.makedirs(fluid_dump_path)
+    
+    #Create Kinetic Dump folder
+    kinetic_dump_path = cycle_dump_path + "/kinetic_out"
+    if not os.path.isdir(kinetic_dump_path):
+        os.makedirs(kinetic_dump_path)
+
 
     #Set Hydro param
     hydroparam = SetHydro.set_hydro_init(Fluid_nx, Atomic_Ar, Atomic_Z, Cq, Gamma, CFL, LaserWavelength,  LaserPower,
     durOfLaser, steps, tmax, initialDt, OutputFrequency, cycle_init_path, fluid_dump_path) 
-    # Handling templating 
+
+    # Handling templating to create the init file for fluid code
     filein = open(os.environ['BASEDIR'] +'/tmpHydroParameterInit.txt', "r")
     src = Template(filein.read())
     fluidTemplate = src.substitute(hydroparam)
@@ -99,16 +101,11 @@ for i in range(1, no_cycles+1, 1):
     p = subprocess.run([FLUID_SRC_DIR_, '-p', cycle_dump_path+'/HydroParameterInit.txt'])
     
     #Convert all relevant parameters to impact norm and prepare files for load in.
-    nc, avgTe, normalised_values = io.HydroToImpact(fluid_dump_path, cycle_dump_path, Atomic_Z, Atomic_Ar, LaserWavelength, Fluid_nx)
+    nc, norm_Te, normalised_values = io.HydroToImpact(fluid_dump_path, cycle_dump_path, Atomic_Z, Atomic_Ar, LaserWavelength, Fluid_nx)
     
-    #NOTES ON PARAMETERS
-    # IF COUL
-    # OMB PARAMETER < 3 FOKKER-PLANK NOT IDLE I.E. VFP PROB NOT BEST TO USE. 
-    # IF VALUES ARE NEGATIVE MOST LIKELY COULOMB PARAMETER IS NOT BEING CALCULATED CORRECTLY
-    # I.E. PLASMA TO COLD .. Make sure skin depth is of order < 1 as well.. 
-
+    ##Impac Reference plasma. 
     ne = nc #1.0e+19 #Note that NE is in cm^3 i.e. times M^3 by 10^-6 to convert 
-    Te = avgTe / (e/kb) #eV
+    Te = norm_Te / (e/kb) #eV
     Z = Atomic_Z 
     Bz = 0.0 #Tesla
     Ar = Atomic_Ar 
@@ -118,8 +115,9 @@ for i in range(1, no_cycles+1, 1):
     if normalised_values["log_lambda"] < 0:
         print("Normalisation values not within good IMPACT PARAMETERS ... change")
         exit(1)
-    
-    #on the fly parameter changes as requierd of fort 10 files.
+
+    #Generate fort files     
+    #On the fly fort10 changes as requierd of fort 10 files.
     fort10Param = setFort10.set_fort_10(wpe_over_nuei = wpe_over_nuei, c_over_vte = c_over_vte, 
                                         atomic_Z = Z, atomic_A = Bz, nv = KINETIC_nv, nx = KINETIC_nx, ny = KINETIC_ny, dt = dt, tmax = tmax)
 
@@ -129,7 +127,6 @@ for i in range(1, no_cycles+1, 1):
     Fort10 = open(RunPath + "/fort.10", "w")
     Fort10.write(fort10template)
     Fort10.close()
-    #Generate fort files 
     fort12TimeStr = SetFort12.createFort12String(["1.0d0","2.0d0","3.0d0","5.0d0"])
     fort.fort_generator(RunPath,fort12TimeStr)
 

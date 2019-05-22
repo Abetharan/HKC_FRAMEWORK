@@ -1,6 +1,9 @@
 import numpy as np
-protonMass = 1.66e-27
+import os
+import fnmatch
 
+protonMass = 1.66e-27
+kb = 1.38e-23
 
 def CalculateMass(coord, density, nx):
     mass = np.zeros(nx)
@@ -52,7 +55,13 @@ def Brem(ne, massNumber, Z, Temperature, nx):
 
     return(BremPower)
 
-def TextDump(path, coord, velocity, density, ne, ni, Te, Ti, Pe, Pi, Ptot, IntEe, IntEi, DpDTe, DpDTi, Cve,Cvi, mass, invBrem, absorption, brem):
+def Heatflow(electron_thermal_flux, mass, nx):
+    HeatConductionE = np.zeros(nx)
+    for i in range(nx):   
+        HeatConductionE[i] = (electron_thermal_flux[i + 1] - electron_thermal_flux[i]) / mass[i]
+    return(HeatConductionE)
+
+def TextDump(path, coord, velocity, density, ne, ni, Te, Ti, Pe, Pi, Ptot, IntEe, IntEi, DpDTe, DpDTi, Cve,Cvi, mass, invBrem, brem, heatflow):
     """ 
     Purpose: Dumps variables to text
     Args: All physical quantities and Path to dump
@@ -76,8 +85,79 @@ def TextDump(path, coord, velocity, density, ne, ni, Te, Ti, Pe, Pi, Ptot, IntEe
     np.savetxt((path+"ion_specific_heat.txt"), Cvi)
     np.savetxt((path+"mass.txt"), mass)
     np.savetxt((path+"inv_brem.txt"), invBrem)
-    np.savetxt((path+"alpha.txt"), absorption)
     np.savetxt((path+"brem.txt"), brem)
+    np.savetxt((path+"qe.txt"),heatflow )
 
-def CalculateRemain(fluid_out_path, ne, Te, qe):
+def CalculateRemain(ne, Te, qe, Z, massNumber, cycle, gammaFactor, laserWaveLength, laserPower, nx, cycleDumpPath, ionfluidDensity = None, ionfluidTemperature = None):
     
+    if ionfluidDensity is not None:
+        ni = ionfluidDensity
+        Ti = ionfluidTemperature
+    else:
+        for fileconstituent in cycleDumpPath.split():
+            
+            if fileconstituent == "cycle_" + "[0-255]":
+                new_path  = new_path + "cycle_" + str(cycle)
+            else:
+                new_path = new_path + fileconstituent
+        previous_cycle_fluid_out_path  = new_path + "/fluid_out/"
+
+        LargestIndex = 0
+        for file in os.listdir(previous_cycle_fluid_out_path):
+            if fnmatch.fnmatch(file, "[a-z]"+ "NumberDensityI"):
+                k = os.path.splitext(file)[0]
+                k = k.split("_")
+                timeIndex = k[-1]
+                if timeIndex > LargestIndex:
+                    LargestIndex = timeIndex
+        ni = np.loadtxt(previous_cycle_fluid_out_path + "NumberDensityI_" + str(LargestIndex) + ".txt")
+        Ti = np.loadtxt(previous_cycle_fluid_out_path + "TemperatureI_" + str(LargestIndex) + ".txt")
+        coord = np.loadtxt(previous_cycle_fluid_out_path + "Coord_" + str(LargestIndex) + ".txt")
+        velocity = np.loadtxt(previous_cycle_fluid_out_path + "Velocity_" + str(LargestIndex) + ".txt")
+    density = ni * massNumber  * protonMass
+    ##Noting convention that Specific Heat ha
+    specificHeatE =  (ne * kb) / (density * (gammaFactor -1))
+    DpDTe = ne *kb
+    
+    specificHeatI =  (ni * kb) / (density * (gammaFactor -1))
+    DpDTi = ni *kb
+
+    #Pressure
+    pressureI = ni * kb * Ti
+    pressureE = ne * kb * Te
+    pressureTotal = pressureE + pressureI
+
+    #Internal Energy
+    IntEe = pressureE / ((gammaFactor - 1) * density)
+    IntEi = pressureI / ((gammaFactor - 1) * density)
+
+    mass = CalculateMass(coord, density, nx)
+    ConstCheck(density, ne, ni, Te, Ti, pressureE, pressureI, pressureTotal, massNumber, Z)
+
+    nc = 1.1E15 / pow(laserWaveLength, 2)
+    InvBrem_ = InvBrem(coord, ne, nc, laserWaveLength, Z, 11, Te, laserPower, mass, nx)
+    Brem_ = Brem(ne, massNumber, Z, Te, nx)
+    electronheatflow= Heatflow(qe, mass, nx)
+
+    TextDump(path = cycleDumpPath + "/fluid_init/",
+            coord= coord,
+            velocity = velocity,
+            density = density,
+            ne = ne,
+            ni = ni ,
+            Te = Te,
+            Ti = Ti,
+            Pe = pressureE,
+            Pi = pressureI,
+            Ptot = pressureTotal,
+            IntEe = IntEe,
+            IntEi = IntEi,
+            DpDTe = DpDTe,
+            DpDTi = DpDTi,
+            Cve = specificHeatE,
+            Cvi = specificHeatI,
+            mass = mass,
+            invBrem = InvBrem_,
+            brem = Brem_,
+            heatflow = electronheatflow
+        )
