@@ -69,10 +69,10 @@ shutil.copyfile(os.environ["BASEDIR"] + "/prof.f", path + "/" + runName + "_prof
 
 #----------------------------------------------------------------#
 #Start Coupling sequence
-#os.chdir(os.environ['BASEDIR'])
+os.chdir(os.environ['BASEDIR'])
 os.system('./hydra_kappa.sh')
 #os.system('bash ' + os.environ['SRCDIR'] + "/fp2df1_compile_run.sh")
-#exit()
+
 
 
 
@@ -137,7 +137,7 @@ for i in range(1, no_cycles+1, 1):
     ##### Launch Impact
     os.chdir(path)
     #os.system('mpirun -np $NP ./fp2df1_run')
-    p = subprocess.Popen(["mpirun", "-np" , str(KINETIC_np), "./fp2df1_run"])
+    p = subprocess.Popen(["mpirun", "-np" , str(KINETIC_np), "./fp2df1_fast"])
     
     for file in os.listdir(path):
         filename, extension = os.path.splitext(file)

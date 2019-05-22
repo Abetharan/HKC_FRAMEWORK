@@ -114,4 +114,3 @@ echo
 #  COMPILE & RUN CODE
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -+
 source ${SRCDIR}/fp2df1_compile_run.sh
-#exit
