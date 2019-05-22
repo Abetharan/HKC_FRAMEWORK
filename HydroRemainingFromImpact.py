@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import fnmatch
+from scipy.interpolate import CubicSpline
 
 protonMass = 1.66e-27
 kb = 1.38e-23
@@ -94,6 +95,7 @@ def CalculateRemain(ne, Te, qe, Z, massNumber, cycle, gammaFactor, laserWaveLeng
         ni = ionfluidDensity
         Ti = ionfluidTemperature
     else:
+        new_path = ""
         for fileconstituent in cycleDumpPath.split():
             
             if fileconstituent == "cycle_" + "[0-255]":
@@ -114,6 +116,22 @@ def CalculateRemain(ne, Te, qe, Z, massNumber, cycle, gammaFactor, laserWaveLeng
         Ti = np.loadtxt(previous_cycle_fluid_out_path + "TemperatureI_" + str(LargestIndex) + ".txt")
         coord = np.loadtxt(previous_cycle_fluid_out_path + "Coord_" + str(LargestIndex) + ".txt")
         velocity = np.loadtxt(previous_cycle_fluid_out_path + "Velocity_" + str(LargestIndex) + ".txt")
+    
+   
+    # Handle the Interpolation back. Cubic 
+    kineticDumpPath = cycleDumpPath + "/kinetic_out/"
+
+    kinetic_x = np.loadtxt(kineticDumpPath + "ReturnToHydro_xf.xy")
+    kinetic_centered_x = [(kinetic_x[i + 1] + kinetic_x[i])/2 for i in range(int(os.environ["NXM"]))]
+
+    cs_ne = CubicSpline(kinetic_centered_x, ne)
+    cs_Te = CubicSpline(kinetic_centered_x, Te)
+    cs_qe = CubicSpline(kinetic_centered_x, qe)
+
+    ne = cs_ne(coord)
+    Te = cs_Te(coord)
+    cs_qe = cs_qe(coord)
+
     density = ni * massNumber  * protonMass
     ##Noting convention that Specific Heat ha
     specificHeatE =  (ne * kb) / (density * (gammaFactor -1))

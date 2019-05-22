@@ -16,12 +16,12 @@ e = constants.value("elementary charge")
 def findLastIndex(path, var):
     LargestIndex = 0
     for file in os.listdir(path):
-        if fnmatch.fnmatch(file, "[a-z]"+ var):
+        if fnmatch.fnmatch(file, "*_" + var + "_*"):
             k = os.path.splitext(file)[0]
             k = k.split("_")
             timeIndex = k[-1]
-            if timeIndex > LargestIndex:
-                LargestIndex = timeIndex
+            if int(timeIndex) > LargestIndex:
+                LargestIndex = int(timeIndex)
             
     return(LargestIndex)
 
@@ -119,9 +119,10 @@ $arraylist
     impactNiFile = open(cyclePath + "/" + os.environ["RUN"] + "_ionden.xy", "w")
     impactTeFile = open(cyclePath + "/" + os.environ["RUN"] + "_tmat.xy", "w")
     impactXFile = open(cyclePath + "/" + os.environ["RUN"] + "_xf.xy", "w")
+    impactReturnXFile = open(cyclePath + "/ReturnToHydro_xf.xy", "w")
     impactLaserFile = open(cyclePath + "/" + os.environ["RUN"] + "_laserdep.xy", "w")
     impactRadFile = open(cyclePath + "/" + os.environ["RUN"] + "_rad_to_electron.xy", "w")
-    
+    impactReturnXFile.write(kinetic_x)
     fileWriteFormat(cyclePath + "/tmpWrite.txt", impactNeFile, kinetic_x, kinetic_ne, "ne")
     fileWriteFormat(cyclePath + "/tmpWrite.txt", impactNiFile, kinetic_x, kinetic_ni, "ni")
     fileWriteFormat(cyclePath + "/tmpWrite.txt", impactXFile, kinetic_x, kinetic_x, "coord")
@@ -142,8 +143,11 @@ def ImpactToHydro(cycleDumpPath, normalisedValues, Z, massNumber, cycle, gammaFa
         #runName = os.environ['RUN']
         if timeStep < 10:
             time_step = "0" + str(timeStep)
-        varArrays = cf.load_dict(kineticDumpPath,runName,var, str(time_step), iter_number = None)
-        varList = varArrays['mat'][:, 1]
+        varArrays = cf.load_dict(kineticDumpPath, runName, var, str(time_step), iter_number = None)
+        if var == "qxX":
+            varList = varArrays['mat'][:]
+        else:
+            varList = varArrays['mat'][:, 1]
 
         if var == "n":
             #outputVar = "ne"
@@ -157,12 +161,12 @@ def ImpactToHydro(cycleDumpPath, normalisedValues, Z, massNumber, cycle, gammaFa
             #outputVar = "electron_heat_flow"
             normConst = 9.11E-31 * normalisedValues['vte']**3*normalisedValues['ne'] * 1e6 
             qxX = varList * normConst
-
     remain.CalculateRemain(ne, Te, qxX, Z, massNumber, cycle, gammaFactor, laserWaveLength, laserPower, fluidNx, cycleDumpPath)
 
-
-
-
+# nc = 1.1E9 / pow(100e-9,2) 
+# avgTe = 1000
+# normalised_values = ImNorms.impact_inputs(nc, avgTe, Z = 64, Ar = 157, Bz = 0)
+# ImpactToHydro("/Users/shiki/Documents/Imperial_College_London/Ph.D./HYDRO_IMPACT_COUPLING/Test_1/cycle_1", normalised_values,64,157,1,1.4,100e-9,10, 10)
 
 
 
