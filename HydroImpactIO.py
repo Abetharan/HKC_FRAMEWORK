@@ -122,7 +122,7 @@ $arraylist
     impactReturnXFile = open(cyclePath + "/ReturnToHydro_xf.xy", "w")
     impactLaserFile = open(cyclePath + "/" + os.environ["RUN"] + "_laserdep.xy", "w")
     impactRadFile = open(cyclePath + "/" + os.environ["RUN"] + "_rad_to_electron.xy", "w")
-    impactReturnXFile.write(kinetic_x)
+    impactReturnXFile.write(str(kinetic_x))
     fileWriteFormat(cyclePath + "/tmpWrite.txt", impactNeFile, kinetic_x, kinetic_ne, "ne")
     fileWriteFormat(cyclePath + "/tmpWrite.txt", impactNiFile, kinetic_x, kinetic_ni, "ni")
     fileWriteFormat(cyclePath + "/tmpWrite.txt", impactXFile, kinetic_x, kinetic_x, "coord")
