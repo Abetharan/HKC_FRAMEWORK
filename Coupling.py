@@ -71,8 +71,10 @@ for i in range(1, no_cycles+1, 1):
         if not os.path.isdir(cycle_init_path):
             shutil.copytree(init, cycle_init_path)
     else:
-        cycle_init_path = cycle_dump_path + "/fluid_init_data/"    
-        io.ImpactToHydro(cycle_dump_path, normalised_values, Z, Ar, i, Gamma, LaserWavelength, LaserPower, Fluid_nx)
+        cycle_init_path = cycle_dump_path + "/fluid_init_data/"
+        os.makedirs(cycle_init_path)   
+        previous_cycle_dump_path = RunPath + "cycle_" + str(i - 1) 
+        io.ImpactToHydro(previous_cycle_dump_path, normalised_values, Z, Ar, i, Gamma, LaserWavelength, LaserPower, Fluid_nx)
 
 
     #Create Fluid Dump Folder
