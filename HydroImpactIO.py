@@ -5,6 +5,8 @@ import fnmatch
 from string import Template
 from scipy import constants
 import impact_norms_py3 as ImNorms
+import impact_module_py3 as cf
+import HydroRemainingFromImpact as remain
 
 kb = constants.value("Boltzmann constant")
 me = constants.value("electron mass")
@@ -126,17 +128,47 @@ $arraylist
 def ImpactToHydro(path, normalised_values):
 
     ##Convert to SI from Impact Norms
-    varList = ["n", "ni", "Te", "qxX"]
-    timeStep = findLastIndex(path, 'qxX')
+    varList = ["n", "Te", "qxX"]
 
-    for var in varList:
-        varArrays = cf.load_dict(path,os.environ['RUN'],var, timeStep, iter_number = None)
+    for var in varList:            
+        timeStep = findLastIndex(path, var)
+        varArrays = cf.load_dict(path,os.environ['RUN'],var, str(timeStep), iter_number = None)
         varList = varArrays['mat'][:, 1]
 
         if var == "n":
             outputVar = "ne"
+            normConst = normalised_values['ne'] * 1e6 #to m**-3
+            varList = varList * normConst
         elif var == "Te":
             outputVar = "electron_temperature"
-        else:
-            outputVar =var
-        fileToWrite = open(path + "/" +outputVar + ".txt" )
+            normConst = normalised_values['Te'] * 2 * 11600 #To kelvin
+            varList = varList * normConst
+        elif var == "qxX":
+            outputVar = "electron_heat_flow"
+            normConst = 9.11E-31 * normalised_values['vte']**3*normalised_values['ne'] * 1e6 
+            varList = varList * normConst
+
+        fileToWrite = open(path + "/" +outputVar + ".txt", "w")
+        fileToWrite.write(varArrays)
+        fileToWrite.close()
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
