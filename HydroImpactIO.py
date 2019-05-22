@@ -138,9 +138,11 @@ def ImpactToHydro(cycleDumpPath, normalisedValues, Z, massNumber, cycle, gammaFa
     kineticDumpPath = cycleDumpPath + "/kinetic_out/"
     for var in varList:            
         timeStep = findLastIndex(kineticDumpPath, var)
-        runName = "default"
+        runName = "default"   
         #runName = os.environ['RUN']
-        varArrays = cf.load_dict(kineticDumpPath,runName,var, str(timeStep), iter_number = None)
+        if timeStep < 10:
+            time_step = "0" + str(timeStep)
+        varArrays = cf.load_dict(kineticDumpPath,runName,var, str(time_step), iter_number = None)
         varList = varArrays['mat'][:, 1]
 
         if var == "n":
