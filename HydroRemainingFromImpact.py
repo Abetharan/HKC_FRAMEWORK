@@ -121,15 +121,15 @@ def CalculateRemain(ne, Te, qe, Z, massNumber, cycle, gammaFactor, laserWaveLeng
     # Handle the Interpolation back. Cubic 
     kineticDumpPath = cycleDumpPath + "/kinetic_out/"
 
-    kinetic_x = np.loadtxt(kineticDumpPath + "ReturnToHydro_xf.xy")
+    kinetic_x = np.loadtxt(kineticDumpPath + "ReturnToHydro_xf.xy", delimiter = "\n")
     kinetic_centered_x = [(kinetic_x[i + 1] + kinetic_x[i])/2 for i in range(int(os.environ["NXM"]))]
-
+    fluid_centered_x = [(coord[i + 1] + coord[i])/2 for i in range(nx)]
     cs_ne = CubicSpline(kinetic_centered_x, ne)
     cs_Te = CubicSpline(kinetic_centered_x, Te)
-    cs_qe = CubicSpline(kinetic_centered_x, qe)
+    cs_qe = CubicSpline(kinetic_x, qe)
 
-    ne = cs_ne(coord)
-    Te = cs_Te(coord)
+    ne = cs_ne(fluid_centered_x)
+    Te = cs_Te(fluid_centered_x)
     cs_qe = cs_qe(coord)
 
     density = ni * massNumber  * protonMass

@@ -20,8 +20,8 @@ KINETIC_nv = 300
 KINETIC_np = 1
 dt = 1 #as a ratio of collisional time i.e. 1 is collision time 
 tmax = 20 #Number of collision times 
-Atomic_Z = 60
-Atomic_Ar = 157
+Atomic_Z = 1#60
+Atomic_Ar = 1#157
 
 #Fluid initial parameters 
 Cq = 2
@@ -121,7 +121,8 @@ for i in range(1, no_cycles+1, 1):
     #Generate fort files     
     #On the fly fort10 changes as requierd of fort 10 files.
     fort10Param = setFort10.set_fort_10(wpe_over_nuei = wpe_over_nuei, c_over_vte = c_over_vte, 
-                                        atomic_Z = Z, atomic_A = Bz, nv = KINETIC_nv, nx = KINETIC_nx, ny = KINETIC_ny, dt = dt, tmax = tmax)
+                                        atomic_Z = Z, atomic_A = Bz, nv = KINETIC_nv, nx = KINETIC_nx, ny = KINETIC_ny, dt = dt, tmax = tmax, do_user_prof_sub = ".false.")
+
 
     filein = open(os.environ['BASEDIR'] +'/tmpfort.10', "r")
     src = Template(filein.read())
@@ -136,15 +137,22 @@ for i in range(1, no_cycles+1, 1):
 
         #Copy and Rename custom functions to run directory 
         shutil.copyfile(os.environ["BASEDIR"] + "/heating.f", RunPath + "/" + runName + "_heating.f")
-
+        shutil.copyfile(os.environ["BASEDIR"] + "/control.dat.dummy", RunPath + "/fp2df1_control.dat.dummy")
         filein = open(os.environ['BASEDIR'] +'/user_custom.f', "r")
         src = Template(filein.read())
-        UserTemplate = src.substitute({'PATH':"\"" + RunPath + "\"", 'RUNNAME':"\"" + runName + "\""})
+        UserTemplate = src.substitute({'PATH':"\'" + RunPath + "\'", 'RUNNAME':"\'" + runName + "\'"})
         userCustom = open(RunPath + "/" + runName + "_user_custom.f", "w")
         userCustom.write(UserTemplate)
         userCustom.close()
-        #shutil.copyfile(os.environ["BASEDIR"] + "/user_custom.f", RunPath + "/" + runName + "_user_custom.f")
-        shutil.copyfile(os.environ["BASEDIR"] + "/prof.f", RunPath + "/" + runName + "_prof.f")
+       # shutil.copyfile(os.environ["BASEDIR"] + "/user_custom.f", RunPath + "/" + runName + "_user_custom.f")
+        filein = open(os.environ['BASEDIR'] +'/prof.f', "r")
+        src = Template(filein.read())
+        #UserTemplate = src.substitute({'PATH':"\"" + RunPath + "\"", 'RUNNAME':"\"" + runName + "\""})
+        userProf = open(RunPath + "/" + runName + "_prof.f", "w")
+        userProf.write(UserTemplate)
+        userProf.close()
+        
+       # shutil.copyfile(os.environ["BASEDIR"] + "/prof.f", RunPath + "/" + runName + "_prof.f")
 
         #----------------------------------------------------------------#
         #Start Coupling sequence

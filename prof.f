@@ -1,9 +1,4 @@
 c234567890---------20--------3---------4---------5---------6---------7-2-----8
-c
-c RK  (08/11/16)   --  Initialisation Routine
-c
-c
-c234567890---------20--------3---------4---------5---------6---------7-2-----8
       subroutine init_prof_user
 
       implicit none
@@ -48,12 +43,14 @@ c (31/07/17) RK
       character*61 dir 
       character*61 cycle
       character*120 fname_tmp
-      
+c (05/03/19) AA 
       parameter( dir = '/home/abetharan/IMPACT/RUNS/A6_INITIAL_DATA/')
       parameter( cycle = 'cycle_1/')
       parameter( ip_bname = 'hydra_impact_testA3' )
-
+c      parameter( dir = $PATH)
+c      parameter( ip_bname = $RUNNAME)
       fname_tmp = trim(dir)//trim(cycle)//trim(ip_bname)
+c      fname_tmp = trim(dir)//trim(ip_bname)
 c----------------------------------------------------------------------------
        write(os,*)
        write(os,'(1x,80(''*''))')
@@ -133,4 +130,3 @@ c ...  Initialise  ...
        enddo
        return
        end
-

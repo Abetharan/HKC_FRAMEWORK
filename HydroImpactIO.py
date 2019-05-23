@@ -69,17 +69,18 @@ def HydroToImpact(fluidPath, cyclePath, Z, Ar, laserWaveLength, fluidNx):
     fluid_brem = np.loadtxt(fluidPath + "/Brem_" + str(lastIndex) + ".txt")
     fluid_density = np.loadtxt(fluidPath + "/Density_" + str(lastIndex) + ".txt")
 
-    nc = 1.1E9 / pow(laserWaveLength,2) 
+    nc = 1.1E15 / pow(laserWaveLength,2) 
+    nc = nc * 1e-6
     avgTe = 1000
     normalised_values = ImNorms.impact_inputs(nc, avgTe, Z, Ar, Bz = 0)
 
     ## NOrmalise SI to Impact norms 
     x_norm = fluid_x / normalised_values["lambda_mfp"]
-    ne_norm = fluid_ne / (1e6 * nc)  # 1e6 there to convert from m^-3 to cm^-3
-    ni_norm = fluid_ni / (1e6 *  (nc / Z)) # 1e6 there to convert from m^-3 to cm^-3
-    Te_norm = (fluid_Te / ((e/kb) * 2 * avgTe)) 
-    laser_norm = (fluid_las_dep * fluid_density) / (normalised_values["vte"] / (me * normalised_values["tau_ei"]))
-    brem_norm = (fluid_brem * fluid_density) / (normalised_values["vte"] / (me * normalised_values["tau_ei"]))
+    ne_norm = fluid_ne / (1e6 * normalised_values['ne'] * 1e21)  # 1e21 normalisation factor. 1e6 there to convert from m^-3 to cm^-3
+    ni_norm = fluid_ni / (1e6 *  normalised_values['ni'] * 1e21) # 1e6 there to convert from m^-3 to cm^-3
+    Te_norm = (fluid_Te / ((e/kb) * normalised_values['Te'])) 
+    laser_norm = (fluid_las_dep * fluid_density) / (normalised_values["vte"] / (normalised_values['ne'] * 1e21 * normalised_values["tau_ei"]))
+    brem_norm = (fluid_brem * fluid_density) / (normalised_values["vte"] / (normalised_values['ne'] * 1e21 * normalised_values["tau_ei"]))
 
     kinetic_x = np.linspace(x_norm[0], x_norm[-1], int(os.environ["NXM"]) + 1)
                # np.geomspace(fluid_x[0, fluid_x[-1], nx)
@@ -122,7 +123,7 @@ $arraylist
     impactReturnXFile = open(cyclePath + "/ReturnToHydro_xf.xy", "w")
     impactLaserFile = open(cyclePath + "/" + os.environ["RUN"] + "_laserdep.xy", "w")
     impactRadFile = open(cyclePath + "/" + os.environ["RUN"] + "_rad_to_electron.xy", "w")
-    impactReturnXFile.write(kinetic_x)
+    np.savetxt(cyclePath + "/kinetic_out/ReturnToHydro_xf.xy", kinetic_x, delimiter = "\n")
     fileWriteFormat(cyclePath + "/tmpWrite.txt", impactNeFile, kinetic_x, kinetic_ne, "ne")
     fileWriteFormat(cyclePath + "/tmpWrite.txt", impactNiFile, kinetic_x, kinetic_ni, "ni")
     fileWriteFormat(cyclePath + "/tmpWrite.txt", impactXFile, kinetic_x, kinetic_x, "coord")
@@ -151,12 +152,12 @@ def ImpactToHydro(cycleDumpPath, normalisedValues, Z, massNumber, cycle, gammaFa
 
         if var == "n":
             #outputVar = "ne"
-            normConst = normalisedValues['ne'] * 1e6 #to m**-3
-            ne = varList * normConst
+            normConst = 1e21 * normalisedValues['ne'] * 1e6 #to m**-3
+            ne = varList[1:-1] * normConst
         elif var == "Te":
             #outputVar = "electron_temperature"
-            normConst = normalisedValues['Te'] * 2 * 11600 #To kelvin
-            Te = varList * normConst
+            normConst = normalisedValues['Te'] * 11600 #To kelvin
+            Te = varList[1:-1] * normConst
         elif var == "qxX":
             #outputVar = "electron_heat_flow"
             normConst = 9.11E-31 * normalisedValues['vte']**3*normalisedValues['ne'] * 1e6 

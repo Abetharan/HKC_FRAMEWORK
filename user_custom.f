@@ -30,20 +30,25 @@ c ...  Local variables  ...
       parameter( nxb=nxbm_glb )
       double precision dxc, grid_loaded_xb(1:nycm, 1:nxb )
 c
-      integer ng_max
-      parameter( ng_max = max(nxm_glb,nym)+5 )
+	  integer ng_max
+	  parameter( ng_max = max(nxm_glb,nym)+5 )
       double precision grid_arr(ng_max,2), grid_arr_root(ng_max,2)
       double precision sample_time
 
 c (31/07/17) RK
       character*60 ip_bname
-      character*100 dir 
+      character*61 dir 
       character*61 cycle
       character*120 fname_tmp
 c (05/03/19) AA 
-      parameter( dir = $PATH)
-      parameter( ip_bname = $RUNNAME)
-      fname_tmp = trim(dir)//trim(ip_bname)
+      
+      parameter( dir = '/home/abetharan/IMPACT/RUNS/A6_INITIAL_DATA/')
+      parameter( cycle = 'cycle_1/')
+      parameter( ip_bname = 'hydra_impact_testA3' )
+c      parameter( dir = $PATH)
+c      parameter( ip_bname = $RUNNAME)
+      fname_tmp = trim(dir)//trim(cycle)//trim(ip_bname)
+c      fname_tmp = trim(dir)//trim(ip_bname)
 c----------------------------------------------------------------------+
       if (char_ind.ne.'xx') then
          write(os,*)'ERROR: this grid_custom() routine only works'//
