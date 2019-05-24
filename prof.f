@@ -44,13 +44,14 @@ c (31/07/17) RK
       character*61 cycle
       character*120 fname_tmp
 c (05/03/19) AA 
-      parameter( dir = '/home/abetharan/IMPACT/RUNS/A6_INITIAL_DATA/')
-      parameter( cycle = 'cycle_1/')
-      parameter( ip_bname = 'hydra_impact_testA3' )
-c      parameter( dir = $PATH)
-c      parameter( ip_bname = $RUNNAME)
-      fname_tmp = trim(dir)//trim(cycle)//trim(ip_bname)
-c      fname_tmp = trim(dir)//trim(ip_bname)
+c      parameter( dir = '/home/abetharan/IMPACT/RUNS/A6_INITIAL_DATA/')
+c      parameter( cycle = 'cycle_1/')
+c      parameter( ip_bname = 'hydra_impact_testA3' )
+      parameter( dir = $PATH)
+      parameter( ip_bname = $RUNNAME)
+c      fname_tmp = trim(dir)//trim(cycle)//trim(ip_bname)
+
+      fname_tmp = trim(dir)//trim(ip_bname)
 c----------------------------------------------------------------------------
        write(os,*)
        write(os,'(1x,80(''*''))')

@@ -16,7 +16,7 @@ def CalculateMass(coord, density, nx):
 def ConstCheck(density, ne, ni, Te, Ti, Pe, Pi, Ptot, massNumber, Z):
     import sys
 
-    if any(density != ni * massNumber * protonMass) or any(density != ((ne * massNumber * protonMass) / Z)):
+    if any(density != ni * massNumber * protonMass): #or any(density != ((ne * massNumber * protonMass) / Z)):
         print("DENSITY ARE NOT CALCULATED CONSISTENTLY")
         print("VALUES")
         print(density)
@@ -89,20 +89,13 @@ def TextDump(path, coord, velocity, density, ne, ni, Te, Ti, Pe, Pi, Ptot, IntEe
     np.savetxt((path+"brem.txt"), brem)
     np.savetxt((path+"qe.txt"),heatflow )
 
-def CalculateRemain(ne, Te, qe, Z, massNumber, cycle, gammaFactor, laserWaveLength, laserPower, nx, cycleDumpPath, ionfluidDensity = None, ionfluidTemperature = None):
+def CalculateRemain(ne, Te, qe, Z, massNumber, gammaFactor, laserWaveLength, laserPower, fluidNx, cycleDumpPath, previousCycleDumpPath, ionfluidDensity = None, ionfluidTemperature = None):
     
     if ionfluidDensity is not None:
         ni = ionfluidDensity
         Ti = ionfluidTemperature
     else:
-        new_path = ""
-        for fileconstituent in cycleDumpPath.split():
-            
-            if fileconstituent == "cycle_" + "[0-255]":
-                new_path  = new_path + "cycle_" + str(cycle)
-            else:
-                new_path = new_path + fileconstituent
-        previous_cycle_fluid_out_path  = new_path + "/fluid_out/"
+        previous_cycle_fluid_out_path  = previousCycleDumpPath +  "/fluid_out/"
 
         LargestIndex = 0
         for file in os.listdir(previous_cycle_fluid_out_path):
@@ -119,18 +112,18 @@ def CalculateRemain(ne, Te, qe, Z, massNumber, cycle, gammaFactor, laserWaveLeng
     
    
     # Handle the Interpolation back. Cubic 
-    kineticDumpPath = cycleDumpPath + "/kinetic_out/"
+    kineticDumpPath = previousCycleDumpPath + "/kinetic_out/"
 
     kinetic_x = np.loadtxt(kineticDumpPath + "ReturnToHydro_xf.xy", delimiter = "\n")
     kinetic_centered_x = [(kinetic_x[i + 1] + kinetic_x[i])/2 for i in range(int(os.environ["NXM"]))]
-    fluid_centered_x = [(coord[i + 1] + coord[i])/2 for i in range(nx)]
+    fluid_centered_x = [(coord[i + 1] + coord[i])/2 for i in range(fluidNx)]
     cs_ne = CubicSpline(kinetic_centered_x, ne)
     cs_Te = CubicSpline(kinetic_centered_x, Te)
     cs_qe = CubicSpline(kinetic_x, qe)
 
     ne = cs_ne(fluid_centered_x)
     Te = cs_Te(fluid_centered_x)
-    cs_qe = cs_qe(coord)
+    qe = cs_qe(coord)
 
     density = ni * massNumber  * protonMass
     ##Noting convention that Specific Heat ha
@@ -149,15 +142,15 @@ def CalculateRemain(ne, Te, qe, Z, massNumber, cycle, gammaFactor, laserWaveLeng
     IntEe = pressureE / ((gammaFactor - 1) * density)
     IntEi = pressureI / ((gammaFactor - 1) * density)
 
-    mass = CalculateMass(coord, density, nx)
+    mass = CalculateMass(coord, density, fluidNx)
     ConstCheck(density, ne, ni, Te, Ti, pressureE, pressureI, pressureTotal, massNumber, Z)
 
     nc = 1.1E15 / pow(laserWaveLength, 2)
-    InvBrem_ = InvBrem(coord, ne, nc, laserWaveLength, Z, 11, Te, laserPower, mass, nx)
-    Brem_ = Brem(ne, massNumber, Z, Te, nx)
-    electronheatflow= Heatflow(qe, mass, nx)
+    InvBrem_ = InvBrem(coord, ne, nc, laserWaveLength, Z, 11, Te, laserPower, mass, fluidNx)
+    Brem_ = Brem(ne, massNumber, Z, Te, fluidNx)
+    electronheatflow= Heatflow(qe, mass, fluidNx)
 
-    TextDump(path = cycleDumpPath + "/fluid_init/",
+    TextDump(path = cycleDumpPath + "/fluid_init_data/",
             coord= coord,
             velocity = velocity,
             density = density,

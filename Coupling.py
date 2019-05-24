@@ -13,13 +13,24 @@ import HydroImpactIO as io
 
 kb  = 1.38E-23
 e = 1.6E-19
+
+def kappa(cmd):
+    popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True)
+    for stdout_line in iter(popen.stdout.readline, ""):
+        print(stdout_line )
+    popen.stdout.close()
+    return_code = popen.wait()
+    if return_code:
+        raise subprocess.CalledProcessError(return_code, cmd)
+
+
 # simulation domain sizes and number of processors to use 
 KINETIC_nx = 30
 KINETIC_ny = 1 
 KINETIC_nv = 300
 KINETIC_np = 1
 dt = 1 #as a ratio of collisional time i.e. 1 is collision time 
-tmax = 20 #Number of collision times 
+kinetic_tmax = 20 #Number of collision times 
 Atomic_Z = 1#60
 Atomic_Ar = 1#157
 
@@ -31,7 +42,7 @@ LaserWavelength = 200e-9
 LaserPower = 1e18
 durOfLaser = 1e-10
 steps = 100
-tmax = 10
+fluid_tmax = 0
 initialDt = 1e-19
 OutputFrequency = 10
 #Set Environement variables for compiling
@@ -74,8 +85,8 @@ for i in range(1, no_cycles+1, 1):
         cycle_init_path = cycle_dump_path + "/fluid_init_data/"
         os.makedirs(cycle_init_path)   
         previous_cycle_dump_path = RunPath + "cycle_" + str(i - 1) 
-        io.ImpactToHydro(previous_cycle_dump_path, normalised_values, Z, Ar, i, Gamma, LaserWavelength, LaserPower, Fluid_nx)
-
+        io.ImpactToHydro(cycle_dump_path, previous_cycle_dump_path, normalised_values, Z, Ar, Gamma, LaserWavelength, LaserPower, Fluid_nx)
+        exit(1)
 
     #Create Fluid Dump Folder
     fluid_dump_path = cycle_dump_path + "/fluid_out/"
@@ -90,7 +101,7 @@ for i in range(1, no_cycles+1, 1):
 
     #Set Hydro param
     hydroparam = SetHydro.set_hydro_init(Fluid_nx, Atomic_Ar, Atomic_Z, Cq, Gamma, CFL, LaserWavelength,  LaserPower,
-    durOfLaser, steps, tmax, initialDt, OutputFrequency, cycle_init_path, fluid_dump_path) 
+    durOfLaser, steps, fluid_tmax, initialDt, OutputFrequency, cycle_init_path, fluid_dump_path) 
 
     # Handling templating to create the init file for fluid code
     filein = open(os.environ['BASEDIR'] +'/tmpHydroParameterInit.txt', "r")
@@ -100,8 +111,9 @@ for i in range(1, no_cycles+1, 1):
     HydroInit.write(fluidTemplate)
     HydroInit.close()
     #Call fluid code
-    p = subprocess.run([FLUID_SRC_DIR_, '-p', cycle_dump_path+'/HydroParameterInit.txt'])
-    
+    headless_cmd = [FLUID_SRC_DIR_, '-p', cycle_dump_path+'/HydroParameterInit.txt']
+    kappa(headless_cmd)
+
     #Convert all relevant parameters to impact norm and prepare files for load in.
     nc, norm_Te, normalised_values = io.HydroToImpact(fluid_dump_path, cycle_dump_path, Atomic_Z, Atomic_Ar, LaserWavelength, Fluid_nx)
     
@@ -121,7 +133,7 @@ for i in range(1, no_cycles+1, 1):
     #Generate fort files     
     #On the fly fort10 changes as requierd of fort 10 files.
     fort10Param = setFort10.set_fort_10(wpe_over_nuei = wpe_over_nuei, c_over_vte = c_over_vte, 
-                                        atomic_Z = Z, atomic_A = Bz, nv = KINETIC_nv, nx = KINETIC_nx, ny = KINETIC_ny, dt = dt, tmax = tmax, do_user_prof_sub = ".false.")
+                                        atomic_Z = Z, atomic_A = Bz, nv = KINETIC_nv, nx = KINETIC_nx, ny = KINETIC_ny, dt = dt, tmax = kinetic_tmax, do_user_prof_sub = ".true.")
 
 
     filein = open(os.environ['BASEDIR'] +'/tmpfort.10', "r")
@@ -140,19 +152,19 @@ for i in range(1, no_cycles+1, 1):
         shutil.copyfile(os.environ["BASEDIR"] + "/control.dat.dummy", RunPath + "/fp2df1_control.dat.dummy")
         filein = open(os.environ['BASEDIR'] +'/user_custom.f', "r")
         src = Template(filein.read())
-        UserTemplate = src.substitute({'PATH':"\'" + RunPath + "\'", 'RUNNAME':"\'" + runName + "\'"})
+        user_custom_UserTemplate = src.substitute({'PATH':"\'" + RunPath + "\'", 'RUNNAME':"\'" + runName + "\'"})
         userCustom = open(RunPath + "/" + runName + "_user_custom.f", "w")
-        userCustom.write(UserTemplate)
+        userCustom.write(user_custom_UserTemplate)
         userCustom.close()
        # shutil.copyfile(os.environ["BASEDIR"] + "/user_custom.f", RunPath + "/" + runName + "_user_custom.f")
         filein = open(os.environ['BASEDIR'] +'/prof.f', "r")
         src = Template(filein.read())
-        #UserTemplate = src.substitute({'PATH':"\"" + RunPath + "\"", 'RUNNAME':"\"" + runName + "\""})
+        prof_UserTemplate = src.substitute({'PATH':"\"" + RunPath + "\"", 'RUNNAME':"\"" + runName + "\""})
         userProf = open(RunPath + "/" + runName + "_prof.f", "w")
-        userProf.write(UserTemplate)
+        userProf.write(prof_UserTemplate)
         userProf.close()
-        
-       # shutil.copyfile(os.environ["BASEDIR"] + "/prof.f", RunPath + "/" + runName + "_prof.f")
+    
+        #shutil.copyfile(os.environ["BASEDIR"] + "/prof.f", RunPath + "/" + runName + "_prof.f")
 
         #----------------------------------------------------------------#
         #Start Coupling sequence
@@ -163,7 +175,7 @@ for i in range(1, no_cycles+1, 1):
 
     
 
-    filenames = ['ionden', 'rad_to_electron', 'xf', 'eden', 'laserdep', 'tmat']
+    filenames = ['ionden', 'rad_to_electron', 'xf', 'eden', 'laserdep', 'tmat', 'zstar']
     for name in filenames:
         if os.path.splitext(cycle_dump_path + "/" + runName + "_" + name  + ".xy")[-1] != ".xy":
             continue
@@ -171,7 +183,8 @@ for i in range(1, no_cycles+1, 1):
     
     ##### Launch Impact
     os.chdir(RunPath)
-    p = subprocess.run(["mpirun", "-np" , str(KINETIC_np), "./fp2df1_fast"])
+    impact_cmd = ["mpirun", "-np" , str(KINETIC_np), "./fp2df1_fast"]
+    kappa(impact_cmd)
 
     # #Impact to Hydro i/o    
     for file in os.listdir(RunPath):
@@ -179,7 +192,7 @@ for i in range(1, no_cycles+1, 1):
         if extension == ".xy" or extension == ".xyz" or extension == ".xyv" or extension == ".xyt" or extension == ".dat" or extension == ".t":
             shutil.move(file, kinetic_dump_path)
 
-    print("kappa")
+    # print("kappa")
 
 
 
