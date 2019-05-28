@@ -41,8 +41,8 @@ CFL = 0.85
 LaserWavelength = 200e-9
 LaserPower = 1e18
 durOfLaser = 1e-10
-steps = 100
-fluid_tmax = 0
+steps = 0
+fluid_tmax = 1e-9
 initialDt = 1e-19
 OutputFrequency = 10
 #Set Environement variables for compiling
@@ -66,7 +66,7 @@ if os.path.exists(RunPath):
         os.makedirs(RunPath)   
 
 #Data location save
-no_cycles  = 2
+no_cycles  = 3
 Fluid_nx = 100
 
 for i in range(1, no_cycles+1, 1):
@@ -86,7 +86,6 @@ for i in range(1, no_cycles+1, 1):
         os.makedirs(cycle_init_path)   
         previous_cycle_dump_path = RunPath + "cycle_" + str(i - 1) 
         io.ImpactToHydro(cycle_dump_path, previous_cycle_dump_path, normalised_values, Z, Ar, Gamma, LaserWavelength, LaserPower, Fluid_nx)
-        exit(1)
 
     #Create Fluid Dump Folder
     fluid_dump_path = cycle_dump_path + "/fluid_out/"
@@ -192,7 +191,7 @@ for i in range(1, no_cycles+1, 1):
         if extension == ".xy" or extension == ".xyz" or extension == ".xyv" or extension == ".xyt" or extension == ".dat" or extension == ".t":
             shutil.move(file, kinetic_dump_path)
 
-    # print("kappa")
+    print("kappa")
 
 
 

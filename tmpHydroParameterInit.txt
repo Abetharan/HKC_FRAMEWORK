@@ -13,3 +13,4 @@ initialDt=$initialDt
 OutputFrequency=$OutputFrequency
 InitPath=$InitPath
 OutPath=$OutPath
+mode=couple
