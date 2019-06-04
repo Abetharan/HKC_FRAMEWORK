@@ -31,25 +31,65 @@ def ConstCheck(density, ne, ni, Te, Ti, Pe, Pi, Ptot, massNumber, Z):
         print(Pe + Pi)
         sys.exit(0)
 
-def InvBrem(coord,ne, nc, wavelength, Z, coulombLog, Temperature,LaserPower, mass, nx):
+
+def InvBrem(coord,ne, nc, wavelength, mZ, coulombLog, TemperatureE,LaserPower, mass, nx):
     mNx = nx
     laserPower = LaserPower
     alpha = np.zeros(mNx)
     CoulombLog = np.zeros(nx) + coulombLog
     CoulombLog.fill(11)
-    powerAbsorbed = np.zeros(nx)
-
-    for i in range(mNx): 
+    TransmittedLaser = np.zeros(nx)
+    PowerAbsorbed = np.zeros(nx)
+    InverseBrem = np.zeros(nx)
+    reflection_index = 0
+    for i in range(mNx - 1, -1, -1):    
+        print(i)
         DistanceTravelled = coord[i + 1] - coord[i]
         beta = ne[i] / nc
-        alpha[i] = 1.23E-14 * ne[i] * Z * CoulombLog[i] * pow(Temperature[i], -1.5) * pow(beta, 2) * pow((1 - beta),-0.5)
+        alpha[i] = 1.23E-14 * ne[i] * mZ * CoulombLog[i] * pow(TemperatureE[i], -1.5) * pow(beta, 2) * pow((1 - beta),-0.5)
     
-        transmittedLaser = laserPower * np.exp(-alpha[i] * DistanceTravelled)
-        powerAbsorbed[i] = laserPower - transmittedLaser
+        TransmittedLaser[i] = laserPower * np.exp(-alpha[i] * DistanceTravelled)
+        PowerAbsorbed[i] = laserPower - TransmittedLaser[i]
+        if ne[i] >= nc:
+        
+            PowerAbsorbed[i] = 0
+            reflection_index = i
+            reflection_power = laserPower
+        
+        if reflection_index > 0:
+            InverseBrem[i] = 0
+        else:
+            InverseBrem[i] = (1/mass[i]) * PowerAbsorbed[i]
+        if math.isnan(InverseBrem[i]):
+            print("kappa")
+        laserPower = TransmittedLaser[i]
 
-        invBremPower = 0.5 * (1/mass[i]) * powerAbsorbed
-        laserPower = transmittedLaser
-    return(invBremPower,powerAbsorbed)
+    if reflection_index > 0:
+        print("reflecting")
+        for i in range(reflection_index+1, mNx, 1):
+    
+            DistanceTravelled = coord[i + 1] - coord[i]
+            beta = ne[i] / nc
+            alpha[i] = 1.23E-14 * ne[i] * mZ * CoulombLog[i] * pow(TemperatureE[i], -1.5) * pow(beta, 2) * pow((1 - beta),-0.5)
+        
+            reflectedtransmittedLaser = reflection_power * np.exp(-alpha[i] * DistanceTravelled)
+            reflectedpowerAbsorbed = reflection_power - reflectedtransmittedLaser
+            if ne[i] >= nc:
+                reflectedpowerAbsorbed = 0
+                reflectedtransmittedLaser = reflection_power
+            
+            if reflectedpowerAbsorbed == 0:
+                InverseBrem[i] += 0
+            else:
+                InverseBrem[i] += (1/mass[i]) * reflectedpowerAbsorbed
+            if math.isnan(InverseBrem[i]):
+                print("kappa")
+            PowerAbsorbed[i] += reflectedpowerAbsorbed
+            reflection_power = reflectedtransmittedLaser
+            TransmittedLaser[i] += reflection_power
+
+    return(InverseBrem, PowerAbsorbed, TransmittedLaser)
+
     
 def Brem(ne, massNumber, Z, Temperature, nx):
     BremPower = -8.5E-14 * ne * (Temperature ** 0.5) * (Z**2 / massNumber)
@@ -89,32 +129,30 @@ def TextDump(path, coord, velocity, density, ne, ni, Te, Ti, Pe, Pi, Ptot, IntEe
     np.savetxt((path+"brem.txt"), brem)
     np.savetxt((path+"qe.txt"),heatflow )
 
-def CalculateRemain(ne, Te, qe, Z, massNumber, gammaFactor, laserWaveLength, laserPower, fluidNx, cycleDumpPath, previousCycleDumpPath, ionfluidDensity = None, ionfluidTemperature = None):
+def CalculateRemain(ne, Te, qe, Z, massNumber, gammaFactor, laserWaveLength, laserPower, fluidNx, NextStepFluidInit, PreviousFluidOutPath, PreviousKineticOutPath, ionfluidDensity = None, ionfluidTemperature = None):
     
     if ionfluidDensity is not None:
         ni = ionfluidDensity
         Ti = ionfluidTemperature
     else:
-        previous_cycle_fluid_out_path  = previousCycleDumpPath +  "/fluid_out/"
 
         LargestIndex = 0
-        for file in os.listdir(previous_cycle_fluid_out_path):
+        for file in os.listdir(PreviousFluidOutPath):
             if fnmatch.fnmatch(file, "[a-z]"+ "NumberDensityI"):
                 k = os.path.splitext(file)[0]
                 k = k.split("_")
                 timeIndex = k[-1]
                 if timeIndex > LargestIndex:
                     LargestIndex = timeIndex
-        ni = np.loadtxt(previous_cycle_fluid_out_path + "NumberDensityI_" + str(LargestIndex) + ".txt")
-        Ti = np.loadtxt(previous_cycle_fluid_out_path + "TemperatureI_" + str(LargestIndex) + ".txt")
-        coord = np.loadtxt(previous_cycle_fluid_out_path + "Coord_" + str(LargestIndex) + ".txt")
-        velocity = np.loadtxt(previous_cycle_fluid_out_path + "Velocity_" + str(LargestIndex) + ".txt")
+        ni = np.loadtxt(PreviousFluidOutPath + "NumberDensityI_" + str(LargestIndex) + ".txt")
+        Ti = np.loadtxt(PreviousFluidOutPath + "TemperatureI_" + str(LargestIndex) + ".txt")
+        coord = np.loadtxt(PreviousFluidOutPath + "Coord_" + str(LargestIndex) + ".txt")
+        velocity = np.loadtxt(PreviousFluidOutPath + "Velocity_" + str(LargestIndex) + ".txt")
     
    
     # Handle the Interpolation back. Cubic 
-    kineticDumpPath = previousCycleDumpPath + "/kinetic_out/"
 
-    kinetic_x = np.loadtxt(kineticDumpPath + "ReturnToHydro_xf.xy", delimiter = "\n")
+    kinetic_x = np.loadtxt(PreviousKineticOutPath + "ReturnToHydro_xf.xy", delimiter = "\n")
     kinetic_centered_x = [(kinetic_x[i + 1] + kinetic_x[i])/2 for i in range(int(os.environ["NXM"]))]
     fluid_centered_x = [(coord[i + 1] + coord[i])/2 for i in range(fluidNx)]
     cs_ne = CubicSpline(kinetic_centered_x, ne)
@@ -146,11 +184,11 @@ def CalculateRemain(ne, Te, qe, Z, massNumber, gammaFactor, laserWaveLength, las
     ConstCheck(density, ne, ni, Te, Ti, pressureE, pressureI, pressureTotal, massNumber, Z)
 
     nc = 1.1E15 / pow(laserWaveLength, 2)
-    InvBrem_ = InvBrem(coord, ne, nc, laserWaveLength, Z, 11, Te, laserPower, mass, fluidNx)
+    InvBrem_, _, _ = InvBrem(coord, ne, nc, laserWaveLength, Z, 11, Te, laserPower, mass, fluidNx)
     Brem_ = Brem(ne, massNumber, Z, Te, fluidNx)
     electronheatflow= Heatflow(qe, mass, fluidNx)
 
-    TextDump(path = cycleDumpPath + "/fluid_init_data/",
+    TextDump(path = NextStepFluidInit,
             coord= coord,
             velocity = velocity,
             density = density,

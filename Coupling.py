@@ -10,11 +10,16 @@ import SetEnvVar as SetEnvVar
 import scipy.constants as constants
 import impact_module_py3 as cf
 import HydroImpactIO as io
-
 kb  = 1.38E-23
 e = 1.6E-19
 
-def kappa(cmd):
+def Execute(cmd):
+    """ 
+    Purpose: Runs a command and handles stdout and cerr
+
+    Args: Exe comman that takes the form listed in the documetnation as a str list
+
+    """
     popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True)
     for stdout_line in iter(popen.stdout.readline, ""):
         print(stdout_line )
@@ -22,6 +27,164 @@ def kappa(cmd):
     return_code = popen.wait()
     if return_code:
         raise subprocess.CalledProcessError(return_code, cmd)
+
+def templating(tmpfilePath, writePath, fileName, parameters):
+    """
+    Purpose: Handles the creation and templating of files.
+    
+    Args:
+        tmpfilePath = Path to tmp file that contains the necessary styling for templating.
+        writePath = Write path for templated file.
+        fileName = name of file and extension.
+        parameters = substuting dictionary.
+    """
+       
+    filein = open(tmpfilePath, "r")
+    src = Template(filein.read())
+    subbedtemplate = src.substitute(parameters)
+    writeFile = open(writePath + "/" + fileName, "w")
+    writeFile.write(subbedtemplate)
+    writeFile.close()
+
+def KineticCompile(RunPath):
+    """  
+    Purpose: Handles movement of neccessary template files for custom operators for IMPACT and compiles the code
+
+    Args:
+        RunPath = Path where IMPACT looks for reference files 
+    """
+    runName = os.environ['RUN']
+    #Copy and Rename custom functions to run directory 
+    shutil.copyfile(os.environ["BASEDIR"] + "/heating.f", RunPath + "/" + runName + "_heating.f")
+    shutil.copyfile(os.environ["BASEDIR"] + "/control.dat.dummy", RunPath + "/fp2df1_control.dat.dummy")
+    custom_param = {'PATH':"\'" + RunPath + "\'", 'RUNNAME':"\'" + runName + "\'"}
+    templating(tmpfilePath = os.environ['BASEDIR'] +'/user_custom.f', writePath = RunPath, fileName = runName + "_user_custom.f", parameters = custom_param)   
+    templating(tmpfilePath = os.environ['BASEDIR'] +'/prof.f', writePath = RunPath, fileName = runName + "_prof.f", parameters = custom_param)        
+    #Start Coupling sequence
+    os.system('./hydra_kappa.sh')
+
+
+def Kinetic(RunPath):
+    ##### Launch Impact
+    os.chdir(RunPath)
+    impact_cmd = ["mpirun", "-np" , str(KINETIC_np), "./fp2df1_fast"]
+    Execute(impact_cmd)
+
+def Fluid(RunPath):
+    #Call fluid code
+    headless_cmd = [FLUID_SRC_DIR_, '-p', RunPath+'/HydroParameterInit.txt']
+    Execute(headless_cmd)
+
+def fluidIO(Fluid_nx, Atomic_Ar, Atomic_Z, Cq, Gamma, CFL, LaserWavelength,  LaserPower, durOfLaser, 
+            steps, fluid_tmax, initialDt, dtGlobalMax, dtGlobalMin, OutputFrequency, BoundaryCondition, cycle_init_path, fluid_dump_path, cycle_dump_path):
+        """ 
+        Purpose: Handles hydro init and creation of init params textfile for HeadlessHydra.
+        Args:
+        Fluid_nx = number of grid points.
+        Atomic_Ar  = Mass Number of material
+        Atomic_Z = Ionisation state(fully ionized gas atm so it will just be its atomic number)
+        Cq = Von-Neumann Richtmyer zonal spread number
+        Gamma = Gas constant
+        CFL = PLACEHOLDER NOT IN USE ANYMORE ... DEFAULT TO 0.85
+        LaserWavelength = Wavelength of laser in m
+        LaserPower = Power of laser in W
+        durOfLaser = Duration of laser in s
+        steps = number of steps.
+        fluid_tmax = Time maximum
+        initialDt = initial step size in t
+        dtGlobalMax = Max step size
+        dtGlobalMin = Min step size
+        OutputFrequency = Frequency of dumping data files
+        BoundaryCondition = Boundary conditions for velocity
+        cycle_init_path = Initialisation files locations
+        fluid_dump_path = Fluid Dumping path
+        cycle_dump_path = Dump path for coupling cycle
+        """    
+        
+        #Set Hydro param
+        hydroparam = SetHydro.set_hydro_init(Fluid_nx, Atomic_Ar, Atomic_Z, Cq, Gamma, CFL, LaserWavelength,  LaserPower,
+                                            durOfLaser, steps, fluid_tmax, initialDt,dtGlobalMax, dtGlobalMin, OutputFrequency, 
+                                            BoundaryCondition, cycle_init_path, fluid_dump_path) 
+
+        # Handling templating to create the init file for fluid code
+        templating(tmpfilePath = os.environ['BASEDIR'] +'/tmpHydroParameterInit.txt', writePath = cycle_dump_path, fileName = "HydroParameterInit.txt", parameters = hydroparam)
+
+def kineticIO(wpe_over_nuei, c_over_vte, Z, A, KINETIC_nv, KINETIC_nx, KINETIC_ny, dt, kinetic_tmax, fort12Output = ["1.0d0","2.0d0","3.0d0","5.0d0"],
+                cycle_dump_path = False, RunPath = False, file_move = False,):
+        """
+        Purpose: Handles the IO side for launching IMPACT. Involves creation of fort files and moving of files and renaming. Furthermore, handles moving of files 
+        when IMPACT completes.
+        Args:
+            wpe_over_nuei = IMPACT launch parameter
+            c_over_vte = IMPACT launch parameter
+            Z = Atomiz number
+            A = Mass Number
+            KINETIC_nv = Number of grid points in velocity space
+            KINETIC_nx = Number of grid points in X space
+            KINETIC_ny = Number of grid points in Y space
+            dt = step size
+            kinetic_tmax = max time 
+            fort12Output = fort12 output times in a str list defaults to = ["1.0d0","2.0d0","3.0d0","5.0d0"],
+            cycle_dump_path = path to dump all files after IMPACT launches. Defaults to  False
+            RunPath = Path to where IMPACT looks for all its necessary files. Defaults to  False
+            file_move = Whether IMPACT output files are moved or not. Defaults to False
+        """     
+        #Generate fort files     
+        #On the fly fort10 changes as requierd of fort 10 files.
+        fort10Param = setFort10.set_fort_10(wpe_over_nuei = wpe_over_nuei, c_over_vte = c_over_vte, 
+                                            atomic_Z = Z, atomic_A = A, nv = KINETIC_nv, nx = KINETIC_nx, ny = KINETIC_ny, dt = dt, tmax = kinetic_tmax, do_user_prof_sub = ".true.")
+
+        templating(tmpfilePath = os.environ['BASEDIR'] +'/tmpfort.10', writePath = RunPath, fileName = "fort.10", parameters = fort10Param)
+        fort12TimeStr = SetFort12.createFort12String(fort12Output)
+        fort.fort_generator(RunPath, fort12TimeStr)
+    
+        runName = os.environ['RUN']
+        filenames = ['ionden', 'rad_to_electron', 'xf', 'eden', 'laserdep', 'tmat', 'zstar']
+        
+        for name in filenames:
+            if os.path.splitext(cycle_dump_path + "/" + runName + "_" + name  + ".xy")[-1] != ".xy":
+                continue
+            shutil.move(cycle_dump_path + "/" + runName + "_" + name  + ".xy", RunPath + "/" + runName + "_" + name + ".xy" )
+    
+        if file_move:
+
+            # #Impact to Hydro i/o    
+            for file in os.listdir(RunPath):
+                _, extension = os.path.splitext(file)
+                if extension == ".xy" or extension == ".xyz" or extension == ".xyv" or extension == ".xyt" or extension == ".dat" or extension == ".t":
+                    shutil.move(file, kinetic_dump_path)
+
+def NextCycleFileManager(RunPath, CycleStep):
+    cycle_dump_path = RunPath + "cycle_" + str(CycleStep)
+    fluid_input_path = cycle_dump_path + "/fluid_input"
+    fluid_output_path = cycle_dump_path + "/fluid_output"
+    kinetic_input_path = cycle_dump_path + "/kinetic_input"
+    kinetic_output_path = cycle_dump_path + "/kinetic_output"
+    
+    if not os.path.exists(cycle_dump_path):
+        os.makedirs(cycle_dump_path)
+        os.makedirs(fluid_input_path)
+        os.makedirs(fluid_output_path)
+        os.makedirs(kinetic_input_path)
+        os.makedirs(kinetic_output_path)
+    if os.path.exists(cycle_dump_path):
+        if not os.path.exists(fluid_input_path):
+            os.makedirs(kinetic_output_path)
+        if not os.path.exists(fluid_output_path):
+            os.makedirs(fluid_output_path)
+        if not os.path.exists(kinetic_input_path):
+            os.makedirs(kinetic_output_path)
+        if not os.path.exists(kinetic_output_path):
+            os.makedirs(kinetic_output_path)
+    
+    previous_cycle_dump_path = RunPath + "cycle_" + str(CycleStep - 1)
+    previous_fluid_output_path = previous_cycle_dump_path + "/fluid_output"
+    previous_kinetic_output_path = previous_cycle_dump_path + "/kinetic_output"
+
+    return(cycle_dump_path,fluid_input_path, fluid_output_path, kinetic_input_path, kinetic_output_path,
+             previous_cycle_dump_path, previous_fluid_output_path, previous_kinetic_output_path)
+
+
 
 
 # simulation domain sizes and number of processors to use 
@@ -42,9 +205,13 @@ LaserWavelength = 200e-9
 LaserPower = 1e18
 durOfLaser = 1e-10
 steps = 0
-fluid_tmax = 1e-9
+fluid_tmax = 1e-15
 initialDt = 1e-19
-OutputFrequency = 10
+OutputFrequency = 1000
+dtGlobalMax =1e-15
+dtGlobalMin = 1e-17
+OutputFrequency = 0.05 * fluid_tmax/dtGlobalMin
+BoundaryCondition = "free" 
 #Set Environement variables for compiling
 runName = "Test_1"
 #rcDir = "/Users/shiki/Documents/Imperial_College_London/Ph.D./IMPACT/src"
@@ -55,7 +222,8 @@ FLUID_SRC_DIR_ = "/home/abetharan/HeadlessHydra/Source_Code/run"
 #INITIAL_CONDITIONS_FILE_PATH = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/init_data/"
 INITIAL_CONDITIONS_FILE_PATH = "/home/abetharan/HeadlessHydra/init_data/"
 #Return path is Run directory
-RunPath  = SetEnvVar.setEnvVar(KINETIC_nx, KINETIC_ny, KINETIC_nv, KINETIC_np, runName, IMPACT_SRC_DIR_)
+RunPath  = SetEnvVar.setEnvVar(KINETIC_nx, KINETIC_ny, KINETIC_nv, KINETIC_np, runName, IMPACT_SRC_DIR_, 
+                                baseDir ="/media/abetharan/DATADRIVE1/Abetharan/HeadlessHydra/" )
 
 ##If set true any conflicting files will be created 
 _OVERWRITE_OK_ = True
@@ -69,56 +237,25 @@ if os.path.exists(RunPath):
 no_cycles  = 3
 Fluid_nx = 100
 
-for i in range(1, no_cycles+1, 1):
-    #Cycle dump
-    cycle_dump_path = RunPath + "cycle_" + str(i)
-    if not os.path.exists(cycle_dump_path):
-        os.makedirs(cycle_dump_path)
+##Set on the fly Fluid parameters
+shutil.copytree(init, cycle_init_path)
 
-    ##Set on the fly Fluid parameters
-    if i == 1:
-        init = INITIAL_CONDITIONS_FILE_PATH
-        cycle_init_path =  cycle_dump_path + "/fluid_init_data/"
-        if not os.path.isdir(cycle_init_path):
-            shutil.copytree(init, cycle_init_path)
-    else:
-        cycle_init_path = cycle_dump_path + "/fluid_init_data/"
-        os.makedirs(cycle_init_path)   
-        previous_cycle_dump_path = RunPath + "cycle_" + str(i - 1) 
-        io.ImpactToHydro(cycle_dump_path, previous_cycle_dump_path, normalised_values, Z, Ar, Gamma, LaserWavelength, LaserPower, Fluid_nx)
-
-    #Create Fluid Dump Folder
-    fluid_dump_path = cycle_dump_path + "/fluid_out/"
-    if not os.path.isdir(fluid_dump_path):
-        os.makedirs(fluid_dump_path)
-    
-    #Create Kinetic Dump folder
-    kinetic_dump_path = cycle_dump_path + "/kinetic_out"
-    if not os.path.isdir(kinetic_dump_path):
-        os.makedirs(kinetic_dump_path)
+normalised_values = io.HydroToImpact(fluid_dump_path, RunPath, Atomic_Z, Atomic_Ar, LaserWavelength, Fluid_nx)
 
 
-    #Set Hydro param
-    hydroparam = SetHydro.set_hydro_init(Fluid_nx, Atomic_Ar, Atomic_Z, Cq, Gamma, CFL, LaserWavelength,  LaserPower,
-    durOfLaser, steps, fluid_tmax, initialDt, OutputFrequency, cycle_init_path, fluid_dump_path) 
 
-    # Handling templating to create the init file for fluid code
-    filein = open(os.environ['BASEDIR'] +'/tmpHydroParameterInit.txt', "r")
-    src = Template(filein.read())
-    fluidTemplate = src.substitute(hydroparam)
-    HydroInit = open(cycle_dump_path + "/HydroParameterInit.txt", "w")
-    HydroInit.write(fluidTemplate)
-    HydroInit.close()
-    #Call fluid code
-    headless_cmd = [FLUID_SRC_DIR_, '-p', cycle_dump_path+'/HydroParameterInit.txt']
-    kappa(headless_cmd)
+for i in range(0, no_cycles, 1):
+   cycle_dump_path,fluid_input_path, fluid_output_path, kinetic_input_path, kinetic_output_path,previous_cycle_dump_path, previous_fluid_output_path, previous_kinetic_output_path = NextCycleFileManager(RunPath, i)
+   
+   if i > 0:
+       io.ImpactToHydro(fluid_input_path, previous_fluid_output_path, previous_kinetic_output_path, normalised_values, Gamma, LaserWavelength, LaserPower, Fluid_nx)
 
-    #Convert all relevant parameters to impact norm and prepare files for load in.
-    nc, norm_Te, normalised_values = io.HydroToImpact(fluid_dump_path, cycle_dump_path, Atomic_Z, Atomic_Ar, LaserWavelength, Fluid_nx)
-    
-    ##Impac Reference plasma. 
+   
+   
+   
+    ##Impact Reference plasma. 
     ne = nc #1.0e+19 #Note that NE is in cm^3 i.e. times M^3 by 10^-6 to convert 
-    Te = norm_Te / (e/kb) #eV
+    Te = norm_Te #eV
     Z = Atomic_Z 
     Bz = 0.0 #Tesla
     Ar = Atomic_Ar 
@@ -128,71 +265,3 @@ for i in range(1, no_cycles+1, 1):
     if normalised_values["log_lambda"] < 0:
         print("Normalisation values not within good IMPACT PARAMETERS ... change")
         exit(1)
-
-    #Generate fort files     
-    #On the fly fort10 changes as requierd of fort 10 files.
-    fort10Param = setFort10.set_fort_10(wpe_over_nuei = wpe_over_nuei, c_over_vte = c_over_vte, 
-                                        atomic_Z = Z, atomic_A = Bz, nv = KINETIC_nv, nx = KINETIC_nx, ny = KINETIC_ny, dt = dt, tmax = kinetic_tmax, do_user_prof_sub = ".true.")
-
-
-    filein = open(os.environ['BASEDIR'] +'/tmpfort.10', "r")
-    src = Template(filein.read())
-    fort10template = src.substitute(fort10Param)
-    Fort10 = open(RunPath + "/fort.10", "w")
-    Fort10.write(fort10template)
-    Fort10.close()
-    fort12TimeStr = SetFort12.createFort12String(["1.0d0","2.0d0","3.0d0","5.0d0"])
-    fort.fort_generator(RunPath,fort12TimeStr)
-
-    if i == 1:
-
-        #Copy and Rename custom functions to run directory 
-        shutil.copyfile(os.environ["BASEDIR"] + "/heating.f", RunPath + "/" + runName + "_heating.f")
-        shutil.copyfile(os.environ["BASEDIR"] + "/control.dat.dummy", RunPath + "/fp2df1_control.dat.dummy")
-        filein = open(os.environ['BASEDIR'] +'/user_custom.f', "r")
-        src = Template(filein.read())
-        user_custom_UserTemplate = src.substitute({'PATH':"\'" + RunPath + "\'", 'RUNNAME':"\'" + runName + "\'"})
-        userCustom = open(RunPath + "/" + runName + "_user_custom.f", "w")
-        userCustom.write(user_custom_UserTemplate)
-        userCustom.close()
-       # shutil.copyfile(os.environ["BASEDIR"] + "/user_custom.f", RunPath + "/" + runName + "_user_custom.f")
-        filein = open(os.environ['BASEDIR'] +'/prof.f', "r")
-        src = Template(filein.read())
-        prof_UserTemplate = src.substitute({'PATH':"\"" + RunPath + "\"", 'RUNNAME':"\"" + runName + "\""})
-        userProf = open(RunPath + "/" + runName + "_prof.f", "w")
-        userProf.write(prof_UserTemplate)
-        userProf.close()
-    
-        #shutil.copyfile(os.environ["BASEDIR"] + "/prof.f", RunPath + "/" + runName + "_prof.f")
-
-        #----------------------------------------------------------------#
-        #Start Coupling sequence
-        #os.chdir(os.environ['BASEDIR'])
-        os.system('./hydra_kappa.sh')
-        #os.system('bash ' + os.environ['SRCDIR'] + "/fp2df1_compile_run.sh")
-        #exit()
-
-    
-
-    filenames = ['ionden', 'rad_to_electron', 'xf', 'eden', 'laserdep', 'tmat', 'zstar']
-    for name in filenames:
-        if os.path.splitext(cycle_dump_path + "/" + runName + "_" + name  + ".xy")[-1] != ".xy":
-            continue
-        shutil.move(cycle_dump_path + "/" + runName + "_" + name  + ".xy", RunPath + "/" + runName + "_" + name + ".xy" )
-    
-    ##### Launch Impact
-    os.chdir(RunPath)
-    impact_cmd = ["mpirun", "-np" , str(KINETIC_np), "./fp2df1_fast"]
-    kappa(impact_cmd)
-
-    # #Impact to Hydro i/o    
-    for file in os.listdir(RunPath):
-        filename, extension = os.path.splitext(file)
-        if extension == ".xy" or extension == ".xyz" or extension == ".xyv" or extension == ".xyt" or extension == ".dat" or extension == ".t":
-            shutil.move(file, kinetic_dump_path)
-
-    print("kappa")
-
-
-
-

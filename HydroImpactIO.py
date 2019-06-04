@@ -57,31 +57,30 @@ def fileWriteFormat(tmpFileLocation, OpenFile, coord, varData, var):
     return(0)
 
 
-def HydroToImpact(fluidPath, cyclePath, Z, Ar, laserWaveLength, fluidNx):
+def HydroToImpact(fluidOutPath, cyclePath, Z, Ar, laserWaveLength, fluidNx):
 
         
-    lastIndex = findLastIndex(fluidPath, "Coord")
-    fluid_x  = np.loadtxt(fluidPath + "/Coord_" + str(lastIndex) + ".txt")
-    fluid_ne = np.loadtxt(fluidPath + "/NumberDensityE_" + str(lastIndex) + ".txt")
-    fluid_ni = np.loadtxt(fluidPath + "/NumberDensityI_" + str(lastIndex) + ".txt")
-    fluid_Te = np.loadtxt(fluidPath + "/TemperatureE_" + str(lastIndex) + ".txt")
-    fluid_las_dep = np.loadtxt(fluidPath + "/InverseBrem_" + str(lastIndex) + ".txt")
-    fluid_brem = np.loadtxt(fluidPath + "/Brem_" + str(lastIndex) + ".txt")
-    fluid_density = np.loadtxt(fluidPath + "/Density_" + str(lastIndex) + ".txt")
+    lastIndex = findLastIndex(fluidOutPath, "Coord")
+    fluid_x  = np.loadtxt(fluidOutPath + "/Coord_" + str(lastIndex) + ".txt")
+    fluid_ne = np.loadtxt(fluidOutPath + "/NumberDensityE_" + str(lastIndex) + ".txt")
+    fluid_ni = np.loadtxt(fluidOutPath + "/NumberDensityI_" + str(lastIndex) + ".txt")
+    fluid_Te = np.loadtxt(fluidOutPath + "/TemperatureE_" + str(lastIndex) + ".txt")
+    fluid_las_dep = np.loadtxt(fluidOutPath + "/InverseBrem_" + str(lastIndex) + ".txt")
+    fluid_brem = np.loadtxt(fluidOutPath + "/Brem_" + str(lastIndex) + ".txt")
+    fluid_density = np.loadtxt(fluidOutPath + "/Density_" + str(lastIndex) + ".txt")
     fluid_Z = np.zeros(fluidNx) + Z 
 
-    nc = 1.1E15 / pow(laserWaveLength,2) 
-    nc = nc * 1e-6
-    avgTe = 1000
-    normalised_values = ImNorms.impact_inputs(nc, avgTe, Z, Ar, Bz = 0)
+    avgNe = np.average(fluid_ne) * 1e-6
+    avgTe = np.average(fluid_Te) * (kb / e)
+    normalised_values = ImNorms.impact_inputs(avgNe, avgTe, Z, Ar, Bz = 0)
 
     ## NOrmalise SI to Impact norms 
     x_norm = fluid_x / normalised_values["lambda_mfp"]
     ne_norm = fluid_ne / (1e6 * normalised_values['ne'] * 1e21)  # 1e21 normalisation factor. 1e6 there to convert from m^-3 to cm^-3
     ni_norm = fluid_ni / (1e6 *  normalised_values['ni'] * 1e21) # 1e6 there to convert from m^-3 to cm^-3
-    Te_norm = (fluid_Te / ((e/kb) * normalised_values['Te'])) 
-    laser_norm = (fluid_las_dep * fluid_density) / (normalised_values["vte"] / (normalised_values['ne'] * 1e21 * normalised_values["tau_ei"]))
-    brem_norm = (fluid_brem * fluid_density) / (normalised_values["vte"] / (normalised_values['ne'] * 1e21 * normalised_values["tau_ei"]))
+    Te_norm = (fluid_Te * (kb/e)) / normalised_values['Te']
+    laser_norm = (fluid_las_dep * fluid_density) / (normalised_values["vte"] / (normalised_values['ne'] * 1e6  * 1e21 * normalised_values["tau_ei"]))
+    brem_norm = (fluid_brem * fluid_density) / (normalised_values["vte"] / (normalised_values['ne'] * 1e6 *  1e21 * normalised_values["tau_ei"]))
     Z_norm = fluid_Z / normalised_values['Z']
 
     kinetic_x = np.linspace(x_norm[0], x_norm[-1], int(os.environ["NXM"]) + 1)
@@ -133,20 +132,21 @@ $arraylist
     fileWriteFormat(cyclePath + "/tmpWrite.txt", impactLaserFile, kinetic_x, kinetic_laser, "laser")
     fileWriteFormat(cyclePath + "/tmpWrite.txt", impactRadFile, kinetic_x, kinetic_brem, "Rad")
     fileWriteFormat(cyclePath + "/tmpWrite.txt", impactZfile, kinetic_x, kinetic_Z, "zstar")
-    return(nc, avgTe, normalised_values)
+    return(normalised_values)
 
-def ImpactToHydro(cycleDumpPath, previousCycleDumpPath, normalisedValues, Z, massNumber, gammaFactor, laserWaveLength, laserPower, fluidNx):
+def ImpactToHydro(nextStepFluidInit, previousFluidOutPath, previousKineticOutPath, normalisedValues,  gammaFactor, laserWaveLength, laserPower, fluidNx):
 
     ##Convert to SI from Impact Norms
     varList = ["n", "Te", "qxX"]
-    kineticDumpPath = previousCycleDumpPath + "/kinetic_out/"
     for var in varList:            
-        timeStep = findLastIndex(kineticDumpPath, var)
+        timeStep = findLastIndex(previousKineticOutPath, var)
         runName = "default"   
         #runName = os.environ['RUN']
         if timeStep < 10:
             time_step = "0" + str(timeStep)
-        varArrays = cf.load_dict(kineticDumpPath, runName, var, str(time_step), iter_number = None)
+        
+        varArrays = cf.load_dict(previousKineticOutPath, runName, var, str(time_step), iter_number = None)
+        
         if var == "qxX":
             varList = varArrays['mat'][:]
         else:
@@ -164,7 +164,9 @@ def ImpactToHydro(cycleDumpPath, previousCycleDumpPath, normalisedValues, Z, mas
             #outputVar = "electron_heat_flow"
             normConst = 9.11E-31 * normalisedValues['vte']**3*normalisedValues['ne'] * 1e6 
             qxX = varList * normConst
-    remain.CalculateRemain(ne, Te, qxX, Z, massNumber, gammaFactor, laserWaveLength, laserPower, fluidNx, cycleDumpPath, previousCycleDumpPath)
+    
+    remain.CalculateRemain(ne, Te, qxX, normalisedValues['Z'], normalisedValues['Ar'], gammaFactor, laserWaveLength, laserPower,
+                             fluidNx, nextStepFluidInit, previousFluidOutPath, previousKineticOutPath)
 
 
 

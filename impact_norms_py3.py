@@ -35,7 +35,7 @@ def impact_inputs(ne,Te,Z,Ar, Bz):
     dict['ne'] = ne
     dict['Te'] = Te
     dict['Z'] = Z
-
+    dict['Ar'] = Ar
     # Convert ne to 10**21 cm**-3
     ne = ne / 1.0e21
     ni = ne / Z
