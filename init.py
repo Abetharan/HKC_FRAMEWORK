@@ -249,7 +249,8 @@ def custom_routine(L, nx, ne, temperature, gamma, Z, massNumber):
     np_centered_x = np.array([0.5*(initial_coord[i + 1] + initial_coord[i]) for i in range(len(initial_coord) - 1)])
     dg = np.float(0.1 * (x_u - x_l))
     mid_point = np.float(0.5) * (np.float(x_u - x_l))
-    temperatureE = temperature +  np.float(3000) * np.exp(-(((np_centered_x -  mid_point)**2) / (dg**2)), dtype = float)
+    #temperatureE = temperature +  np.float(3000) * np.exp(-(((np_centered_x -  mid_point)**2) / (dg**2)), dtype = float)
+    temperatureE = temperature + temperature*np.sin(np.linspace(0, 2, nx))  #np.linspace(11600*10, temperature, nx)
     temperatureI = temperatureE
     pressureE = ne * 1.38E-23 * temperatureE
     pressureI = ni * 1.38E-23 * temperatureI
@@ -269,7 +270,7 @@ def custom_routine(L, nx, ne, temperature, gamma, Z, massNumber):
 
 nx = 200
 x_l = 0
-x_u = 1E-9
+x_u = 1E-5
 L = x_u - x_l
 massNumber = 1 
 Z = 1
@@ -278,7 +279,8 @@ gammaFactor = 1.4
 laserWavelength = 1E-9
 LaserPower = 0
 coulombLog = 11
-temperature = 11600 * 10
+temperature = 11600 * 100
+
 ne = 1E27
 nc = 1.1E15 / pow(laserWavelength, 2)
 

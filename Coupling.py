@@ -193,7 +193,7 @@ _KINETIC_ny = 1
 _KINETIC_nv = 300
 _KINETIC_np = 1
 _FLUID_nx = 100
-_CYCLES  = 3
+_CYCLES  = 1
 
 #Material Properties
 atomicZ = 1#60
@@ -260,10 +260,6 @@ for i in range(0, _CYCLES, 1):
 
     Fluid(cycle_dump_path)
     normalised_values = io.HydroToImpact(fluid_output_path, kinetic_output_path, runPath, atomicZ, atomicAr, laserWavelength, _FLUID_nx)
-
-    if normalised_values["log_lambda"] < 0:
-        print("Normalisation values not within good IMPACT PARAMETERS ... change")
-        exit(1)
 
     SetKineticParam(normalised_values, _KINETIC_nv, _KINETIC_nx, _KINETIC_ny, kineticDt, kineticTMax, cycle_dump_path, runPath)
     if i == 0:
