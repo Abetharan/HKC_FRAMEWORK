@@ -43,12 +43,15 @@ def construct_fname(path,fprefix,var,time, iter_number):
         fname = path + '/' + fprefix +'_' + var + '_' + time + suffix
     return fname
 #-----------------------------------------------------------------------    
-def load_dict(path,fprefix,var,time, iter_number):
+def load_dict(path,fprefix = None,var = None,time = None, iter_number = None):
     '''
         Gets the IMPACT header info
         dict = fpg_get_info(fname)
     '''
-    fname = construct_fname(path,fprefix,var,time, iter_number)
+    if fprefix is None:
+        fname = path
+    else:
+        fname = construct_fname(path,fprefix,var,time, iter_number)
     
     #dict = MyDict()
     #mat = np.loadtxt(fname,skiprows=out_l)

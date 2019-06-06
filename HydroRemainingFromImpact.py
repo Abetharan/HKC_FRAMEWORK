@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import fnmatch
+import math
 from scipy.interpolate import CubicSpline
 
 protonMass = 1.66e-27
@@ -135,15 +136,17 @@ def CalculateRemain(ne, Te, qe, Z, massNumber, gammaFactor, laserWaveLength, las
         ni = ionfluidDensity
         Ti = ionfluidTemperature
     else:
-
+        
         LargestIndex = 0
         for file in os.listdir(PreviousFluidOutPath):
-            if fnmatch.fnmatch(file, "[a-z]"+ "NumberDensityI"):
+            if fnmatch.fnmatch(file, "NumberDensityI_*"):
                 k = os.path.splitext(file)[0]
                 k = k.split("_")
                 timeIndex = k[-1]
-                if timeIndex > LargestIndex:
-                    LargestIndex = timeIndex
+                if int(timeIndex) > LargestIndex:
+                    LargestIndex = int(timeIndex)
+            
+
         ni = np.loadtxt(PreviousFluidOutPath + "NumberDensityI_" + str(LargestIndex) + ".txt")
         Ti = np.loadtxt(PreviousFluidOutPath + "TemperatureI_" + str(LargestIndex) + ".txt")
         coord = np.loadtxt(PreviousFluidOutPath + "Coord_" + str(LargestIndex) + ".txt")

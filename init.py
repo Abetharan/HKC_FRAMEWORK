@@ -246,8 +246,11 @@ def custom_routine(L, nx, ne, temperature, gamma, Z, massNumber):
     ne = ne + np.zeros(nx)
     ni = ne / Z
     density = massNumber * 1.67E-27 * ni
-    temperatureE = np.zeros(nx) + temperature
-    temperatureI = np.zeros(nx) + temperature
+    np_centered_x = np.array([0.5*(initial_coord[i + 1] + initial_coord[i]) for i in range(len(initial_coord) - 1)])
+    dg = np.float(0.1 * (x_u - x_l))
+    mid_point = np.float(0.5) * (np.float(x_u - x_l))
+    temperatureE = temperature +  np.float(3000) * np.exp(-(((np_centered_x -  mid_point)**2) / (dg**2)), dtype = float)
+    temperatureI = temperatureE
     pressureE = ne * 1.38E-23 * temperatureE
     pressureI = ni * 1.38E-23 * temperatureI
     pressureTotal  = pressureE + pressureI
@@ -264,9 +267,9 @@ def custom_routine(L, nx, ne, temperature, gamma, Z, massNumber):
 
     return(initial_coord, density, ne, ni, temperatureE, temperatureI, specificHeatE, DpDTe, specificHeatI, DpDTi, pressureE, pressureI, pressureTotal, IntEe, IntEi)
 
-nx = 1000
+nx = 200
 x_l = 0
-x_u = 1E-4
+x_u = 1E-9
 L = x_u - x_l
 massNumber = 1 
 Z = 1
@@ -275,30 +278,14 @@ gammaFactor = 1.4
 laserWavelength = 1E-9
 LaserPower = 0
 coulombLog = 11
-temperature = 1
+temperature = 11600 * 10
 ne = 1E27
 nc = 1.1E15 / pow(laserWavelength, 2)
 
 velocity = np.zeros(nx + 1) #+ add any function
 #path = "/Users/shiki/Documents/Imperial_College_London/Ph.D./Lagrangian_fluid_code/c_plus_plus_lagrangian/init_data/"
 path = "/home/abetharan/HeadlessHydra/init_data/"
-#coord, density, pressure = custom_routine(nx, gammaFactor) 
-# coord, density, pressure, energy = LoadTestProblem(testName, nx, gammaFactor, x_l = 0, x_u = 1)
-# numberDensityE, numberDensityI, temperatureE, temperatureI, specificHeatE, DpDTe, specificHeatI, DpDTi, pressureE, pressureI, pressureTotal, IntEe, IntEi = HydroCalculateRemain(density, pressure, Z, massNumber, gammaFactor)
 coord, density, numberDensityE, numberDensityI, temperatureE, temperatureI, specificHeatE, DpDTe, specificHeatI, DpDTi, pressureE, pressureI, pressureTotal, IntEe, IntEi  = custom_routine(L, nx, ne, temperature, gammaFactor, Z, massNumber)
-#density, numberDensityE, numberDensityI, temperatureE, temperatureI, specificHeatE, DpDTe, specificHeatI, DpDTi, pressureE, pressureI, pressureTotal, IntEe, IntEi =TemperatureCalculateRemain(ne, temperatureE, Z, massNumber, gammaFactor, temperatureI)
-
-
-##Two Temperature Init
-#density, numberDensityE, numberDensityI, temperatureE, temperatureI, specificHeatE1E14, DpDTe, specificHeatI, DpDTi, pressureE, pressureI, pressureTotal, IntEe, IntEi = TwoTemperatureBath(temperatureE, temperatureI, Z, massNumber, gammaFactor)
-
-#Inv Brem
-# coord = np.linspace(x_l, x_u, nx + 1)
-# density, numberDensityE, numberDensityI, temperatureE, temperatureI, specificHeatE, DpDTe, specificHeatI, DpDTi, pressureE, pressureI, pressureTotal, IntEe, IntEi = InvBremCheck(x_l, x_l,ne,  nx)
-#Brem Check
-#coord = np.linspace(x_l, x_u, nx + 1)
-#density, numberDensityE, numberDensityI, temperatureE, temperatureI, specificHeatE, DpDTe, specificHeatI, DpDTi, pressureE, pressureI, pressureTotal, IntEe, IntEi = BremCheck(ne,  nx)
-# centeredCoord = (x_l + x_u) / 2
 
 mass = CalculateMass(coord, density, nx)
 InvBrem_, absorption  = InvBrem(coord, numberDensityE, nc, laserWavelength, Z, coulombLog, temperatureE, LaserPower, mass, nx)
@@ -341,4 +328,4 @@ plt.plot(pressureE)
 plt.plot(pressureI)
 plt.title("pressure")
 
-plt.show()
+#plt.show()

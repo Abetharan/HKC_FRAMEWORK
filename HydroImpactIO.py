@@ -24,7 +24,7 @@ def findLastIndex(path, var):
                 LargestIndex = int(timeIndex)
             
     return(LargestIndex)
-
+    
 def fileWriteFormat(tmpFileLocation, OpenFile, coord, varData, var):   
     
     
@@ -57,7 +57,7 @@ def fileWriteFormat(tmpFileLocation, OpenFile, coord, varData, var):
     return(0)
 
 
-def HydroToImpact(fluidOutPath, cyclePath, Z, Ar, laserWaveLength, fluidNx):
+def HydroToImpact(fluidOutPath, kineticOutPath, cyclePath, Z, Ar, laserWaveLength, fluidNx):
 
         
     lastIndex = findLastIndex(fluidOutPath, "Coord")
@@ -70,8 +70,8 @@ def HydroToImpact(fluidOutPath, cyclePath, Z, Ar, laserWaveLength, fluidNx):
     fluid_density = np.loadtxt(fluidOutPath + "/Density_" + str(lastIndex) + ".txt")
     fluid_Z = np.zeros(fluidNx) + Z 
 
-    avgNe = np.average(fluid_ne) * 1e-6
-    avgTe = np.average(fluid_Te) * (kb / e)
+    avgNe = np.average(fluid_ne) * 1e-6#1e21 
+    avgTe = np.average(fluid_Te) * (kb / e) #1000 #
     normalised_values = ImNorms.impact_inputs(avgNe, avgTe, Z, Ar, Bz = 0)
 
     ## NOrmalise SI to Impact norms 
@@ -124,7 +124,7 @@ $arraylist
     impactZfile = open(cyclePath + "/" + os.environ["RUN"] + "_zstar.xy", "w")
     impactLaserFile = open(cyclePath + "/" + os.environ["RUN"] + "_laserdep.xy", "w")
     impactRadFile = open(cyclePath + "/" + os.environ["RUN"] + "_rad_to_electron.xy", "w")
-    np.savetxt(cyclePath + "/kinetic_out/ReturnToHydro_xf.xy", kinetic_x, delimiter = "\n")
+    np.savetxt(kineticOutPath + "/ReturnToHydro_xf.xy", kinetic_x, delimiter = "\n")
     fileWriteFormat(cyclePath + "/tmpWrite.txt", impactNeFile, kinetic_x, kinetic_ne, "ne")
     fileWriteFormat(cyclePath + "/tmpWrite.txt", impactNiFile, kinetic_x, kinetic_ni, "ni")
     fileWriteFormat(cyclePath + "/tmpWrite.txt", impactXFile, kinetic_x, kinetic_x, "coord")

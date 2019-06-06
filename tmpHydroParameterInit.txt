@@ -16,4 +16,4 @@ OutputFrequency=$OutputFrequency
 BoundaryCondition=$BoundaryCondition
 InitPath=$InitPath
 OutPath=$OutPath
-mode=couple
+mode=$mode
