@@ -131,7 +131,7 @@ def SetKineticParam(normalised_values, _KINETIC_nv, _KINETIC_nx, _KINETIC_ny, dt
         Z = normalised_values["Z"]
         A = normalised_values["Ar"]
         fort10Param = setFort10.set_fort_10(wpe_over_nuei = wpe_over_nu_ei, c_over_vte = c_over_vte, 
-                                            atomic_Z = Z, atomic_A = A, nv = _KINETIC_nv, nx = _KINETIC_nx, ny = _KINETIC_ny, dt = dt, tmax = kineticTMax, do_user_prof_sub = ".true.")
+                                            atomic_Z = Z, atomic_A = A, nv = _KINETIC_nv, nx = _KINETIC_nx, ny = _KINETIC_ny, dt = dt, tmax = kineticTMax,vmax= 13, do_user_prof_sub = ".true.")
 
         templating(tmpfilePath = os.environ['BASEDIR'] +'/tmpfort.10', writePath = runPath, fileName = "fort.10", parameters = fort10Param)
         fort12TimeStr = SetFort12.createFort12String(fort12Output)
@@ -192,16 +192,16 @@ _KINETIC_nx = 30
 _KINETIC_ny = 1 
 _KINETIC_nv = 300
 _KINETIC_np = 1
-_FLUID_nx = 100
-_CYCLES  = 1
+_FLUID_nx = 200
+_CYCLES  = 50
 
 #Material Properties
-atomicZ = 1#60
-atomicAr = 1#157
+atomicZ = 64
+atomicAr = 157
 
 #Kinetic parameters
-kineticDt = 1 #as a ratio of collisional time i.e. 1 is collision time 
-kineticTMax = 20 #Number of collision times 
+kineticDt = 0.8 #as a ratio of collisional time i.e. 1 is collision time 
+kineticTMax = 2 #Number of collision times 
 
 
 #Fluid initial parameters 
@@ -211,14 +211,18 @@ cfl = 0.85
 laserWavelength = 200e-9
 laserPower = 0
 durOfLaser = 1e-10
-steps = 0
-fluidTMax = 1e-15
+steps = 75
+fluidTMax =  0 #1e-15
 initialDt = 1e-19
 dtGlobalMax =1e-15
 dtGlobalMin = 1e-17
-outputFrequency = 0.05 * fluidTMax/dtGlobalMin
-boundaryCondition = "free" 
+if fluidTMax == 0:
+    outputFrequency = 1
+else:
+    outputFrequency = int(0.05 * fluidTMax/dtGlobalMin)
 
+boundaryCondition = "rigid" 
+path = "/media/abetharan/DATADRIVE1/Abetharan/Test_1/cycle_3/fluid_output/Temperature.txt"
 #Set Environement variables for compiling
 RUN_NAME_ = "Test_1"
 BASE_DIR_ = "/media/abetharan/DATADRIVE1/Abetharan/"
@@ -248,12 +252,12 @@ for i in range(0, _CYCLES, 1):
         os.rmdir(fluid_input_path)
         shutil.copytree(INITIAL_CONDITIONS_FILE_PATH_, fluid_input_path)
         mode = "free"
-
+        steps = 1
     if i > 0:
         io.ImpactToHydro(fluid_input_path, previous_fluid_output_path, previous_kinetic_output_path, 
                             normalised_values, gamma, laserWavelength, laserPower, _FLUID_nx)
         mode = "couple"
-
+        steps = 75
     SetFluidParam(_FLUID_nx, atomicAr, atomicZ, cq, gamma, cfl, laserWavelength,  laserPower, durOfLaser, 
                     steps, fluidTMax, initialDt, dtGlobalMax, dtGlobalMin, outputFrequency, boundaryCondition, mode,
                     fluid_input_path, fluid_output_path, cycle_dump_path)

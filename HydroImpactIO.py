@@ -2,6 +2,7 @@ from scipy.interpolate import CubicSpline
 import numpy as np 
 import os
 import fnmatch
+import string
 from string import Template
 from scipy import constants
 import impact_norms_py3 as ImNorms
@@ -14,16 +15,18 @@ mp = constants.value("proton mass")
 e = constants.value("elementary charge")
 
 def findLastIndex(path, var):
-    LargestIndex = 0
+    largest_index = 0
     for file in os.listdir(path):
         if fnmatch.fnmatch(file, "*_" + var + "_*"):
             k = os.path.splitext(file)[0]
             k = k.split("_")
-            timeIndex = k[-1]
-            if int(timeIndex) > LargestIndex:
-                LargestIndex = int(timeIndex)
+            time_index = k[-1]
+            if str.isalpha(time_index):
+                continue
+            if int(time_index) > largest_index:
+                largest_index = int(time_index)
             
-    return(LargestIndex)
+    return(largest_index)
     
 def fileWriteFormat(tmpFileLocation, OpenFile, coord, varData, var):   
     

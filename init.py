@@ -247,10 +247,10 @@ def custom_routine(L, nx, ne, temperature, gamma, Z, massNumber):
     ni = ne / Z
     density = massNumber * 1.67E-27 * ni
     np_centered_x = np.array([0.5*(initial_coord[i + 1] + initial_coord[i]) for i in range(len(initial_coord) - 1)])
-    dg = np.float(0.1 * (x_u - x_l))
+    dg = np.float(0.9 * (x_u - x_l))
     mid_point = np.float(0.5) * (np.float(x_u - x_l))
-    #temperatureE = temperature +  np.float(3000) * np.exp(-(((np_centered_x -  mid_point)**2) / (dg**2)), dtype = float)
-    temperatureE = temperature + temperature*np.sin(np.linspace(0, 2, nx))  #np.linspace(11600*10, temperature, nx)
+    temperatureE = temperature +  np.float(3000) * np.exp(-(((np_centered_x -  mid_point)**2) / (dg**2)), dtype = float)
+   # temperatureE = temperature + np.linspace(11600*10, temperature, nx)
     temperatureI = temperatureE
     pressureE = ne * 1.38E-23 * temperatureE
     pressureI = ni * 1.38E-23 * temperatureI
