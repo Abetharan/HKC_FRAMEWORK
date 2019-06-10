@@ -2,6 +2,8 @@
     By default initial velocity is always zero
 """
 import numpy as np
+import impact_profiles_py3 as profiles
+
 #global constants
 kb = 1.38E-23
 protonMass = 1.67E-27
@@ -250,6 +252,18 @@ def custom_routine(L, nx, ne, temperature, gamma, Z, massNumber):
     dg = np.float(0.9 * (x_u - x_l))
     mid_point = np.float(0.5) * (np.float(x_u - x_l))
     temperatureE = temperature +  np.float(3000) * np.exp(-(((np_centered_x -  mid_point)**2) / (dg**2)), dtype = float)
+    temperatureE = temperature * profiles.load_profile(nx = 30,
+                                                        xmin = 0,
+                                                        xmax = 600,
+                                                        avg = 0.5,
+                                                        amp = 0.05,
+                                                        pos = 0.0,
+                                                        nwl = 0.50,
+                                                        wid = 1000.0,
+                                                        func = '+cos'
+                                                        )
+                                        
+  
    # temperatureE = temperature + np.linspace(11600*10, temperature, nx)
     temperatureI = temperatureE
     pressureE = ne * 1.38E-23 * temperatureE
@@ -268,7 +282,7 @@ def custom_routine(L, nx, ne, temperature, gamma, Z, massNumber):
 
     return(initial_coord, density, ne, ni, temperatureE, temperatureI, specificHeatE, DpDTe, specificHeatI, DpDTi, pressureE, pressureI, pressureTotal, IntEe, IntEi)
 
-nx = 200
+nx = 100
 x_l = 0
 x_u = 1E-5
 L = x_u - x_l

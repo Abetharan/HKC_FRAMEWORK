@@ -134,10 +134,6 @@ def CheckInOut(fluidPath, kineticPath, normalised_values, fluidNx, kineticNx, ki
                 exit(1)
     
     
-    
-    
-    
-    
     if FluidIN:
         #Checks kinetic output against fluid input
         #reuqire paths from Kinetic ouput agains the previous cycle agsinst current cycle fluid input path
