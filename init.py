@@ -3,9 +3,11 @@
 """
 import numpy as np
 import impact_profiles_py3 as profiles
+import impact_norms_py3 as norm
 
 #global constants
 kb = 1.38E-23
+e = 1.6E-19
 protonMass = 1.67E-27
 
 def LoadTestProblem(testName, nx, gammaFactor, x_l = 0, x_u = 1):
@@ -251,19 +253,21 @@ def custom_routine(L, nx, ne, temperature, gamma, Z, massNumber):
     np_centered_x = np.array([0.5*(initial_coord[i + 1] + initial_coord[i]) for i in range(len(initial_coord) - 1)])
     dg = np.float(0.9 * (x_u - x_l))
     mid_point = np.float(0.5) * (np.float(x_u - x_l))
-    temperatureE = temperature +  np.float(3000) * np.exp(-(((np_centered_x -  mid_point)**2) / (dg**2)), dtype = float)
-    temperatureE = temperature * profiles.load_profile(nx = nx,
+    #temperatureE = temperature +  np.float(3000) * np.exp(-(((np_centered_x -  mid_point)**2) / (dg**2)), dtype = float)
+    Bz = 0
+    normalised_values = norm.impact_inputs(np.average(ne) * 1e-6, temperature, Z, massNumber, Bz)
+    temperatureE = 0.5 + profiles.load_profile(nx = nx,
                                                         xmin = 0,
                                                         xmax = 600,
                                                         avg = 0.5,
-                                                        amp = 0.005,
+                                                        amp = 0.0005,
                                                         pos = 0.0,
                                                         nwl = 0.50,
                                                         wid = 1000.0,
                                                         func = '+cos'
                                                         )
-                                        
-  
+                                   
+    temperatureE = temperatureE * normalised_values['Te']
    # temperatureE = temperature + np.linspace(11600*10, temperature, nx)
     temperatureI = temperatureE
     pressureE = ne * 1.38E-23 * temperatureE
@@ -284,16 +288,17 @@ def custom_routine(L, nx, ne, temperature, gamma, Z, massNumber):
 
 nx = 100
 x_l = 0
-x_u = 1E-5
+x_u = 5.44759e-07  * 600
 L = x_u - x_l
-massNumber = 1 
-Z = 1
+massNumber = 157
+Z = 64
 testName = "hydro_energy_diff"
 gammaFactor = 1.4
 laserWavelength = 1E-9
 LaserPower = 0
 coulombLog = 11
-temperature = 11600 * 100
+#Ev
+temperature = 1000
 
 ne = 1E27
 nc = 1.1E15 / pow(laserWavelength, 2)
@@ -332,8 +337,10 @@ TextDump(   path = path,
 import matplotlib.pyplot as plt
 
 plt.figure(1)
-plt.plot(temperatureE)
-plt.plot(temperatureI)
+normalised_values = norm.impact_inputs(np.average(ne)*1e-6, temperature, Z,massNumber, 0)
+plotTemperature = (temperatureE * (kb/e))/ normalised_values['Te']
+plt.plot(plotTemperature)
+#lt.plot(temperatureI)
 plt.title("temperature")
 plt.figure(2)
 plt.plot(density)
