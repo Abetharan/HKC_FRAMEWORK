@@ -193,7 +193,7 @@ _KINETIC_ny = 1
 _KINETIC_nv = 300
 _KINETIC_np = 1
 _FLUID_nx = 100
-_CYCLES  = 3
+_CYCLES  = 1
 
 #Material Properties
 atomicZ = 64
