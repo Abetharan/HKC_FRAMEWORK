@@ -225,14 +225,14 @@ boundaryCondition = "rigid"
 path = "/media/abetharan/DATADRIVE1/Abetharan/Test_1/cycle_3/fluid_output/Temperature.txt"
 #Set Environement variables for compiling
 RUN_NAME_ = "Test_1"
-BASE_DIR_ = "/media/abetharan/DATADRIVE1/Abetharan/"
-IMPACT_SRC_DIR_ = "/home/abetharan/IMPACT/src"
-FLUID_SRC_DIR_ = "/home/abetharan/HeadlessHydra/Source_Code/run"
-INITIAL_CONDITIONS_FILE_PATH_ = "/home/abetharan/HeadlessHydra/init_data/"
-
-#IMPACT_SRC_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./IMPACT/src"
-#FLUID_SRC_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/Source_Code/run"
-#INITIAL_CONDITIONS_FILE_PATH_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/init_data/"
+#BASE_DIR_ = "/media/abetharan/DATADRIVE1/Abetharan/"
+#IMPACT_SRC_DIR_ = "/home/abetharan/IMPACT/src"
+#FLUID_SRC_DIR_ = "/home/abetharan/HeadlessHydra/Source_Code/run"
+#INITIAL_CONDITIONS_FILE_PATH_ = "/home/abetharan/HeadlessHydra/init_data/"
+BASE_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HYDRO_IMPACT_COUPLING/"
+IMPACT_SRC_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./IMPACT/src"
+FLUID_SRC_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/Source_Code/run"
+INITIAL_CONDITIONS_FILE_PATH_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/init_data/"
 #Return path is Run directory
 runPath  = SetEnvVar.setEnvVar(_KINETIC_nx, _KINETIC_ny, _KINETIC_nv, _KINETIC_np, RUN_NAME_, IMPACT_SRC_DIR_, 
                                 BASE_DIR_)
@@ -252,7 +252,7 @@ for i in range(0, _CYCLES, 1):
         os.rmdir(fluid_input_path)
         shutil.copytree(INITIAL_CONDITIONS_FILE_PATH_, fluid_input_path)
         mode = "free"
-        steps = 1
+        steps = 10
     if i > 0:
         io.ImpactToHydro(fluid_input_path, previous_fluid_output_path, previous_kinetic_output_path, 
                             normalised_values, gamma, laserWavelength, laserPower, _FLUID_nx)
