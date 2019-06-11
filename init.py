@@ -252,11 +252,11 @@ def custom_routine(L, nx, ne, temperature, gamma, Z, massNumber):
     dg = np.float(0.9 * (x_u - x_l))
     mid_point = np.float(0.5) * (np.float(x_u - x_l))
     temperatureE = temperature +  np.float(3000) * np.exp(-(((np_centered_x -  mid_point)**2) / (dg**2)), dtype = float)
-    temperatureE = temperature * profiles.load_profile(nx = 30,
+    temperatureE = temperature * profiles.load_profile(nx = nx,
                                                         xmin = 0,
                                                         xmax = 600,
                                                         avg = 0.5,
-                                                        amp = 0.05,
+                                                        amp = 0.005,
                                                         pos = 0.0,
                                                         nwl = 0.50,
                                                         wid = 1000.0,

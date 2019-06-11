@@ -193,7 +193,7 @@ _KINETIC_ny = 1
 _KINETIC_nv = 300
 _KINETIC_np = 1
 _FLUID_nx = 100
-_CYCLES  = 2
+_CYCLES  = 3
 
 #Material Properties
 atomicZ = 64
@@ -201,7 +201,7 @@ atomicAr = 157
 
 #Kinetic parameters
 kineticDt = 0.8 #as a ratio of collisional time i.e. 1 is collision time 
-kineticTMax = 2 #Number of collision times 
+kineticTMax = 10 #Number of collision times 
 
 
 #Fluid initial parameters 
