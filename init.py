@@ -4,6 +4,7 @@
 import numpy as np
 import impact_profiles_py3 as profiles
 import impact_norms_py3 as norm
+import matplotlib.pyplot as plt
 
 #global constants
 kb = 1.38E-23
@@ -256,7 +257,7 @@ def custom_routine(L, nx, ne, temperature, gamma, Z, massNumber):
     #temperatureE = temperature +  np.float(3000) * np.exp(-(((np_centered_x -  mid_point)**2) / (dg**2)), dtype = float)
     Bz = 0
     normalised_values = norm.impact_inputs(np.average(ne) * 1e-6, temperature, Z, massNumber, Bz)
-    temperatureE = 0.5 + profiles.load_profile(nx = nx,
+    temperatureE = profiles.load_profile(nx = nx,
                                                         xmin = 0,
                                                         xmax = 600,
                                                         avg = 0.5,
@@ -266,8 +267,12 @@ def custom_routine(L, nx, ne, temperature, gamma, Z, massNumber):
                                                         wid = 1000.0,
                                                         func = '+cos'
                                                         )
-                                   
-    temperatureE = temperatureE * normalised_values['Te']
+    #plt.figure(1)
+    #plt.plot(temperatureE)
+    temperatureE = temperatureE * normalised_values['Te'] * (e/kb)
+    # plt.figure(2)
+    # plt.plot(temperatureE)
+    # plt.show()
    # temperatureE = temperature + np.linspace(11600*10, temperature, nx)
     temperatureI = temperatureE
     pressureE = ne * 1.38E-23 * temperatureE
@@ -311,6 +316,22 @@ coord, density, numberDensityE, numberDensityI, temperatureE, temperatureI, spec
 mass = CalculateMass(coord, density, nx)
 InvBrem_, absorption  = InvBrem(coord, numberDensityE, nc, laserWavelength, Z, coulombLog, temperatureE, LaserPower, mass, nx)
 Brem = Brem(numberDensityE, massNumber, 0, temperatureE, nx)
+
+plt.figure(1)
+plt.plot(temperatureE)
+plt.plot(temperatureI)
+plt.title("temperature")
+plt.figure(2)
+plt.plot(density)
+plt.title("n density")
+
+plt.figure(3)
+plt.plot(pressureE)
+plt.plot(pressureI)
+plt.title("pressure")
+
+plt.show()
+
 TextDump(   path = path,
             coord= coord ,
             velocity = velocity,
@@ -334,21 +355,4 @@ TextDump(   path = path,
             brem = Brem
         )
 
-import matplotlib.pyplot as plt
 
-plt.figure(1)
-normalised_values = norm.impact_inputs(np.average(ne)*1e-6, temperature, Z,massNumber, 0)
-plotTemperature = (temperatureE * (kb/e))/ normalised_values['Te']
-plt.plot(plotTemperature)
-#lt.plot(temperatureI)
-plt.title("temperature")
-plt.figure(2)
-plt.plot(density)
-plt.title("n density")
-
-plt.figure(3)
-plt.plot(pressureE)
-plt.plot(pressureI)
-plt.title("pressure")
-
-plt.show()
