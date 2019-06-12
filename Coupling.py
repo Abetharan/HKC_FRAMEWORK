@@ -193,15 +193,15 @@ _KINETIC_ny = 1
 _KINETIC_nv = 300
 _KINETIC_np = 1
 _FLUID_nx = 100
-_CYCLES  = 1
+_CYCLES  = 20
 
 #Material Properties
-atomicZ = 64
-atomicAr = 157
+atomicZ = 8
+atomicAr = 16
 
 #Kinetic parameters
-kineticDt = 0.8 #as a ratio of collisional time i.e. 1 is collision time 
-kineticTMax = 10 #Number of collision times 
+kineticDt = 0.75 #as a ratio of collisional time i.e. 1 is collision time 
+kineticTMax = 200 #Number of collision times 
 
 
 #Fluid initial parameters 
@@ -215,7 +215,7 @@ steps = 75
 fluidTMax =  0 #1e-15
 initialDt = 1e-19
 dtGlobalMax =1e-15
-dtGlobalMin = 1e-17
+dtGlobalMin = 1e-16
 if fluidTMax == 0:
     outputFrequency = 1
 else:
@@ -225,14 +225,14 @@ boundaryCondition = "rigid"
 path = "/media/abetharan/DATADRIVE1/Abetharan/Test_1/cycle_3/fluid_output/Temperature.txt"
 #Set Environement variables for compiling
 RUN_NAME_ = "Test_1"
-#BASE_DIR_ = "/media/abetharan/DATADRIVE1/Abetharan/"
-#IMPACT_SRC_DIR_ = "/home/abetharan/IMPACT/src"
-#FLUID_SRC_DIR_ = "/home/abetharan/HeadlessHydra/Source_Code/run"
-#INITIAL_CONDITIONS_FILE_PATH_ = "/home/abetharan/HeadlessHydra/init_data/"
-BASE_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HYDRO_IMPACT_COUPLING/"
-IMPACT_SRC_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./IMPACT/src"
-FLUID_SRC_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/Source_Code/run"
-INITIAL_CONDITIONS_FILE_PATH_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/init_data/"
+BASE_DIR_ = "/media/abetharan/DATADRIVE1/Abetharan/"
+IMPACT_SRC_DIR_ = "/home/abetharan/IMPACT/src"
+FLUID_SRC_DIR_ = "/home/abetharan/HeadlessHydra/Source_Code/run"
+INITIAL_CONDITIONS_FILE_PATH_ = "/home/abetharan/HeadlessHydra/init_data/"
+#BASE_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HYDRO_IMPACT_COUPLING/"
+#IMPACT_SRC_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./IMPACT/src"
+#FLUID_SRC_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/Source_Code/run"
+#INITIAL_CONDITIONS_FILE_PATH_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/init_data/"
 #Return path is Run directory
 runPath  = SetEnvVar.setEnvVar(_KINETIC_nx, _KINETIC_ny, _KINETIC_nv, _KINETIC_np, RUN_NAME_, IMPACT_SRC_DIR_, 
                                 BASE_DIR_)
@@ -252,12 +252,12 @@ for i in range(0, _CYCLES, 1):
         os.rmdir(fluid_input_path)
         shutil.copytree(INITIAL_CONDITIONS_FILE_PATH_, fluid_input_path)
         mode = "free"
-        steps = 10
+        steps = 1
     if i > 0:
         io.ImpactToHydro(fluid_input_path, previous_fluid_output_path, previous_kinetic_output_path, 
                             normalised_values, gamma, laserWavelength, laserPower, _FLUID_nx)
         mode = "couple"
-        steps = 75
+        steps = 200
     SetFluidParam(_FLUID_nx, atomicAr, atomicZ, cq, gamma, cfl, laserWavelength,  laserPower, durOfLaser, 
                     steps, fluidTMax, initialDt, dtGlobalMax, dtGlobalMin, outputFrequency, boundaryCondition, mode,
                     fluid_input_path, fluid_output_path, cycle_dump_path)

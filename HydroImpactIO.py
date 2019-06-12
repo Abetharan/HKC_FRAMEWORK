@@ -8,6 +8,7 @@ from scipy import constants
 import impact_norms_py3 as ImNorms
 import impact_module_py3 as cf
 import HydroRemainingFromImpact as remain
+import pickle
 
 kb = constants.value("Boltzmann constant")
 me = constants.value("electron mass")
@@ -71,11 +72,14 @@ def HydroToImpact(fluidOutPath, kineticOutPath, cyclePath, Z, Ar, laserWaveLengt
     fluid_las_dep = np.loadtxt(fluidOutPath + "/InverseBrem_" + str(lastIndex) + ".txt")
     fluid_brem = np.loadtxt(fluidOutPath + "/Brem_" + str(lastIndex) + ".txt")
     fluid_density = np.loadtxt(fluidOutPath + "/Density_" + str(lastIndex) + ".txt")
-    fluid_Z = np.zeros(fluidNx) + Z 
+    fluid_Z = np.loadtxt(fluidOutPath + "/Z_" + str(lastIndex) + ".txt")
 
     avgNe = np.average(fluid_ne) * 1e-6#1e21 
     avgTe = np.average(fluid_Te) * (kb / e) #1000 #
-    normalised_values = ImNorms.impact_inputs(avgNe, avgTe, Z, Ar, Bz = 0)
+    avgZ = np.average(fluid_Z)
+    normalised_values = ImNorms.impact_inputs(avgNe, avgTe, avgZ, Ar, Bz = 0)
+    with open(os.path.join(kineticOutPath, "normValues.pkl"), 'wb') as f:
+        pickle.dump(normalised_values, f, pickle.HIGHEST_PROTOCOL)
 
     if normalised_values["log_lambda"] < 0:
         print("Normalisation values not within good IMPACT PARAMETERS ... change")
@@ -168,10 +172,10 @@ def ImpactToHydro(nextStepFluidInit, previousFluidOutPath, previousKineticOutPat
             Te = varList[1:-1] * normConst
         elif var == "qxX":
             #outputVar = "electron_heat_flow"
-            normConst = 9.11E-31 * normalisedValues['vte']**3*normalisedValues['ne'] * 1e6 
+            normConst = 9.11E-31 * normalisedValues['vte']**3*normalisedValues['ne'] * 1e21 * 1e6 
             qxX = varList * normConst
     
-    remain.CalculateRemain(ne, Te, qxX, normalisedValues['Z'], normalisedValues['Ar'], gammaFactor, laserWaveLength, laserPower,
+    remain.CalculateRemain(ne, Te, qxX, normalisedValues, gammaFactor, laserWaveLength, laserPower,
                              fluidNx, nextStepFluidInit, previousFluidOutPath, previousKineticOutPath)
 
 

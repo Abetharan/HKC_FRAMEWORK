@@ -309,8 +309,8 @@ ne = 1E27
 nc = 1.1E15 / pow(laserWavelength, 2)
 
 velocity = np.zeros(nx + 1) #+ add any function
-path = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/init_data/"
-#path = "/home/abetharan/HeadlessHydra/init_data/"
+#path = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/init_data/"
+path = "/home/abetharan/HeadlessHydra/init_data/"
 coord, density, numberDensityE, numberDensityI, temperatureE, temperatureI, specificHeatE, DpDTe, specificHeatI, DpDTi, pressureE, pressureI, pressureTotal, IntEe, IntEi  = custom_routine(L, nx, ne, temperature, gammaFactor, Z, massNumber)
 
 mass = CalculateMass(coord, density, nx)

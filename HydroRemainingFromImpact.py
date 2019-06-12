@@ -3,7 +3,6 @@ import os
 import fnmatch
 import math
 from scipy.interpolate import CubicSpline
-
 protonMass = 1.66e-27
 kb = 1.38e-23
 
@@ -47,7 +46,7 @@ def InvBrem(coord,ne, nc, wavelength, mZ, coulombLog, TemperatureE,LaserPower, m
         print(i)
         DistanceTravelled = coord[i + 1] - coord[i]
         beta = ne[i] / nc
-        alpha[i] = 1.23E-14 * ne[i] * mZ * CoulombLog[i] * pow(TemperatureE[i], -1.5) * pow(beta, 2) * pow((1 - beta),-0.5)
+        alpha[i] = 1.23E-14 * ne[i] * mZ[i] * CoulombLog[i] * pow(TemperatureE[i], -1.5) * pow(beta, 2) * pow((1 - beta),-0.5)
     
         TransmittedLaser[i] = laserPower * np.exp(-alpha[i] * DistanceTravelled)
         PowerAbsorbed[i] = laserPower - TransmittedLaser[i]
@@ -71,7 +70,7 @@ def InvBrem(coord,ne, nc, wavelength, mZ, coulombLog, TemperatureE,LaserPower, m
     
             DistanceTravelled = coord[i + 1] - coord[i]
             beta = ne[i] / nc
-            alpha[i] = 1.23E-14 * ne[i] * mZ * CoulombLog[i] * pow(TemperatureE[i], -1.5) * pow(beta, 2) * pow((1 - beta),-0.5)
+            alpha[i] = 1.23E-14 * ne[i] * mZ[i] * CoulombLog[i] * pow(TemperatureE[i], -1.5) * pow(beta, 2) * pow((1 - beta),-0.5)
         
             reflectedtransmittedLaser = reflection_power * np.exp(-alpha[i] * DistanceTravelled)
             reflectedpowerAbsorbed = reflection_power - reflectedtransmittedLaser
@@ -100,7 +99,7 @@ def Brem(ne, massNumber, Z, Temperature, nx):
 def Heatflow(electron_thermal_flux, mass, nx):
     HeatConductionE = np.zeros(nx)
     for i in range(nx):   
-        HeatConductionE[i] = (electron_thermal_flux[i + 1] - electron_thermal_flux[i]) / mass[i]
+        HeatConductionE[i] = -(electron_thermal_flux[i + 1] - electron_thermal_flux[i]) / mass[i]
     return(HeatConductionE)
 
 def TextDump(path, coord, velocity, density, ne, ni, Te, Ti, Pe, Pi, Ptot, IntEe, IntEi, DpDTe, DpDTi, Cve,Cvi, mass, invBrem, brem, heatflow):
@@ -130,7 +129,7 @@ def TextDump(path, coord, velocity, density, ne, ni, Te, Ti, Pe, Pi, Ptot, IntEe
     np.savetxt((path+"brem.txt"), brem)
     np.savetxt((path+"qe.txt"),heatflow )
 
-def CalculateRemain(ne, Te, qe, Z, massNumber, gammaFactor, laserWaveLength, laserPower, fluidNx, NextStepFluidInit, PreviousFluidOutPath, PreviousKineticOutPath, ionfluidDensity = None, ionfluidTemperature = None):
+def CalculateRemain(kinetic_ne, kinetic_Te, kinetic_qe, normalisationValues, gammaFactor, laserWaveLength, laserPower, fluidNx, NextStepFluidInit, PreviousFluidOutPath, PreviousKineticOutPath, ionfluidDensity = None, ionfluidTemperature = None):
     
     if ionfluidDensity is not None:
         ni = ionfluidDensity
@@ -151,20 +150,23 @@ def CalculateRemain(ne, Te, qe, Z, massNumber, gammaFactor, laserWaveLength, las
         Ti = np.loadtxt(PreviousFluidOutPath + "TemperatureI_" + str(LargestIndex) + ".txt")
         coord = np.loadtxt(PreviousFluidOutPath + "Coord_" + str(LargestIndex) + ".txt")
         velocity = np.loadtxt(PreviousFluidOutPath + "Velocity_" + str(LargestIndex) + ".txt")
-    
-   
+        Z = np.loadtxt(PreviousFluidOutPath + "Z_" + str(LargestIndex) + ".txt")
+
+    #material
+    massNumber = normalisationValues['Ar']
     # Handle the Interpolation back. Cubic 
 
-    kinetic_x = np.loadtxt(PreviousKineticOutPath + "ReturnToHydro_xf.xy", delimiter = "\n")
+    kinetic_x = np.loadtxt(PreviousKineticOutPath + "ReturnToHydro_xf.xy", delimiter = "\n") * normalisationValues['lambda_mfp'] 
     kinetic_centered_x = [(kinetic_x[i + 1] + kinetic_x[i])/2 for i in range(int(os.environ["NXM"]))]
     fluid_centered_x = [(coord[i + 1] + coord[i])/2 for i in range(fluidNx)]
-    cs_ne = CubicSpline(kinetic_centered_x, ne)
-    cs_Te = CubicSpline(kinetic_centered_x, Te)
-    cs_qe = CubicSpline(kinetic_x, qe)
+    cs_ne = CubicSpline(kinetic_centered_x, kinetic_ne)
+    cs_Te = CubicSpline(kinetic_centered_x, kinetic_Te)
+    cs_qe = CubicSpline(kinetic_x, kinetic_qe)
 
     ne = cs_ne(fluid_centered_x)
     Te = cs_Te(fluid_centered_x)
     qe = cs_qe(coord)
+    
 
     density = ni * massNumber  * protonMass
     ##Noting convention that Specific Heat ha
@@ -188,7 +190,19 @@ def CalculateRemain(ne, Te, qe, Z, massNumber, gammaFactor, laserWaveLength, las
 
     nc = 1.1E15 / pow(laserWaveLength, 2)
     InvBrem_, _, _ = InvBrem(coord, ne, nc, laserWaveLength, Z, 11, Te, laserPower, mass, fluidNx)
-    Brem_ = Brem(ne, massNumber, Z, Te, fluidNx)
+    
+    ###############################################################################
+    ###############################################################################
+    ###############################################################################
+    ###############################################################################
+    ###############################################################################
+    #############################BREM HAS BEEN TURNED OFF HERE##############################
+        ###############################################################################
+    ###############################################################################
+    ###############################################################################
+    ###############################################################################
+    ###############################################################################
+    Brem_ = np.zeros(fluidNx) #Brem(ne, massNumber, Z, Te, fluidNx)
     electronheatflow= Heatflow(qe, mass, fluidNx)
 
     TextDump(path = NextStepFluidInit,
