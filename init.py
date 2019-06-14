@@ -2,7 +2,7 @@
     By default initial velocity is always zero
 """
 import numpy as np
-import impact_profiles_py3 as profiles
+import impact_profiles_py3 as prof
 import impact_norms_py3 as norm
 import matplotlib.pyplot as plt
 
@@ -251,25 +251,19 @@ def custom_routine(L, nx, ne, temperature, gamma, Z, massNumber):
     ne = ne + np.zeros(nx)
     ni = ne / Z
     density = massNumber * 1.67E-27 * ni
-    np_centered_x = np.array([0.5*(initial_coord[i + 1] + initial_coord[i]) for i in range(len(initial_coord) - 1)])
-    dg = np.float(0.9 * (x_u - x_l))
-    mid_point = np.float(0.5) * (np.float(x_u - x_l))
-    #temperatureE = temperature +  np.float(3000) * np.exp(-(((np_centered_x -  mid_point)**2) / (dg**2)), dtype = float)
-    Bz = 0
-    normalised_values = norm.impact_inputs(np.average(ne) * 1e-6, temperature, Z, massNumber, Bz)
-    temperatureE = profiles.load_profile(nx = nx,
-                                                        xmin = 0,
-                                                        xmax = 600,
-                                                        avg = 0.5,
-                                                        amp = 0.0005,
-                                                        pos = 0.0,
-                                                        nwl = 0.50,
-                                                        wid = 1000.0,
-                                                        func = '+cos'
+
+    temperatureE = temperature * prof.load_profile(nx = nx,
+                                                    xmin = 0,
+                                                    xmax = 600,
+                                                    avg = 0.5,
+                                                    amp = 0.0005,
+                                                    pos = 0.0,
+                                                    nwl = 0.50,
+                                                    wid = 1000.0,
+                                                    func = '+cos'
                                                         )
     #plt.figure(1)
     #plt.plot(temperatureE)
-    temperatureE = temperatureE * normalised_values['Te'] * (e/kb)
     # plt.figure(2)
     # plt.plot(temperatureE)
     # plt.show()
@@ -293,17 +287,17 @@ def custom_routine(L, nx, ne, temperature, gamma, Z, massNumber):
 
 nx = 100
 x_l = 0
-x_u = 5.44759e-07  * 600
+x_u = 1.88666e-07 * 600
 L = x_u - x_l
-massNumber = 157
-Z = 64
+massNumber = 16
+Z = 8
 testName = "hydro_energy_diff"
 gammaFactor = 1.4
 laserWavelength = 1E-9
 LaserPower = 0
 coulombLog = 11
 #Ev
-temperature = 1000
+temperature = 200*11600
 
 ne = 1E27
 nc = 1.1E15 / pow(laserWavelength, 2)

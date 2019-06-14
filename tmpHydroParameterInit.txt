@@ -17,3 +17,4 @@ BoundaryCondition=$BoundaryCondition
 InitPath=$InitPath
 OutPath=$OutPath
 mode=$mode
+SingleTemperature=true

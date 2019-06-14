@@ -26,7 +26,8 @@ def Execute(cmd):
     popen.stdout.close()
     return_code = popen.wait()
     if return_code:
-        raise subprocess.CalledProcessError(return_code, cmd)
+        Warning('Return code was written')
+        #raise subprocess.CalledProcessError(return_code, cmd)
 
 def templating(tmpfilePath, writePath, fileName, parameters):
     """
@@ -190,7 +191,7 @@ def NextCycleFileManager(runPath, CycleStep):
 # simulation domain sizes and number of processors to use 
 _KINETIC_nx = 30
 _KINETIC_ny = 1 
-_KINETIC_nv = 300
+_KINETIC_nv = 150
 _KINETIC_np = 1
 _FLUID_nx = 100
 _CYCLES  = 20
@@ -213,21 +214,20 @@ laserPower = 0
 durOfLaser = 1e-10
 steps = 75
 fluidTMax =  0 #1e-15
-initialDt = 1e-19
-dtGlobalMax =1e-15
-dtGlobalMin = 1e-16
+initialDt = 1e-16
+dtGlobalMax =1e-14
+dtGlobalMin = 1e-17
 if fluidTMax == 0:
     outputFrequency = 1
 else:
     outputFrequency = int(0.05 * fluidTMax/dtGlobalMin)
 
 boundaryCondition = "rigid" 
-path = "/media/abetharan/DATADRIVE1/Abetharan/Test_1/cycle_3/fluid_output/Temperature.txt"
 #Set Environement variables for compiling
-RUN_NAME_ = "Test_1"
+RUN_NAME_ = "Test3"
 BASE_DIR_ = "/media/abetharan/DATADRIVE1/Abetharan/"
 IMPACT_SRC_DIR_ = "/home/abetharan/IMPACT/src"
-FLUID_SRC_DIR_ = "/home/abetharan/HeadlessHydra/Source_Code/run"
+FLUID_SRC_DIR_ = "/home/abetharan/HeadlessHydra/run"
 INITIAL_CONDITIONS_FILE_PATH_ = "/home/abetharan/HeadlessHydra/init_data/"
 #BASE_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HYDRO_IMPACT_COUPLING/"
 #IMPACT_SRC_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./IMPACT/src"
@@ -257,7 +257,11 @@ for i in range(0, _CYCLES, 1):
         io.ImpactToHydro(fluid_input_path, previous_fluid_output_path, previous_kinetic_output_path, 
                             normalised_values, gamma, laserWavelength, laserPower, _FLUID_nx)
         mode = "couple"
-        steps = 200
+        steps = 0
+        fluidTMax = 10e-12
+        outputFrequency = int(0.05 * fluidTMax/dtGlobalMin)
+
+    
     SetFluidParam(_FLUID_nx, atomicAr, atomicZ, cq, gamma, cfl, laserWavelength,  laserPower, durOfLaser, 
                     steps, fluidTMax, initialDt, dtGlobalMax, dtGlobalMin, outputFrequency, boundaryCondition, mode,
                     fluid_input_path, fluid_output_path, cycle_dump_path)

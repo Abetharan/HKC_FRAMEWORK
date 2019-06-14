@@ -72,8 +72,8 @@ def HydroToImpact(fluidOutPath, kineticOutPath, cyclePath, Z, Ar, laserWaveLengt
     fluid_las_dep = np.loadtxt(fluidOutPath + "/InverseBrem_" + str(lastIndex) + ".txt")
     fluid_brem = np.loadtxt(fluidOutPath + "/Brem_" + str(lastIndex) + ".txt")
     fluid_density = np.loadtxt(fluidOutPath + "/Density_" + str(lastIndex) + ".txt")
-    fluid_Z = np.loadtxt(fluidOutPath + "/Z_" + str(lastIndex) + ".txt")
-
+    #fluid_Z = np.loadtxt(fluidOutPath + "/Z_" + str(lastIndex) + ".txt")
+    fluid_Z = np.zeros(fluidNx) + Z
     avgNe = np.average(fluid_ne) * 1e-6#1e21 
     avgTe = np.average(fluid_Te) * (kb / e) #1000 #
     avgZ = np.average(fluid_Z)

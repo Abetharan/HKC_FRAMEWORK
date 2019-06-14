@@ -46,7 +46,7 @@ def InvBrem(coord,ne, nc, wavelength, mZ, coulombLog, TemperatureE,LaserPower, m
         print(i)
         DistanceTravelled = coord[i + 1] - coord[i]
         beta = ne[i] / nc
-        alpha[i] = 1.23E-14 * ne[i] * mZ[i] * CoulombLog[i] * pow(TemperatureE[i], -1.5) * pow(beta, 2) * pow((1 - beta),-0.5)
+        alpha[i] = 1.23E-14 * ne[i] * mZ * CoulombLog[i] * pow(TemperatureE[i], -1.5) * pow(beta, 2) * pow((1 - beta),-0.5)
     
         TransmittedLaser[i] = laserPower * np.exp(-alpha[i] * DistanceTravelled)
         PowerAbsorbed[i] = laserPower - TransmittedLaser[i]
@@ -70,7 +70,7 @@ def InvBrem(coord,ne, nc, wavelength, mZ, coulombLog, TemperatureE,LaserPower, m
     
             DistanceTravelled = coord[i + 1] - coord[i]
             beta = ne[i] / nc
-            alpha[i] = 1.23E-14 * ne[i] * mZ[i] * CoulombLog[i] * pow(TemperatureE[i], -1.5) * pow(beta, 2) * pow((1 - beta),-0.5)
+            alpha[i] = 1.23E-14 * ne[i] * mZ * CoulombLog[i] * pow(TemperatureE[i], -1.5) * pow(beta, 2) * pow((1 - beta),-0.5)
         
             reflectedtransmittedLaser = reflection_power * np.exp(-alpha[i] * DistanceTravelled)
             reflectedpowerAbsorbed = reflection_power - reflectedtransmittedLaser
@@ -150,10 +150,11 @@ def CalculateRemain(kinetic_ne, kinetic_Te, kinetic_qe, normalisationValues, gam
         Ti = np.loadtxt(PreviousFluidOutPath + "TemperatureI_" + str(LargestIndex) + ".txt")
         coord = np.loadtxt(PreviousFluidOutPath + "Coord_" + str(LargestIndex) + ".txt")
         velocity = np.loadtxt(PreviousFluidOutPath + "Velocity_" + str(LargestIndex) + ".txt")
-        Z = np.loadtxt(PreviousFluidOutPath + "Z_" + str(LargestIndex) + ".txt")
+       # Z = np.loadtxt(PreviousFluidOutPath + "Z_" + str(LargestIndex) + ".txt")
 
     #material
     massNumber = normalisationValues['Ar']
+    Z = normalisationValues['Z']
     # Handle the Interpolation back. Cubic 
 
     kinetic_x = np.loadtxt(PreviousKineticOutPath + "ReturnToHydro_xf.xy", delimiter = "\n") * normalisationValues['lambda_mfp'] 
