@@ -72,6 +72,7 @@ def HydroToImpact(fluidOutPath, kineticOutPath, cyclePath, Z, Ar, laserWaveLengt
     fluid_las_dep = np.loadtxt(fluidOutPath + "/InverseBrem_" + str(lastIndex) + ".txt")
     fluid_brem = np.loadtxt(fluidOutPath + "/Brem_" + str(lastIndex) + ".txt")
     fluid_density = np.loadtxt(fluidOutPath + "/Density_" + str(lastIndex) + ".txt")
+    #fluid_mass = np.loadtxt(fluidOutPath + "/mass.txt")
     #fluid_Z = np.loadtxt(fluidOutPath + "/Z_" + str(lastIndex) + ".txt")
     fluid_Z = np.zeros(fluidNx) + Z
     avgNe = np.average(fluid_ne) * 1e-6#1e21 
@@ -84,13 +85,16 @@ def HydroToImpact(fluidOutPath, kineticOutPath, cyclePath, Z, Ar, laserWaveLengt
     if normalised_values["log_lambda"] < 0:
         print("Normalisation values not within good IMPACT PARAMETERS ... change")
         exit(1)
+    #Energy normlisation
+    Un = me * normalised_values['vte']**2 * normalised_values['ne'] ** 1e21 * 1e6
     ## NOrmalise SI to Impact norms 
     x_norm = fluid_x / normalised_values["lambda_mfp"]
     ne_norm = fluid_ne / (1e6 * normalised_values['ne'] * 1e21)  # 1e21 normalisation factor. 1e6 there to convert from m^-3 to cm^-3
     ni_norm = fluid_ni / (1e6 *  normalised_values['ni'] * 1e21) # 1e6 there to convert from m^-3 to cm^-3
     Te_norm = (fluid_Te * (kb/e)) / normalised_values['Te']
-    laser_norm = (fluid_las_dep * fluid_density) / (normalised_values["vte"] / (normalised_values['ne'] * 1e6  * 1e21 * normalised_values["tau_ei"]))
-    brem_norm = (fluid_brem * fluid_density) / (normalised_values["vte"] / (normalised_values['ne'] * 1e6 *  1e21 * normalised_values["tau_ei"]))
+    #laser_norm = (fluid_las_dep * fluid_mass) / (Un / (normalised_values['tau_ei'] * normalised_values['ne'] * 1e21))
+    laser_norm = (fluid_las_dep * fluid_density) / (Un / (normalised_values['tau_ei']))
+    brem_norm = (fluid_brem * fluid_density) / (Un / normalised_values['tau_ei'])
     Z_norm = fluid_Z / normalised_values['Z']
 
     kinetic_x = np.linspace(x_norm[0], x_norm[-1], int(os.environ["NXM"]) + 1)
