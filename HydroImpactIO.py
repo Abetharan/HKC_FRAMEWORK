@@ -86,7 +86,7 @@ def HydroToImpact(fluidOutPath, kineticOutPath, cyclePath, Z, Ar, laserWaveLengt
         print("Normalisation values not within good IMPACT PARAMETERS ... change")
         exit(1)
     #Energy normlisation
-    Un = me * normalised_values['vte']**2 * normalised_values['ne'] ** 1e21 * 1e6
+    Un = me * normalised_values['vte']**2 * normalised_values['ne'] * 1e21 * 1e6
     ## NOrmalise SI to Impact norms 
     x_norm = fluid_x / normalised_values["lambda_mfp"]
     ne_norm = fluid_ne / (1e6 * normalised_values['ne'] * 1e21)  # 1e21 normalisation factor. 1e6 there to convert from m^-3 to cm^-3

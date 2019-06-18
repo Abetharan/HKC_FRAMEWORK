@@ -82,42 +82,65 @@ def KineticLoad(kineticOutPath, timeStep):
     return(xgrid, time, ne, Te, qxX)
    
 
-BASE_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HYDRO_IMPACT_COUPLING"
-RUN_NAME_ = "Test_1"
+BASE_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/"
+RUN_NAME_ = "couple"
 RUN_DIR = os.path.join(BASE_DIR_, RUN_NAME_)
 _NO_CYCLES = 3
 f = plt.figure(figsize = (20, 20))
 total_time = 0
-for i in range(_NO_CYCLES):
+nx = 100
+for i in range(1, _NO_CYCLES):
     cycle_path = os.path.join(RUN_DIR, "cycle_" + str(i))
     fluid_out_path = os.path.join(cycle_path, "fluid_output")
-    kinetic_out_path = os.path.join(cycle_path, "kinetic_output")
-    for fluidKin in range(2):
-        if fluidKin == 0:
-            largest_time = fluidFindLastIndex(fluid_out_path, "TemperatureE" )
-        else:
-            largest_time = kineticFindLastIndex(kinetic_out_path, "Te")
-        for time_step in range(largest_time):
-            if fluidKin == 0:
-                xgrid, time, ne, ni, Te, Ti, HeatConductionE = FluidLoad(fluid_out_path, time_step)
-                xgrid = [(xgrid[i+1] + xgrid[i]) / 2 for i in range(len(ne))]
-            else:
-                if time_step < 10:
-                    time_step = "0" + str(time_step)
-                xgrid, time, ne, Te, qxX = KineticLoad(kinetic_out_path, time_step)
+    for i in range(0,10000,500):
+        _pathTe = fluid_out_path + "/TemperatureE_" + str(i) + ".txt"
+        _pathTi = fluid_out_path + "/TemperatureI_" + str(i) + ".txt"
+        _pathx = fluid_out_path + "/TotalPressure_" + str(i) + ".txt"
+        _pathNumberDensityE =fluid_out_path + "/NumberDensityE_" + str(i) + ".txt" 
+        _pathNumberDensityI =fluid_out_path + "/NumberDensityI_" + str(i) + ".txt" 
 
-            total_time += time
-            # ax = f.add_subplot(211)
-            # ax2 = f.add_subplot(212)
-            # ax.plot(xgrid, Te, color = 'b', label = "Electron Temperature/eV")
-            # #ax.plot(xgrid, Ti, color = 'r', label = "Ion Temperature/eV")
-            # ax.set_title("Temperature")    
-            # ax2.plot(xgrid, ne, color = 'b' , label = "ne/cm^-3")
-            # ax2.set_title("Number Density")    
-            # plt.suptitle("current step is: " + str(time))
-            plt.plot(xgrid, Te)
-            #plt.legend()
-            plt.title("Time " + str(time) + "S")
-            plt.pause(0.0000000000000002)
-            plt.gcf().clear()
-        plt.show()
+        _pathDensity = fluid_out_path + "/Density_" + str(i) + ".txt"
+        _pathinvbrem = fluid_out_path + "/InverseBrem_" + str(i) + ".txt"
+        _path1 = fluid_out_path + "/Coord_" + str(i) + ".txt"
+        _pathTime = fluid_out_path + "/Time_" + str(i) + ".txt"
+        _pathViscosity = fluid_out_path + "/Viscosity_" + str(i) + ".txt"
+        _pathvelocity = fluid_out_path + "/Velocity_" + str(i) + ".txt"
+        _pathHeatConductionE = fluid_out_path + "/HeatConductionE_" + str(i) + ".txt"
+        _pathInternalEnergyE = fluid_out_path + "/InternalEnergyE_" + str(i) + ".txt"
+        _pathInternalEnergyI = fluid_out_path + "/InternalEnergyI_" + str(i) + ".txt"
+        _pathExchange =fluid_out_path + "/Exchange_" + str(i) + ".txt"
+        _pathBrem =fluid_out_path + "/Brem_" + str(i) + ".txt"
+        _pathPowerAbs = fluid_out_path + "/PowerAbsorbed_" + str(i) + ".txt"
+        _pathTransmit = fluid_out_path + "/TransmittedLaser_" + str(i) + ".txt"
+        time = np.loadtxt(_pathTime)
+        rho = np.loadtxt(_pathDensity)
+        velocity = np.loadtxt(_pathvelocity)
+        temperatureE = np.loadtxt(_pathTe) #* (1/11600)
+        temperatureI = np.loadtxt(_pathTi) #* (1/11600)
+        Internal_energyE = np.loadtxt(_pathInternalEnergyE)
+        Internal_energyI = np.loadtxt(_pathInternalEnergyI)
+        ne = np.loadtxt(_pathNumberDensityE)
+        ni = np.loadtxt(_pathNumberDensityI)
+        HeatConductionE = np.loadtxt(_pathHeatConductionE)
+        invbrem = np.loadtxt(_pathinvbrem)   
+        Exchange = np.loadtxt(_pathExchange)
+        Brem = np.loadtxt(_pathBrem)
+        x = np.loadtxt(_path1)
+        viscosity = np.loadtxt(_pathViscosity)
+        TransmittedLaser = np.loadtxt(_pathTransmit)
+        PowerAbsorbed = np.loadtxt(_pathPowerAbs)
+        centered_x = [(x[i + 1] + x[i]) / 2 for i in range(nx)]
+
+        total_time += time
+        ax = f.add_subplot(211)
+        ax2 = f.add_subplot(212)
+        ax.plot(centered_x, temperatureE, color = 'b', label = "Electron Temperature/eV")
+        #ax.plot(xgrid, Ti, color = 'r', label = "Ion Temperature/eV")
+        ax.set_title("Temperature")    
+        ax2.plot(centered_x, ne, color = 'b' , label = "ne/cm^-3")
+        ax2.set_title("Number Density")    
+        plt.suptitle("current step is: " + str(time))
+        plt.title("Time " + str(time) + "S")
+        plt.pause(0.0000000000000002)
+        plt.gcf().clear()
+    plt.show()
