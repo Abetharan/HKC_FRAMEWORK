@@ -86,7 +86,7 @@ BASE_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/
 RUN_NAME_ = "couple"
 RUN_DIR = os.path.join(BASE_DIR_, RUN_NAME_)
 _NO_CYCLES = 3
-f = plt.figure(figsize = (20, 20))
+f = plt.figure(figsize = (20, 20))fill_value="extrapolate"
 total_time = 0
 nx = 100
 for i in range(1, _NO_CYCLES):

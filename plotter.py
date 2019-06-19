@@ -1,17 +1,19 @@
+import matplotlib.pyplot
+matplotlib.rcParams.update({'font.size': 20})
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 BASE_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/"
-RUN_NAME_ = "couple"
+RUN_NAME_ = "couple_success"
 RUN_DIR = os.path.join(BASE_DIR_, RUN_NAME_)
 _NO_CYCLES = 3
 f = plt.figure(figsize = (20, 20))
 total_time = 0
 nx = 100
 cycle_path_0 = os.path.join(RUN_DIR, "cycle_0/fluid_output/TemperatureE_-1.txt")
-cycle_path_1 = os.path.join(RUN_DIR, "cycle_1/fluid_output/TemperatureE_-1.txt")
-cycle_path_5 = os.path.join(RUN_DIR, "cycle_0/fluid_output/TemperatureE_-1.txt")
-cycle_path_9 = os.path.join(RUN_DIR, "cycle_3/fluid_output/TemperatureE_-1.txt")
+cycle_path_1 = os.path.join(RUN_DIR, "cycle_10/fluid_output/TemperatureE_10000.txt")
+cycle_path_5 = os.path.join(RUN_DIR, "cycle_15/fluid_output/TemperatureE_10000.txt")
+cycle_path_9 = os.path.join(RUN_DIR, "cycle_20/fluid_output/TemperatureE_10000.txt")
 #path1 = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/data_out/TemperatureE_0.txt"
 #path5 = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/data_out/TemperatureE_1000.txt"
 #path9 = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/data_out/TemperatureE_1999.txt"
@@ -25,8 +27,11 @@ te9 = np.loadtxt(cycle_path_9)
 # te9 = np.loadtxt(path9)
 
 plt.figure(1)
-plt.plot(te0)
-plt.plot(te1)
-#plt.plot(te5)
-#plt.plot(te9)
+plt.plot(te0/11600, label = "cycle 0")
+plt.plot(te1/11600, label = "cycle 10")
+plt.plot(te5/11600, label = "cycle 15")
+plt.plot(te9/11600, label = "cycle 20")
+plt.xlabel('Grid position')
+plt.ylabel('Temperature/eV')
+plt.legend()
 plt.show()
