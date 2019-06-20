@@ -287,7 +287,7 @@ def custom_routine(L, nx, ne, temperature, gamma, Z, massNumber):
 
 nx = 100
 x_l = 0
-x_u = 1.88666e-07 * 600
+x_u = 6.19347e-03 * 600
 L = x_u - x_l
 massNumber = 16
 Z = 8
@@ -297,9 +297,9 @@ laserWavelength = 1E-9
 LaserPower = 0
 coulombLog = 11
 #Ev
-temperature = 200*11600
+temperature = 5*11600
 
-ne = 1E27
+ne = 1E19
 nc = 1.1E15 / pow(laserWavelength, 2)
 
 velocity = np.zeros(nx + 1) #+ add any function

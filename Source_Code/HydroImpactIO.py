@@ -10,7 +10,7 @@ import impact_norms_py3 as ImNorms
 import impact_module_py3 as cf
 import HydroRemainingFromImpact as remain
 import pickle
-
+import TmpFileCreator as tfc
 kb = constants.value("Boltzmann constant")
 me = constants.value("electron mass")
 mp = constants.value("proton mass")
@@ -120,19 +120,7 @@ def HydroToImpact(fluidOutPath, kineticOutPath, cyclePath, Z, Ar, laserWaveLengt
     # plot(kinetic_Te)
     # plt.show()plt.
     if not os.path.exists(cyclePath + "/tmpWrite.txt"):
-
-        writeStatement = """Version:2
-0
-2
-$leadingDim
-$maxparam
-$Len     
-$xlist\n
-$arraylist
-        """
-        kappa = open(cyclePath + "/tmpWrite.txt", "w")
-        kappa.write(writeStatement)
-        kappa.close()
+        tfc.impactOutputformat(cyclePath)
 
     impactNeFile = open(cyclePath + "/" + os.environ["RUN"] + "_eden.xy", "w")
     impactNiFile = open(cyclePath + "/" + os.environ["RUN"] + "_ionden.xy", "w")
