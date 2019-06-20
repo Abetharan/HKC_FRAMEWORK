@@ -20,14 +20,20 @@ def Execute(cmd):
     Args: Exe comman that takes the form listed in the documetnation as a str list
 
     """
-    popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True)
-    for stdout_line in iter(popen.stdout.readline, ""):
-        print(stdout_line )
-    popen.stdout.close()
-    return_code = popen.wait()
-    if return_code:
-        Warning('Return code was written')
-        #raise subprocess.CalledProcessError(return_code, cmd)
+    # popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True)
+    # for stdout_line in iter(popen.stdout.readline, ""):
+    #     print(stdout_line )
+    # popen.stdout.close()
+    # return_code = popen.wait()
+    # if return_code:
+    #     Warning('Return code was written')
+    #     #raise subprocess.CalledProcessError(return_code, cmd)
+    try:
+        subprocess.run(cmd, stderr=subprocess.PIPE)
+    except subprocess.CalledProcessError as e:
+        import sys
+        print(e.output)
+        sys.exit(1)
 
 def templating(tmpfilePath, writePath, fileName, parameters):
     """
@@ -194,27 +200,27 @@ _KINETIC_ny = 1
 _KINETIC_nv = 150
 _KINETIC_np = 1
 _FLUID_nx = 100
-_CYCLES  = 20
+_CYCLES  = 30
 
 #Material Properties
-atomicZ = 8
-atomicAr = 16
+atomicZ = 64
+atomicAr = 157
 
 #Kinetic parameters
 kineticDt = 0.75 #as a ratio of collisional time i.e. 1 is collision time 
-kineticTMax = 200 #Number of collision times 
+kineticTMax = 75  #Number of collision times 
 
 
 #Fluid initial parameters 
 cq = 2
 gamma = 1.4
 cfl = 0.85
-laserWavelength = 200e-9
-laserPower = 0
+laserWavelength = 351e-9 #200e-9
+laserPower = 1e15
 durOfLaser = 1e-10
 steps = 75
 fluidTMax =  0 #1e-15
-initialDt = 1e-16
+initialDt = 1e-15
 dtGlobalMax =1e-14
 dtGlobalMin = 1e-17
 if fluidTMax == 0:
@@ -223,16 +229,17 @@ else:
     outputFrequency = int(0.05 * fluidTMax/dtGlobalMin)
 
 boundaryCondition = "rigid" 
-#Set Environement variables for compiling
-RUN_NAME_ = "Test3"
+#Set Environement variafbles for compiling
+RUN_NAME_ = "couple3"
 BASE_DIR_ = "/media/abetharan/DATADRIVE1/Abetharan/"
 IMPACT_SRC_DIR_ = "/home/abetharan/IMPACT/src"
-FLUID_SRC_DIR_ = "/home/abetharan/HeadlessHydra/run"
+FLUID_SRC_DIR_ = "/home/abetharan/HeadlessHydra/Source_Code/run"
+#FLUID_SRC_DIR_ = "/home/abetharan/HeadlessHydra/run"
 INITIAL_CONDITIONS_FILE_PATH_ = "/home/abetharan/HeadlessHydra/init_data/"
-BASE_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HYDRO_IMPACT_COUPLING/"
-IMPACT_SRC_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./IMPACT/src"
-FLUID_SRC_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/Source_Code/run"
-INITIAL_CONDITIONS_FILE_PATH_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/init_data/"
+#BASE_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HYDRO_IMPACT_COUPLING/"
+#IMPACT_SRC_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./IMPACT/src"
+#FLUID_SRC_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/Source_Code/run"
+#INITIAL_CONDITIONS_FILE_PATH_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/init_data/"
 #Return path is Run directory
 runPath  = SetEnvVar.setEnvVar(_KINETIC_nx, _KINETIC_ny, _KINETIC_nv, _KINETIC_np, RUN_NAME_, IMPACT_SRC_DIR_, 
                                 BASE_DIR_)
@@ -252,14 +259,16 @@ for i in range(0, _CYCLES, 1):
         os.rmdir(fluid_input_path)
         shutil.copytree(INITIAL_CONDITIONS_FILE_PATH_, fluid_input_path)
         mode = "free"
-        steps = 1
+        steps = 0
+        fluidTMax = 1e-12
+        outputFrequency = round(0.05 * fluidTMax/initialDt)
     if i > 0:
         io.ImpactToHydro(fluid_input_path, previous_fluid_output_path, previous_kinetic_output_path, 
                             normalised_values, gamma, laserWavelength, laserPower, _FLUID_nx)
         mode = "couple"
         steps = 0
-        fluidTMax = 10e-12
-        outputFrequency = int(0.05 * fluidTMax/dtGlobalMin)
+        fluidTMax = 100e-12
+        outputFrequency = round(0.05 * fluidTMax/initialDt)
 
     
     SetFluidParam(_FLUID_nx, atomicAr, atomicZ, cq, gamma, cfl, laserWavelength,  laserPower, durOfLaser, 
@@ -267,8 +276,7 @@ for i in range(0, _CYCLES, 1):
                     fluid_input_path, fluid_output_path, cycle_dump_path)
 
     Fluid(cycle_dump_path)
-    normalised_values = io.HydroToImpact(fluid_output_path, kinetic_output_path, runPath, atomicZ, atomicAr, laserWavelength, _FLUID_nx)
-
+    normalised_values, _ = io.HydroToImpact(fluid_output_path, kinetic_output_path, runPath, atomicZ, atomicAr, laserWavelength, _FLUID_nx)
     SetKineticParam(normalised_values, _KINETIC_nv, _KINETIC_nx, _KINETIC_ny, kineticDt, kineticTMax, cycle_dump_path, runPath)
     if i == 0:
         KineticCompile(runPath)

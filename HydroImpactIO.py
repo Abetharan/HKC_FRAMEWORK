@@ -1,4 +1,5 @@
 from scipy.interpolate import CubicSpline
+from scipy import interpolate
 import numpy as np 
 import os
 import fnmatch
@@ -102,12 +103,12 @@ def HydroToImpact(fluidOutPath, kineticOutPath, cyclePath, Z, Ar, laserWaveLengt
                # np.logspace(fluid_x[0, fluid_x[-1], nx)
     fluid_centered_x = [(x_norm[i + 1] + x_norm[i])/2 for i in range(fluidNx)]
     kinetic_centered_x = [(kinetic_x[i + 1] + kinetic_x[i])/2 for i in range(int(os.environ["NXM"]))]
-    cs_ne = CubicSpline(fluid_centered_x, ne_norm)
-    cs_ni = CubicSpline(fluid_centered_x, ni_norm)
-    cs_Te = CubicSpline(fluid_centered_x, Te_norm)
-    cs_laser = CubicSpline(fluid_centered_x, laser_norm)
-    cs_brem = CubicSpline(fluid_centered_x, brem_norm)
-    cs_Z = CubicSpline(fluid_centered_x, Z_norm)
+    cs_ne = interpolate.interp1d(fluid_centered_x, ne_norm,fill_value="extrapolate")#CubicSpline(fluid_centered_x, ne_norm)
+    cs_ni = interpolate.interp1d(fluid_centered_x, ni_norm,fill_value="extrapolate")
+    cs_Te = interpolate.interp1d(fluid_centered_x, Te_norm,fill_value="extrapolate")
+    cs_laser = interpolate.interp1d(fluid_centered_x, laser_norm,fill_value="extrapolate")
+    cs_brem = interpolate.interp1d(fluid_centered_x, brem_norm,fill_value="extrapolate")
+    cs_Z = interpolate.interp1d(fluid_centered_x, Z_norm,fill_value="extrapolate")
 
     kinetic_ne = cs_ne(kinetic_centered_x)
     kinetic_ni = cs_ni(kinetic_centered_x)
@@ -115,7 +116,9 @@ def HydroToImpact(fluidOutPath, kineticOutPath, cyclePath, Z, Ar, laserWaveLengt
     kinetic_laser = cs_laser(kinetic_centered_x)
     kinetic_brem = cs_brem(kinetic_centered_x)
     kinetic_Z = cs_Z(kinetic_centered_x)
-    
+    # import matplotlib.pyplot as plt
+    # plot(kinetic_Te)
+    # plt.show()plt.
     if not os.path.exists(cyclePath + "/tmpWrite.txt"):
 
         writeStatement = """Version:2
@@ -146,7 +149,7 @@ $arraylist
     fileWriteFormat(cyclePath + "/tmpWrite.txt", impactLaserFile, kinetic_x, kinetic_laser, "laser")
     fileWriteFormat(cyclePath + "/tmpWrite.txt", impactRadFile, kinetic_x, kinetic_brem, "Rad")
     fileWriteFormat(cyclePath + "/tmpWrite.txt", impactZfile, kinetic_x, kinetic_Z, "zstar")
-    return(normalised_values)
+    return(normalised_values, kinetic_x[-1])
 
 def ImpactToHydro(nextStepFluidInit, previousFluidOutPath, previousKineticOutPath, normalisedValues,  gammaFactor, laserWaveLength, laserPower, fluidNx):
 
@@ -172,7 +175,7 @@ def ImpactToHydro(nextStepFluidInit, previousFluidOutPath, previousKineticOutPat
             ne = varList[1:-1] * normConst
         elif var == "Te":
             #outputVar = "electron_temperature"
-            normConst = normalisedValues['Te'] * 11600 #To kelvin
+            normConst = normalisedValues['Te'] * (e/kb) #To kelvin
             Te = varList[1:-1] * normConst
         elif var == "qxX":
             #outputVar = "electron_heat_flow"
