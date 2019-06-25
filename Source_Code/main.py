@@ -8,7 +8,7 @@ _KINETIC_ny = 1
 _KINETIC_nv = 150
 _KINETIC_np = 1
 _FLUID_nx = 100
-_CYCLES  = 5
+_CYCLES  = 10
 
 #Material Properties
 atomicZ = 8
@@ -28,9 +28,9 @@ durOfLaser = 1e-10
 laserLoc = 'left'
 steps = 75
 fluidTMax =  0 #1e-15
-initialDt = 1e-15
-dtGlobalMax =1e-14
-dtGlobalMin = 1e-17
+initialDt = 1e-13
+dtGlobalMax =1e-12
+dtGlobalMin = 1e-15
 if fluidTMax == 0:
     outputFrequency = 1
 else:
@@ -63,7 +63,7 @@ if os.path.exists(runPath):
 
 for i in range(0, _CYCLES, 1):
     #Cretes all the directories and returns the neccessary paths
-    cycle_dump_path, fluid_input_path, fluid_output_path, kinetic_input_path, kinetic_output_path, previous_cycle_dump_path, previous_fluid_output_path, previous_kinetic_input_path, previous_kinetic_output_path = cpl.NextCycleFileManager(runPath, i)
+    cycle_dump_path, fluid_input_path, fluid_output_path, kinetic_input_path, kinetic_output_path, previous_fluid_input_path, previous_fluid_output_path, previous_kinetic_input_path, previous_kinetic_output_path = cpl.NextCycleFileManager(runPath, i)
     
     #Initial fluid run and genereates all tmp files that are required
     if i == 0:        
@@ -85,11 +85,12 @@ for i in range(0, _CYCLES, 1):
 
     #Start coupling mode of hydro code sa well as handling IMPACT->Fluid IO
     if i > 0:
-        cpl.io.ImpactToHydro(fluid_input_path, previous_fluid_output_path, previous_kinetic_output_path, 
-                            normalised_values, gamma, laserWavelength, laserPower, _FLUID_nx)
+    #     cpl.io.ImpactToHydro(fluid_input_path, previous_fluid_output_path, previous_kinetic_output_path, 
+    #                         normalised_values, gamma, laserWavelength, laserPower, _FLUID_nx)
+        cpl.io.ImpactToHydro1(normalised_values, fluid_input_path,  previous_fluid_input_path, previous_fluid_output_path, previous_kinetic_output_path )
         mode = "couple"
         steps = 0
-        fluidTMax = 1e-12
+        fluidTMax = 4.65e-12
         outputFrequency = round(0.05 * fluidTMax/initialDt)
 
     #Set Switches for fluid run as well as fluid parameters
@@ -98,7 +99,7 @@ for i in range(0, _CYCLES, 1):
                         exchangeOn = "false",
                         bremsstrahlungOn = "false", 
                         invBremOn = "false", 
-                        singleTemperatureOn = "false", 
+                        singleTemperatureOn = "false",
                         mode = mode
                         )    
 

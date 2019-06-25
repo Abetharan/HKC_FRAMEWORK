@@ -251,23 +251,28 @@ def custom_routine(L, nx, ne, temperature, gamma, Z, massNumber):
     ne = ne + np.zeros(nx)
     ni = ne / Z
     density = massNumber * 1.67E-27 * ni
-
-    temperatureE = temperature * prof.load_profile(nx = nx,
-                                                    xmin = 0,
-                                                    xmax = 600,
-                                                    avg = 0.5,
-                                                    amp = 0.0005,
-                                                    pos = 0.0,
-                                                    nwl = 0.50,
-                                                    wid = 1000.0,
-                                                    func = '+cos'
-                                                        )
+    temperatureE = np.zeros(nx)
+    temperatureE[0:int(nx*0.7)] = 5000
+    temperatureE[int(nx*0.7):] = 4
+    # temperatureE = temperature * prof.load_profile(nx = nx,
+    #                                                 xmin = 0,
+    #                                                 xmax = 600,
+    #                                                 avg = 0.5,
+    #                                                 amp = 0.0005,
+    #                                                 pos = 0.0,
+    #                                                 nwl = 3.0,
+    #                                                 wid = 1000.0,
+    #                                                 func = '+cos'
+    #                                                     )
     #plt.figure(1)
     #plt.plot(temperatureE)
     # plt.figure(2)
     # plt.plot(temperatureE)
     # plt.show()
    # temperatureE = temperature + np.linspace(11600*10, temperature, nx)
+   
+
+
     temperatureI = temperatureE
     pressureE = ne * 1.38E-23 * temperatureE
     pressureI = ni * 1.38E-23 * temperatureI
@@ -287,7 +292,7 @@ def custom_routine(L, nx, ne, temperature, gamma, Z, massNumber):
 
 nx = 100
 x_l = 0
-x_u = 6.19347e-03 * 600
+x_u = 3.68825e-07 * 600
 L = x_u - x_l
 massNumber = 16
 Z = 8
@@ -297,9 +302,9 @@ laserWavelength = 1E-9
 LaserPower = 0
 coulombLog = 11
 #Ev
-temperature = 5*11600
+temperature = 25*11600
 
-ne = 1E19
+ne = 1E25
 nc = 1.1E15 / pow(laserWavelength, 2)
 
 velocity = np.zeros(nx + 1) #+ add any function
@@ -312,8 +317,12 @@ InvBrem_, absorption  = InvBrem(coord, numberDensityE, nc, laserWavelength, Z, c
 Brem = Brem(numberDensityE, massNumber, 0, temperatureE, nx)
 
 plt.figure(1)
+from scipy.signal import find_peaks
+
+peaks, _ = find_peaks(temperatureE, height =0)
 plt.plot(temperatureE)
-plt.plot(temperatureI)
+plt.plot(peaks, temperatureE[peaks], "x")
+#plt.plot(temperatureI)
 plt.title("temperature")
 plt.figure(2)
 plt.plot(density)

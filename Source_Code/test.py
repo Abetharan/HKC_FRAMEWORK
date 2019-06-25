@@ -1,8 +1,8 @@
+import numpy as np
 
-path = "/home/abetharan/IMPACT/RUNS/kappa"
+from scipy.signal import argrelextrema
+# for local maxima
+argrelextrema(xNorm, np.greater)
 
-with open(path + "/fort.12", "r") as file:
-    data = file.read().replace('\n', "")
-
-
-print(data)
+# for local minima
+argrelextrema(xNorm, np.less)

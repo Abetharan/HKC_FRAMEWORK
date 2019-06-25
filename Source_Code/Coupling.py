@@ -86,7 +86,7 @@ def Fluid(parameterPath,fluidSrcDir):
         fluidSrcDir = path to fluid exe
     """
 
-    headless_cmd = [fluidSrcDir, '-p', parameterPath+'/HydroParameterInit.txt']
+    headless_cmd = [fluidSrcDir,'-Vb','-p', parameterPath+'/HydroParameterInit.txt']
     Execute(headless_cmd)
 
 def SetFluidParam(fluidNx, atomicAr, atomicZ, cq, gamma, cfl, laserWavelength,  laserPower, durOfLaser,laserLoc, 
@@ -151,7 +151,7 @@ def SetFluidSwitches(cycleDumpPath, viscosityOn = "true", velocityOn = "true", h
                 'InvBremsstrahlung':invBremOn ,
                 'IsothermalMode' : "false",
                 'AdiabaticMode' : "false",
-                'pDvWorkOff' : "false",
+                'pDvWorkOff' : "true",
                 'mode':mode,
                 'SingleTemperature':singleTemperatureOn
                 }
@@ -240,13 +240,14 @@ def NextCycleFileManager(runPath, cycleStep):
     
     if cycleStep > 0:
         previous_cycle_dump_path = runPath + "cycle_" + str(cycleStep - 1) + "/"
+        previous_fluid_input_path = previous_cycle_dump_path + "/fluid_input/"
         previous_fluid_output_path = previous_cycle_dump_path + "/fluid_output/"
         previous_kinetic_output_path = previous_cycle_dump_path + "/kinetic_output/"
         previous_kinetic_input_path =  previous_cycle_dump_path + "/kinetic_input/"
         moveIMPACTFILE(runPath,cycle_dump_path, previous_kinetic_input_path, previous_kinetic_output_path)
        
         return(cycle_dump_path,fluid_input_path, fluid_output_path, kinetic_input_path, kinetic_output_path,
-                previous_cycle_dump_path, previous_fluid_output_path, previous_kinetic_input_path, previous_kinetic_output_path)
+                previous_fluid_input_path, previous_fluid_output_path, previous_kinetic_input_path, previous_kinetic_output_path)
     else:
         return(cycle_dump_path,fluid_input_path, fluid_output_path, kinetic_input_path, kinetic_output_path,
                     0,0, 0, 0)

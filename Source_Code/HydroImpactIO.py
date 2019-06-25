@@ -103,12 +103,19 @@ def HydroToImpact(fluidOutPath, kineticOutPath, cyclePath, Z, Ar, laserWaveLengt
                # np.logspace(fluid_x[0, fluid_x[-1], nx)
     fluid_centered_x = [(x_norm[i + 1] + x_norm[i])/2 for i in range(fluidNx)]
     kinetic_centered_x = [(kinetic_x[i + 1] + kinetic_x[i])/2 for i in range(int(os.environ["NXM"]))]
-    cs_ne = interpolate.interp1d(fluid_centered_x, ne_norm,fill_value="extrapolate")#CubicSpline(fluid_centered_x, ne_norm)
-    cs_ni = interpolate.interp1d(fluid_centered_x, ni_norm,fill_value="extrapolate")
-    cs_Te = interpolate.interp1d(fluid_centered_x, Te_norm,fill_value="extrapolate")
-    cs_laser = interpolate.interp1d(fluid_centered_x, laser_norm,fill_value="extrapolate")
-    cs_brem = interpolate.interp1d(fluid_centered_x, brem_norm,fill_value="extrapolate")
-    cs_Z = interpolate.interp1d(fluid_centered_x, Z_norm,fill_value="extrapolate")
+    cs_ne = CubicSpline(fluid_centered_x, ne_norm)
+    cs_ni = CubicSpline(fluid_centered_x, ni_norm)
+    cs_Te = CubicSpline(fluid_centered_x, Te_norm)
+    cs_laser = CubicSpline(fluid_centered_x, laser_norm)
+    cs_brem = CubicSpline(fluid_centered_x, brem_norm)
+    cs_Z = CubicSpline(fluid_centered_x, Z_norm)
+
+    # cs_ne = interpolate.interp1d(fluid_centered_x, ne_norm,fill_value="extrapolate")#CubicSpline(fluid_centered_x, ne_norm)
+    # cs_ni = interpolate.interp1d(fluid_centered_x, ni_norm,fill_value="extrapolate")
+    # cs_Te = interpolate.interp1d(fluid_centered_x, Te_norm,fill_value="extrapolate")
+    # cs_laser = interpolate.interp1d(fluid_centered_x, laser_norm,fill_value="extrapolate")
+    # cs_brem = interpolate.interp1d(fluid_centered_x, brem_norm,fill_value="extrapolate")
+    # cs_Z = interpolate.interp1d(fluid_centered_x, Z_norm,fill_value="extrapolate")
 
     kinetic_ne = cs_ne(kinetic_centered_x)
     kinetic_ni = cs_ni(kinetic_centered_x)
@@ -172,6 +179,37 @@ def ImpactToHydro(nextStepFluidInit, previousFluidOutPath, previousKineticOutPat
     
     remain.CalculateRemain(ne, Te, qxX, normalisedValues, gammaFactor, laserWaveLength, laserPower,
                              fluidNx, nextStepFluidInit, previousFluidOutPath, previousKineticOutPath)
+
+def CoordGenerator(xNorm, kineticNx):
+
+    from scipy.signal import argrelextrema
+    # for local maxima
+    argrelextrema(xNorm, np.greater)
+
+    # for local minima
+    argrelextrema(xNorm, np.less)
+
+
+def ImpactToHydro1(normalisedValues, nextStepFluidInit,  previousFluidInit, previousFluidOutPath, previousKineticOutPath):
+
+    ##Convert to SI from Impact Norms
+    var = "qxX"
+    timeStep = findLastIndex(previousKineticOutPath, var)
+    runName = "default"   
+    #runName = os.environ['RUN']
+    if timeStep < 10:
+        time_step = "0" + str(timeStep)
+    
+    varArrays = cf.load_dict(previousKineticOutPath, runName, var, str(time_step), iter_number = None)
+    varList = varArrays['mat'][:] 
+    #outputVar = "electron_heat_flow"
+    normConst = 9.11E-31 * pow(normalisedValues['vte'],3) * normalisedValues['ne'] * 1e21 * 1e6 
+    qxX = varList * normConst
+    remain.AltCalculateRemain(qxX, normalisedValues, nextStepFluidInit, previousFluidInit, previousFluidOutPath, previousKineticOutPath)
+    
+    
+
+
 
 
 
