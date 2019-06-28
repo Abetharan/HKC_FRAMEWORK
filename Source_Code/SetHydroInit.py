@@ -1,11 +1,9 @@
-def set_hydro_init(nx, Ar, Z, Cq, Gamma, CFL, laserWavelength,
+def set_hydro_init(nx, Cq, Gamma, CFL, laserWavelength,
  laserPower, durOfLaser, laserLoc, steps, tMax,initialDt, dtGlobalMax, dtGlobalMin,
 outputFrequency, boundaryCondition,initPath, outPath, switchPath):
 
     kappa = {
         'nx':nx,
-        'Ar':Ar,
-        'Z':Z,
         'Cq':Cq,
         'Gamma':Gamma,
         'CFL':CFL,

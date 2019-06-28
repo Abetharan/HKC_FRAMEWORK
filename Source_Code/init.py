@@ -7,9 +7,13 @@ import impact_norms_py3 as norm
 import matplotlib.pyplot as plt
 
 #global constants
-kb = 1.38E-23
-e = 1.6E-19
-protonMass = 1.67E-27
+kb = 1.38064852e-23;
+protonMass = 1.6726219e-27;
+electronMass = 9.10938356e-31;
+epsilon_0 = 8.85418782e-12;
+electronCharge = 1.60217662e-19;
+hbar = 1.054571800e-34;
+c = 299792458;
 
 def LoadTestProblem(testName, nx, gammaFactor, x_l = 0, x_u = 1):
     import TestProblems as tp
@@ -215,7 +219,7 @@ def BremCheck(ne, nx):
     
     return(density, ne, ni, Te, Ti, specificHeatE, DpDTe, specificHeatI, DpDTi, pe, pi, pTotal, IntEe, IntEi)
 
-def TextDump(path, coord, velocity, density, ne, ni, Te, Ti, Pe, Pi, Ptot, IntEe, IntEi, DpDTe, DpDTi, Cve,Cvi, mass, invBrem, absorption, brem):
+def TextDump(path, coord, velocity, density, ne, ni, Te, Ti, mass, Z, Ar):
     """ 
     Purpose: Dumps variables to text
     Args: All physical quantities and Path to dump
@@ -226,44 +230,43 @@ def TextDump(path, coord, velocity, density, ne, ni, Te, Ti, Pe, Pi, Ptot, IntEe
     np.savetxt((path+"density.txt"), density)
     np.savetxt((path+"ne.txt"), ne)
     np.savetxt((path+"ni.txt"), ni)
-    np.savetxt((path+"total_pressure.txt"),  Ptot)
-    np.savetxt((path+"ion_pressure.txt"), Pi)
-    np.savetxt((path+"electron_pressure.txt"), Pe)
     np.savetxt((path+"electron_temperature.txt"), Te)
     np.savetxt((path+"ion_temperature.txt"), Ti)
-    np.savetxt((path+"electron_internal_energy.txt"), IntEe)
-    np.savetxt((path+"ion_internal_energy.txt"), IntEi)
-    np.savetxt((path+"electron_dp_dt.txt"), DpDTe)
-    np.savetxt((path+"ion_dp_dt.txt"), DpDTi)
-    np.savetxt((path+"electron_specific_heat.txt"), Cve)
-    np.savetxt((path+"ion_specific_heat.txt"), Cvi)
     np.savetxt((path+"mass.txt"), mass)
-    np.savetxt((path+"inv_brem.txt"), invBrem)
-    np.savetxt((path+"alpha.txt"), absorption)
-    np.savetxt((path+"brem.txt"), brem)
-
+    np.savetxt((path+"Z.txt"), Z)    
+    np.savetxt((path+"Ar.txt"), Ar)
+    
 
 #### Custom routines
 def custom_routine(L, nx, ne, temperature, gamma, Z, massNumber):
     x_l = 0
     x_u = L
     initial_coord = initial_coord = np.linspace(x_l, x_u, nx+1)
-    ne = ne + np.zeros(nx)
+    ne = np.zeros(nx) + ne
+    # ne[0:int(nx*0.7)] = 1e25
+    # ne[int(nx*0.7):] = 1e27
+    Z = np.zeros(nx) + Z
+    Ar = np.zeros(nx) + massNumber
+    # Z[0:int(nx*0.7)] = 2
+    # Z[int(nx*0.7):] = 64
+    # Ar = np.zeros(nx)
+    # Ar[0:int(nx*0.7)] = 4
+    # Ar[int(nx*0.7):] = 157.25
     ni = ne / Z
-    density = massNumber * 1.67E-27 * ni
-    temperatureE = np.zeros(nx)
-    temperatureE[0:int(nx*0.7)] = 5000
-    temperatureE[int(nx*0.7):] = 4
-    # temperatureE = temperature * prof.load_profile(nx = nx,
-    #                                                 xmin = 0,
-    #                                                 xmax = 600,
-    #                                                 avg = 0.5,
-    #                                                 amp = 0.0005,
-    #                                                 pos = 0.0,
-    #                                                 nwl = 3.0,
-    #                                                 wid = 1000.0,
-    #                                                 func = '+cos'
-    #                                                     )
+    density = Ar * 1.67E-27 * ni
+    # temperatureE = np.zeros(nx)
+    # temperatureE[0:int(nx*0.7)] = 100 * (electronCharge/kb)
+    # temperatureE[int(nx*0.7):] = 4* (electronCharge/kb) 
+    temperatureE = temperature * prof.load_profile(nx = nx,
+                                                    xmin = 0,
+                                                    xmax = 1000,
+                                                    avg = 0.5,
+                                                    amp = 0.0005,
+                                                    pos = 0.0,
+                                                    nwl = 0.5,
+                                                    wid = 1000.0,
+                                                    func = '+cos'
+                                                        )
     #plt.figure(1)
     #plt.plot(temperatureE)
     # plt.figure(2)
@@ -274,25 +277,12 @@ def custom_routine(L, nx, ne, temperature, gamma, Z, massNumber):
 
 
     temperatureI = temperatureE
-    pressureE = ne * 1.38E-23 * temperatureE
-    pressureI = ni * 1.38E-23 * temperatureI
-    pressureTotal  = pressureE + pressureI
-    ConstCheck(density, ne, ni, temperatureE,temperatureI, pressureE, pressureI, pressureTotal, massNumber, Z)
-
-    specificHeatE =  (ne * kb) / (density * (gammaFactor -1))
-    DpDTe = ne *kb
     
-    specificHeatI =  (ni * kb) / (density * (gammaFactor -1))
-    DpDTi = ni *kb
-
-    IntEe = pressureE / ((gammaFactor - 1) * density)
-    IntEi = pressureI / ((gammaFactor - 1) * density)
-
-    return(initial_coord, density, ne, ni, temperatureE, temperatureI, specificHeatE, DpDTe, specificHeatI, DpDTi, pressureE, pressureI, pressureTotal, IntEe, IntEi)
+    return(initial_coord, density, ne, ni, temperatureE, temperatureI, Z, Ar)
 
 nx = 100
 x_l = 0
-x_u = 3.68825e-07 * 600
+x_u = 3.68825e-07 * 1000
 L = x_u - x_l
 massNumber = 16
 Z = 8
@@ -302,36 +292,24 @@ laserWavelength = 1E-9
 LaserPower = 0
 coulombLog = 11
 #Ev
-temperature = 25*11600
+temperature = 25*1160000
 
-ne = 1E25
+ne = 1E26
 nc = 1.1E15 / pow(laserWavelength, 2)
 
 velocity = np.zeros(nx + 1) #+ add any function
 #path = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/init_data/"
 path = "/home/abetharan/HeadlessHydra/init_data/"
-coord, density, numberDensityE, numberDensityI, temperatureE, temperatureI, specificHeatE, DpDTe, specificHeatI, DpDTi, pressureE, pressureI, pressureTotal, IntEe, IntEi  = custom_routine(L, nx, ne, temperature, gammaFactor, Z, massNumber)
-
+coord, density, numberDensityE, numberDensityI, temperatureE, temperatureI, Z, Ar  = custom_routine(L, nx, ne, temperature, gammaFactor, Z, massNumber)
 mass = CalculateMass(coord, density, nx)
-InvBrem_, absorption  = InvBrem(coord, numberDensityE, nc, laserWavelength, Z, coulombLog, temperatureE, LaserPower, mass, nx)
-Brem = Brem(numberDensityE, massNumber, 0, temperatureE, nx)
 
 plt.figure(1)
-from scipy.signal import find_peaks
-
-peaks, _ = find_peaks(temperatureE, height =0)
 plt.plot(temperatureE)
-plt.plot(peaks, temperatureE[peaks], "x")
 #plt.plot(temperatureI)
 plt.title("temperature")
 plt.figure(2)
 plt.plot(density)
 plt.title("n density")
-
-plt.figure(3)
-plt.plot(pressureE)
-plt.plot(pressureI)
-plt.title("pressure")
 
 plt.show()
 
@@ -343,19 +321,9 @@ TextDump(   path = path,
             ni = numberDensityI ,
             Te = temperatureE,
             Ti = temperatureI,
-            Pe = pressureE,
-            Pi = pressureI,
-            Ptot = pressureTotal,
-            IntEe = IntEe,
-            IntEi = IntEi,
-            DpDTe = DpDTe,
-            DpDTi = DpDTi,
-            Cve = specificHeatE,
-            Cvi = specificHeatI,
             mass = mass,
-            invBrem = InvBrem_, 
-            absorption = absorption,
-            brem = Brem
-        )
+            Z = Z,
+            Ar = Ar,
+)
 
 

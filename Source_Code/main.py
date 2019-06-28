@@ -8,7 +8,7 @@ _KINETIC_ny = 1
 _KINETIC_nv = 150
 _KINETIC_np = 1
 _FLUID_nx = 100
-_CYCLES  = 10
+_CYCLES  = 20
 
 #Material Properties
 atomicZ = 8
@@ -28,9 +28,9 @@ durOfLaser = 1e-10
 laserLoc = 'left'
 steps = 75
 fluidTMax =  0 #1e-15
-initialDt = 1e-13
+initialDt = 1e-15
 dtGlobalMax =1e-12
-dtGlobalMin = 1e-15
+dtGlobalMin = 1e-16
 if fluidTMax == 0:
     outputFrequency = 1
 else:
@@ -104,14 +104,14 @@ for i in range(0, _CYCLES, 1):
                         )    
 
     switchPath = cycle_dump_path + "/HydroSwitches.txt"
-    cpl.SetFluidParam(_FLUID_nx, atomicAr, atomicZ, cq, gamma, cfl, laserWavelength,  laserPower, durOfLaser, laserLoc,
+    cpl.SetFluidParam(_FLUID_nx, cq, gamma, cfl, laserWavelength,  laserPower, durOfLaser, laserLoc,
                     steps, fluidTMax, initialDt, dtGlobalMax, dtGlobalMin, outputFrequency, boundaryCondition,
                     fluid_input_path, fluid_output_path, switchPath, cycle_dump_path)
     #Launch hydro
     cpl.Fluid(cycle_dump_path, FLUID_SRC_DIR_)
     
     #Handle file transfers for hydro to impact
-    normalised_values, _ = cpl.io.HydroToImpact(fluid_output_path, kinetic_output_path, runPath, atomicZ, atomicAr, laserWavelength, _FLUID_nx)
+    normalised_values, _ = cpl.io.HydroToImpact(fluid_output_path, kinetic_output_path, runPath, laserWavelength, _FLUID_nx)
     
     #Creates fort10 file and sets the values
     cpl.SetKineticParam(normalised_values, _KINETIC_nv, _KINETIC_nx, _KINETIC_ny, kineticDt, kineticTMax, cycle_dump_path, runPath)

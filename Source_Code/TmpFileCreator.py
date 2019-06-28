@@ -3,8 +3,6 @@ import os
 
 def hydroParameter(runPath):
     writeStatement = """nx=$nx
-Ar=$Ar
-Z=$Z
 Cq=$Cq
 Gamma=$Gamma
 LaserWavelength=$LaserWavelength

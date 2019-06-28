@@ -74,7 +74,7 @@ def Kinetic(runPath,_KINETIC_np):
     """
     
     os.chdir(runPath)
-    impact_cmd = ["mpirun", "-np" , str(_KINETIC_np), "./fp2df1_fast"]
+    impact_cmd = ["mpirun", "-np", str(_KINETIC_np), "./fp2df1_fast"]
     Execute(impact_cmd)
 
 def Fluid(parameterPath,fluidSrcDir):
@@ -89,7 +89,7 @@ def Fluid(parameterPath,fluidSrcDir):
     headless_cmd = [fluidSrcDir,'-Vb','-p', parameterPath+'/HydroParameterInit.txt']
     Execute(headless_cmd)
 
-def SetFluidParam(fluidNx, atomicAr, atomicZ, cq, gamma, cfl, laserWavelength,  laserPower, durOfLaser,laserLoc, 
+def SetFluidParam(fluidNx, cq, gamma, cfl, laserWavelength,  laserPower, durOfLaser,laserLoc, 
             steps, fluidTMax, initialDt, dtGlobalMax, dtGlobalMin, outputFrequency, boundaryCondition, 
             fluidInitPath, fluidDumpPath, switchPath, cycleDumpPath):
         """ 
@@ -119,7 +119,7 @@ def SetFluidParam(fluidNx, atomicAr, atomicZ, cq, gamma, cfl, laserWavelength,  
         """    
         
         #Set Hydro param
-        hydroparam = SetHydro.set_hydro_init(fluidNx, atomicAr, atomicZ, cq, gamma, cfl, laserWavelength,  laserPower,
+        hydroparam = SetHydro.set_hydro_init(fluidNx, cq, gamma, cfl, laserWavelength,  laserPower,
                                             durOfLaser, laserLoc, steps, fluidTMax, initialDt,dtGlobalMax, dtGlobalMin, outputFrequency, 
                                             boundaryCondition, fluidInitPath, fluidDumpPath, switchPath) 
 
