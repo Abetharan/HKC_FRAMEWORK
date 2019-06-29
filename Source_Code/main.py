@@ -90,7 +90,7 @@ for i in range(0, _CYCLES, 1):
         cpl.io.ImpactToHydro1(normalised_values, fluid_input_path,  previous_fluid_input_path, previous_fluid_output_path, previous_kinetic_output_path )
         mode = "couple"
         steps = 0
-        fluidTMax = 4.65e-12
+        fluidTMax = 10e-12
         outputFrequency = round(0.05 * fluidTMax/initialDt)
 
     #Set Switches for fluid run as well as fluid parameters

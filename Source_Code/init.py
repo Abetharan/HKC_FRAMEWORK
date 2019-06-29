@@ -267,11 +267,7 @@ def custom_routine(L, nx, ne, temperature, gamma, Z, massNumber):
                                                     wid = 1000.0,
                                                     func = '+cos'
                                                         )
-    #plt.figure(1)
-    #plt.plot(temperatureE)
-    # plt.figure(2)
-    # plt.plot(temperatureE)
-    # plt.show()
+  
    # temperatureE = temperature + np.linspace(11600*10, temperature, nx)
    
 
@@ -282,7 +278,7 @@ def custom_routine(L, nx, ne, temperature, gamma, Z, massNumber):
 
 nx = 100
 x_l = 0
-x_u = 3.68825e-07 * 1000
+x_u = 4.89902e-07 * 1000
 L = x_u - x_l
 massNumber = 16
 Z = 8
@@ -292,7 +288,7 @@ laserWavelength = 1E-9
 LaserPower = 0
 coulombLog = 11
 #Ev
-temperature = 25*1160000
+temperature = 30*11600
 
 ne = 1E26
 nc = 1.1E15 / pow(laserWavelength, 2)
