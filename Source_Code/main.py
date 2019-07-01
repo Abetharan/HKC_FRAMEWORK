@@ -8,7 +8,7 @@ _KINETIC_ny = 1
 _KINETIC_nv = 150
 _KINETIC_np = 1
 _FLUID_nx = 100
-_CYCLES  = 20
+_CYCLES  = 100
 
 #Material Properties
 atomicZ = 8
@@ -16,7 +16,7 @@ atomicAr = 16
 
 #Kinetic parameters
 kineticDt = 0.75 #as a ratio of collisional time i.e. 1 is collision time 
-kineticTMax = 50  #Number of collision times 
+kineticTMax = 1  #Number of collision times 
 
 #Fluid initial parameters 
 cq = 2
@@ -28,7 +28,7 @@ durOfLaser = 1e-10
 laserLoc = 'left'
 steps = 75
 fluidTMax =  0 #1e-15
-initialDt = 1e-15
+initialDt = 1e-10
 dtGlobalMax =1e-12
 dtGlobalMin = 1e-16
 if fluidTMax == 0:
@@ -70,7 +70,7 @@ for i in range(0, _CYCLES, 1):
         os.rmdir(fluid_input_path)
         shutil.copytree(INITIAL_CONDITIONS_FILE_PATH_, fluid_input_path)
         mode = "free"
-        steps = 5
+        steps = 1
         fluidTMax = 0
         outputFrequency = round(0.05 * fluidTMax/initialDt)
 
@@ -89,8 +89,8 @@ for i in range(0, _CYCLES, 1):
     #                         normalised_values, gamma, laserWavelength, laserPower, _FLUID_nx)
         cpl.io.ImpactToHydro1(normalised_values, fluid_input_path,  previous_fluid_input_path, previous_fluid_output_path, previous_kinetic_output_path )
         mode = "couple"
-        steps = 0
-        fluidTMax = 10e-12
+        steps = 1
+        fluidTMax = 0
         outputFrequency = round(0.05 * fluidTMax/initialDt)
 
     #Set Switches for fluid run as well as fluid parameters

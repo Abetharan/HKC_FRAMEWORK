@@ -260,7 +260,7 @@ def custom_routine(L, nx, ne, temperature, gamma, Z, massNumber):
     temperatureE = temperature * prof.load_profile(nx = nx,
                                                     xmin = 0,
                                                     xmax = 1000,
-                                                    avg = 0.5,
+                                                    avg = 1.0,
                                                     amp = 0.0005,
                                                     pos = 0.0,
                                                     nwl = 0.5,
