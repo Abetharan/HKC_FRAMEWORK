@@ -32,7 +32,9 @@
 
 echo "SRCDIR  = ${SRCDIR}"
 echo "BASEDIR = ${BASEDIR}"
-echo
+echo "NP = ${NP}"
+echo "NXM = ${NXM}"
+echo "NYM = ${NYM}"
 
 #set RUN="${RUN}"
   

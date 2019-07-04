@@ -10,16 +10,21 @@ import impact_norms_py3 as ImNorms
 import impact_module_py3 as cf
 import HydroRemainingFromImpact as remain
 import pickle
-
+import TmpFileCreator as tfc
 kb = constants.value("Boltzmann constant")
 me = constants.value("electron mass")
 mp = constants.value("proton mass")
 e = constants.value("elementary charge")
 
-def findLastIndex(path, var):
+def findLastIndex(path, var, which):
     largest_index = 0
     for file in os.listdir(path):
-        if fnmatch.fnmatch(file, "*_" + var + "_*"):
+        if which == "kinetic":
+            match = "*_" + var + "_*"
+        else:
+            match = var + "_*"
+
+        if fnmatch.fnmatch(file,match):
             k = os.path.splitext(file)[0]
             k = k.split("_")
             time_index = k[-1]
@@ -62,24 +67,25 @@ def fileWriteFormat(tmpFileLocation, OpenFile, coord, varData, var):
     return(0)
 
 
-def HydroToImpact(fluidOutPath, kineticOutPath, cyclePath, Z, Ar, laserWaveLength, fluidNx):
+def HydroToImpact(fluidOutPath, kineticOutPath, cyclePath,  laserWaveLength, fluidNx):
 
         
-    lastIndex = findLastIndex(fluidOutPath, "Coord")
+    lastIndex = findLastIndex(fluidOutPath, "Coord", "fluid")
     fluid_x  = np.loadtxt(fluidOutPath + "/Coord_" + str(lastIndex) + ".txt")
+    fluid_v  = np.loadtxt(fluidOutPath + "/Velocity_" + str(lastIndex) + ".txt")
     fluid_ne = np.loadtxt(fluidOutPath + "/NumberDensityE_" + str(lastIndex) + ".txt")
     fluid_ni = np.loadtxt(fluidOutPath + "/NumberDensityI_" + str(lastIndex) + ".txt")
     fluid_Te = np.loadtxt(fluidOutPath + "/TemperatureE_" + str(lastIndex) + ".txt")
     fluid_las_dep = np.loadtxt(fluidOutPath + "/InverseBrem_" + str(lastIndex) + ".txt")
     fluid_brem = np.loadtxt(fluidOutPath + "/Brem_" + str(lastIndex) + ".txt")
     fluid_density = np.loadtxt(fluidOutPath + "/Density_" + str(lastIndex) + ".txt")
-    #fluid_mass = np.loadtxt(fluidOutPath + "/mass.txt")
-    #fluid_Z = np.loadtxt(fluidOutPath + "/Z_" + str(lastIndex) + ".txt")
-    fluid_Z = np.zeros(fluidNx) + Z
+    fluid_Z = np.loadtxt(fluidOutPath + "/Z_" + str(lastIndex) + ".txt")
+    fluid_Ar = np.loadtxt(fluidOutPath + "/Ar_"+ str(lastIndex) + ".txt")
     avgNe = np.average(fluid_ne) * 1e-6#1e21 
     avgTe = np.average(fluid_Te) * (kb / e) #1000 #
     avgZ = np.average(fluid_Z)
-    normalised_values = ImNorms.impact_inputs(avgNe, avgTe, avgZ, Ar, Bz = 0)
+    avgAr = np.average(fluid_Ar)
+    normalised_values = ImNorms.impact_inputs(avgNe, avgTe, avgZ,avgAr, Bz = 0)
     with open(os.path.join(kineticOutPath, "normValues.pkl"), 'wb') as f:
         pickle.dump(normalised_values, f, pickle.HIGHEST_PROTOCOL)
 
@@ -93,22 +99,31 @@ def HydroToImpact(fluidOutPath, kineticOutPath, cyclePath, Z, Ar, laserWaveLengt
     ne_norm = fluid_ne / (1e6 * normalised_values['ne'] * 1e21)  # 1e21 normalisation factor. 1e6 there to convert from m^-3 to cm^-3
     ni_norm = fluid_ni / (1e6 *  normalised_values['ni'] * 1e21) # 1e6 there to convert from m^-3 to cm^-3
     Te_norm = (fluid_Te * (kb/e)) / normalised_values['Te']
-    #laser_norm = (fluid_las_dep * fluid_mass) / (Un / (normalised_values['tau_ei'] * normalised_values['ne'] * 1e21))
     laser_norm = (fluid_las_dep * fluid_density) / (Un / (normalised_values['tau_ei']))
     brem_norm = (fluid_brem * fluid_density) / (Un / normalised_values['tau_ei'])
     Z_norm = fluid_Z / normalised_values['Z']
 
-    kinetic_x = np.linspace(x_norm[0], x_norm[-1], int(os.environ["NXM"]) + 1)
-               # np.geomspace(fluid_x[0, fluid_x[-1], nx)
-               # np.logspace(fluid_x[0, fluid_x[-1], nx)
+    if(np.max(ne_norm)/ np.min(ne_norm)) > 30 or (np.max(Te_norm)/ np.min(Te_norm)) > 5:
+        kinetic_x = CoordGenerator(x_norm, fluid_v, int(os.environ["NXM"]) + 1, numberSmoothingCellsRatio = .5)
+    else:
+        kinetic_x = np.linspace(x_norm[0], x_norm[-1], int(os.environ["NXM"]) + 1)
+    
+
     fluid_centered_x = [(x_norm[i + 1] + x_norm[i])/2 for i in range(fluidNx)]
     kinetic_centered_x = [(kinetic_x[i + 1] + kinetic_x[i])/2 for i in range(int(os.environ["NXM"]))]
-    cs_ne = interpolate.interp1d(fluid_centered_x, ne_norm,fill_value="extrapolate")#CubicSpline(fluid_centered_x, ne_norm)
-    cs_ni = interpolate.interp1d(fluid_centered_x, ni_norm,fill_value="extrapolate")
-    cs_Te = interpolate.interp1d(fluid_centered_x, Te_norm,fill_value="extrapolate")
-    cs_laser = interpolate.interp1d(fluid_centered_x, laser_norm,fill_value="extrapolate")
-    cs_brem = interpolate.interp1d(fluid_centered_x, brem_norm,fill_value="extrapolate")
-    cs_Z = interpolate.interp1d(fluid_centered_x, Z_norm,fill_value="extrapolate")
+    cs_ne = CubicSpline(fluid_centered_x, ne_norm)
+    cs_ni = CubicSpline(fluid_centered_x, ni_norm)
+    cs_Te = CubicSpline(fluid_centered_x, Te_norm)
+    cs_laser = CubicSpline(fluid_centered_x, laser_norm)
+    cs_brem = CubicSpline(fluid_centered_x, brem_norm)
+    cs_Z = CubicSpline(fluid_centered_x, Z_norm)
+
+    # cs_ne = interpolate.interp1d(fluid_centered_x, ne_norm,fill_value="extrapolate")#CubicSpline(fluid_centered_x, ne_norm)
+    # cs_ni = interpolate.interp1d(fluid_centered_x, ni_norm,fill_value="extrapolate")
+    # cs_Te = interpolate.interp1d(fluid_centered_x, Te_norm,fill_value="extrapolate")
+    # cs_laser = interpolate.interp1d(fluid_centered_x, laser_norm,fill_value="extrapolate")
+    # cs_brem = interpolate.interp1d(fluid_centered_x, brem_norm,fill_value="extrapolate")
+    # cs_Z = interpolate.interp1d(fluid_centered_x, Z_norm,fill_value="extrapolate")
 
     kinetic_ne = cs_ne(kinetic_centered_x)
     kinetic_ni = cs_ni(kinetic_centered_x)
@@ -120,19 +135,7 @@ def HydroToImpact(fluidOutPath, kineticOutPath, cyclePath, Z, Ar, laserWaveLengt
     # plot(kinetic_Te)
     # plt.show()plt.
     if not os.path.exists(cyclePath + "/tmpWrite.txt"):
-
-        writeStatement = """Version:2
-0
-2
-$leadingDim
-$maxparam
-$Len     
-$xlist\n
-$arraylist
-        """
-        kappa = open(cyclePath + "/tmpWrite.txt", "w")
-        kappa.write(writeStatement)
-        kappa.close()
+        tfc.impactOutputformat(cyclePath)
 
     impactNeFile = open(cyclePath + "/" + os.environ["RUN"] + "_eden.xy", "w")
     impactNiFile = open(cyclePath + "/" + os.environ["RUN"] + "_ionden.xy", "w")
@@ -156,7 +159,7 @@ def ImpactToHydro(nextStepFluidInit, previousFluidOutPath, previousKineticOutPat
     ##Convert to SI from Impact Norms
     varList = ["n", "Te", "qxX"]
     for var in varList:            
-        timeStep = findLastIndex(previousKineticOutPath, var)
+        timeStep = findLastIndex(previousKineticOutPath, var, "kinetic")
         runName = "default"   
         #runName = os.environ['RUN']
         if timeStep < 10:
@@ -184,6 +187,43 @@ def ImpactToHydro(nextStepFluidInit, previousFluidOutPath, previousKineticOutPat
     
     remain.CalculateRemain(ne, Te, qxX, normalisedValues, gammaFactor, laserWaveLength, laserPower,
                              fluidNx, nextStepFluidInit, previousFluidOutPath, previousKineticOutPath)
+
+def CoordGenerator(xNorm, velocity, kineticNx, numberSmoothingCellsRatio, numberCellsToCheck = 2):
+    kineticNx += 1
+    numberSmoothingCells = int(numberSmoothingCellsRatio * kineticNx)
+    fluid_nx = len(xNorm)
+    index_max_v = np.argmax(velocity)
+    remaining_cells = (kineticNx - numberSmoothingCells)
+    no_cells_to_right = remaining_cells * (index_max_v/fluid_nx)
+    no_cells_to_left = remaining_cells * (1 - index_max_v/fluid_nx)
+
+    kinetic_finer_coord = np.linspace(xNorm[index_max_v - numberCellsToCheck], xNorm[index_max_v + numberCellsToCheck], numberSmoothingCells)
+    kinetic_right_coord = np.linspace(xNorm[0], xNorm[index_max_v - numberCellsToCheck - 1],no_cells_to_left)
+    kinetic_left_coord = np.linspace(xNorm[index_max_v + numberCellsToCheck + 1], xNorm[-1], no_cells_to_right)
+    kinetic_coord = np.concatenate((kinetic_right_coord, kinetic_finer_coord, kinetic_left_coord), axis = 0)
+
+    return(kinetic_coord)
+
+def ImpactToHydro1(normalisedValues, nextStepFluidInit,  previousFluidInit, previousFluidOutPath, previousKineticOutPath):
+
+    ##Convert to SI from Impact Norms
+    var = "qxX"
+    timeStep = findLastIndex(previousKineticOutPath, var, "kinetic")
+    runName = "default"   
+    #runName = os.environ['RUN']
+    if timeStep < 10:
+        time_step = "0" + str(timeStep)
+    
+    varArrays = cf.load_dict(previousKineticOutPath, runName, var, str(time_step), iter_number = None)
+    varList = varArrays['mat'][:] 
+    #outputVar = "electron_heat_flow"
+    normConst = 9.11E-31 * pow(normalisedValues['vte'],3) * normalisedValues['ne'] * 1e21 * 1e6 
+    qxX = varList * normConst
+    remain.AltCalculateRemain(qxX, normalisedValues, nextStepFluidInit, previousFluidInit, previousFluidOutPath, previousKineticOutPath)
+    
+    
+
+
 
 
 

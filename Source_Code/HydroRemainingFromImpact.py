@@ -2,6 +2,7 @@ import numpy as np
 import os
 import fnmatch
 import math
+import shutil
 from scipy.interpolate import CubicSpline
 from scipy import interpolate
 protonMass = 1.66e-27
@@ -108,7 +109,8 @@ def Brem(ne, Ar, Z, Temperature, nx):
 
     return(BremPower)
 
-def Heatflow(electron_thermal_flux, mass, nx):
+def Heatflow(electron_thermal_flux, mass):
+    nx = len(mass)
     HeatConductionE = np.zeros(nx)
     for i in range(nx):   
         HeatConductionE[i] = -(electron_thermal_flux[i + 1] - electron_thermal_flux[i]) / mass[i]
@@ -189,18 +191,6 @@ def CalculateRemain(kinetic_ne, kinetic_Te, kinetic_qe, normalisationValues, gam
     ne = cs_ne(fluid_centered_x)
     Te = pressureE/(ne*kb)
     ni = ne/Z
-
-    # cs_Te = interpolate.interp1d(kinetic_centered_x, kinetic_Te,fill_value="extrapolate")
-    # cs_qe = interpolate.interp1d(kinetic_x, kinetic_qe,fill_value="extrapolate")
-
-    # ne = cs_ne(fluid_centered_x)
-    # Te = cs_Te(fluid_centered_x)
-    # qe = cs_qe(coord)
-    # import matplotlib.pyplot as plt
-    # plt.plot(Te)
-    # plt.plot(kinetic_Te)
-    # plt.show()
-
     density = ni * Ar  * protonMass
     ##Noting convention that Specific Heat ha
     specificHeatE =  (ne * kb) / (density * (gammaFactor -1))
@@ -224,7 +214,7 @@ def CalculateRemain(kinetic_ne, kinetic_Te, kinetic_qe, normalisationValues, gam
     InvBrem_, _, _ = InvBrem(coord, ne, nc, laserWaveLength, Z, 11, Te, laserPower, mass, fluidNx, "left")
     
     Brem_ = Brem(ne, Ar, Z, Te, fluidNx)
-    electronheatflow= Heatflow(qe, mass, fluidNx)
+    electronheatflow= Heatflow(qe, mass)
     TextDump(path = NextStepFluidInit,
             coord= coord,
             velocity = velocity,
@@ -249,3 +239,59 @@ def CalculateRemain(kinetic_ne, kinetic_Te, kinetic_qe, normalisationValues, gam
             Z = Z,
             Ar = Ar,
         )
+
+
+def AltCalculateRemain(kinetic_qe, normalisationValues, nextStepFluidInit, previousFluidInPath, previousFluidOutPath, previousKineticOutPath):
+    import glob
+    LargestIndex = 0
+    for file in os.listdir(previousFluidOutPath):
+        if fnmatch.fnmatch(file, "Coord_*"):
+            k = os.path.splitext(file)[0]
+            k = k.split("_")
+            timeIndex = k[-1]
+            if int(timeIndex) > LargestIndex:
+                LargestIndex = int(timeIndex)
+    
+    ###
+    
+    coord = np.loadtxt(previousFluidOutPath + "Coord_" + str(LargestIndex) + ".txt")
+    mass = np.loadtxt(os.path.join(previousFluidInPath + "/mass.txt"))
+    #material
+    # Ar = normalisationValues['Ar']
+    # Z = normalisationValues['Z']
+    # Handle the Interpolation back. Cubic 
+
+    kinetic_x = np.loadtxt(previousKineticOutPath + "ReturnToHydro_xf.xy", delimiter = "\n") * normalisationValues['lambda_mfp'] 
+    
+    cs_qe = CubicSpline(kinetic_x, kinetic_qe)
+    qe = cs_qe(coord)
+    electronheatflow= Heatflow(qe, mass)
+    np.savetxt(os.path.join(nextStepFluidInit, "qe.txt"), electronheatflow)
+
+    shutil.copyfile(os.path.join(previousFluidOutPath + "/Coord_" + str(LargestIndex) +".txt")    ,os.path.join(nextStepFluidInit,"coord.txt"))
+    shutil.copyfile(os.path.join(previousFluidOutPath + "/Velocity_" + str(LargestIndex) +".txt")    ,os.path.join(nextStepFluidInit,"velocity.txt"))
+    shutil.copyfile(os.path.join(previousFluidOutPath + "/Density_" + str(LargestIndex) +".txt")    ,os.path.join(nextStepFluidInit,"density.txt"))
+    shutil.copyfile(os.path.join(previousFluidOutPath + "/NumberDensityE_" + str(LargestIndex) +".txt")    ,os.path.join(nextStepFluidInit,"ne.txt"))
+    shutil.copyfile(os.path.join(previousFluidOutPath + "/NumberDensityI_" + str(LargestIndex) +".txt")    ,os.path.join(nextStepFluidInit,"ni.txt"))
+    shutil.copyfile(os.path.join(previousFluidOutPath + "/TotalPressure_" + str(LargestIndex) +".txt")    ,os.path.join(nextStepFluidInit,"total_pressure.txt"))
+    shutil.copyfile(os.path.join(previousFluidOutPath + "/PressureI_" + str(LargestIndex) +".txt")    ,os.path.join(nextStepFluidInit,"ion_pressure.txt"))
+    shutil.copyfile(os.path.join(previousFluidOutPath + "/PressureE_" + str(LargestIndex) +".txt")    ,os.path.join(nextStepFluidInit,"electron_pressure.txt"))
+    shutil.copyfile(os.path.join(previousFluidOutPath + "/TemperatureE_" + str(LargestIndex) +".txt")    ,os.path.join(nextStepFluidInit,"electron_temperature.txt"))
+    shutil.copyfile(os.path.join(previousFluidOutPath + "/TemperatureI_" + str(LargestIndex) +".txt")    ,os.path.join(nextStepFluidInit,"ion_temperature.txt"))
+    shutil.copyfile(os.path.join(previousFluidOutPath + "/InternalEnergyE_" + str(LargestIndex) +".txt")    ,os.path.join(nextStepFluidInit,"electron_internal_energy.txt"))
+    shutil.copyfile(os.path.join(previousFluidOutPath + "/InternalEnergyI_" + str(LargestIndex) +".txt")    ,os.path.join(nextStepFluidInit,"ion_internal_energy.txt"))
+    shutil.copyfile(os.path.join(previousFluidOutPath + "/DpDtE_" + str(LargestIndex) +".txt")    ,os.path.join(nextStepFluidInit,"electron_dp_dt.txt"))
+    shutil.copyfile(os.path.join(previousFluidOutPath + "/DpDtI_" + str(LargestIndex) +".txt")    ,os.path.join(nextStepFluidInit,"ion_dp_dt.txt"))
+    shutil.copyfile(os.path.join(previousFluidOutPath + "/SpecificHeatE_" + str(LargestIndex) +".txt")    ,os.path.join(nextStepFluidInit,"electron_specific_heat.txt"))
+    shutil.copyfile(os.path.join(previousFluidOutPath + "/SpecificHeatI_" + str(LargestIndex) +".txt")    ,os.path.join(nextStepFluidInit,"ion_specific_heat.txt"))
+    shutil.copyfile(os.path.join(previousFluidInPath + "/mass.txt"),os.path.join(nextStepFluidInit,"mass.txt"))
+    shutil.copyfile(os.path.join(previousFluidOutPath + "/InverseBrem_" + str(LargestIndex) +".txt")    ,os.path.join(nextStepFluidInit,"inv_brem.txt"))
+    shutil.copyfile(os.path.join(previousFluidOutPath + "/Brem_" + str(LargestIndex) +".txt")    ,os.path.join(nextStepFluidInit,"brem.txt"))
+    shutil.copyfile(os.path.join(previousFluidOutPath + "/Exchange_" + str(LargestIndex) +".txt")    ,os.path.join(nextStepFluidInit,"exchange.txt"))
+    shutil.copyfile(os.path.join(previousFluidOutPath + "/HeatConductionI_" + str(LargestIndex) +".txt")    ,os.path.join(nextStepFluidInit,"qi.txt"))
+    shutil.copyfile(os.path.join(previousFluidOutPath + "/Z_" + str(LargestIndex) +".txt")    ,os.path.join(nextStepFluidInit, "Z.txt"))
+    shutil.copyfile(os.path.join(previousFluidOutPath + "/Ar_" + str(LargestIndex) +".txt")    ,os.path.join(nextStepFluidInit, "Ar.txt"))
+
+
+
+
