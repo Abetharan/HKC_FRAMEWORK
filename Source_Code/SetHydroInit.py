@@ -1,6 +1,6 @@
 def set_hydro_init(nx, Cq, Gamma, CFL, laserWavelength,
  laserPower, durOfLaser, laserLoc, steps, tMax,initialDt, dtGlobalMax, dtGlobalMin,
-outputFrequency, boundaryCondition,initPath, outPath, switchPath):
+outputFrequency, boundaryCondition,initPath, outPath, switchPath,FeosPathMaterial1,FeosPathMaterial2):
 
     kappa = {
         'nx':nx,
@@ -21,5 +21,8 @@ outputFrequency, boundaryCondition,initPath, outPath, switchPath):
         'InitPath':initPath,
         'OutPath':outPath,
         'SwitchPath': switchPath,
+        'FEOSPathMaterial1':FeosPathMaterial1,
+        'FEOSPathMaterial2':FeosPathMaterial2
+        
     }
     return(kappa)

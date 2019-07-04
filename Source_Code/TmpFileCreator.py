@@ -20,7 +20,9 @@ BoundaryCondition=$BoundaryCondition
 InitPath=$InitPath
 OutPath=$OutPath
 SwitchPath=$SwitchPath
-            """
+FEOSPathMaterial1=$FEOSPathMaterial1
+FEOSPathMaterial2=$FEOSPathMaterial2
+"""
     kappa = open(runPath + "/tmpHydroParameterInit.txt", "w")
     kappa.write(writeStatement)
     kappa.close()
@@ -37,6 +39,8 @@ AdiabaticMode=$AdiabaticMode
 pDvWorkOff=$pDvWorkOff
 mode=$mode
 SingleTemperature=$mode
+MultiMaterial=$MultiMaterial
+IdealGas=$IdealGas
     """
     kappa = open(runPath + "/tmpFluidSwitch.txt", "w")
     kappa.write(writeStatement)

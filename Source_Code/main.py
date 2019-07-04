@@ -15,8 +15,8 @@ atomicZ = 8
 atomicAr = 16
 
 #Kinetic parameters
-kineticDt = 0.75 #as a ratio of collisional time i.e. 1 is collision time 
-kineticTMax = 1  #Number of collision times 
+kineticDt = 0.01 #as a ratio of collisional time i.e. 1 is collision time 
+kineticTMax = 0.01  #Number of collision times 
 
 #Fluid initial parameters 
 cq = 2
@@ -38,7 +38,7 @@ else:
 
 boundaryCondition = "rigid" 
 #Set Environement variafbles for compiling
-RUN_NAME_ = "couple3"
+RUN_NAME_ = "coupleS"
 BASE_DIR_ = "/media/abetharan/DATADRIVE1/Abetharan/"
 IMPACT_SRC_DIR_ = "/home/abetharan/IMPACT/src"
 FLUID_SRC_DIR_ = "/home/abetharan/HeadlessHydra/Source_Code/run"
@@ -100,13 +100,15 @@ for i in range(0, _CYCLES, 1):
                         bremsstrahlungOn = "false", 
                         invBremOn = "false", 
                         singleTemperatureOn = "false",
-                        mode = mode
+                        mode = mode,
+                        MultiMaterial="false",
+                        IdealGas="true"
                         )    
 
     switchPath = cycle_dump_path + "/HydroSwitches.txt"
     cpl.SetFluidParam(_FLUID_nx, cq, gamma, cfl, laserWavelength,  laserPower, durOfLaser, laserLoc,
                     steps, fluidTMax, initialDt, dtGlobalMax, dtGlobalMin, outputFrequency, boundaryCondition,
-                    fluid_input_path, fluid_output_path, switchPath, cycle_dump_path)
+                    fluid_input_path, fluid_output_path, switchPath,"None","None", cycle_dump_path)
     #Launch hydro
     cpl.Fluid(cycle_dump_path, FLUID_SRC_DIR_)
     

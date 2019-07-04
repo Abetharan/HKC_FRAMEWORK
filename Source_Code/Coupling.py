@@ -91,7 +91,7 @@ def Fluid(parameterPath,fluidSrcDir):
 
 def SetFluidParam(fluidNx, cq, gamma, cfl, laserWavelength,  laserPower, durOfLaser,laserLoc, 
             steps, fluidTMax, initialDt, dtGlobalMax, dtGlobalMin, outputFrequency, boundaryCondition, 
-            fluidInitPath, fluidDumpPath, switchPath, cycleDumpPath):
+            fluidInitPath, fluidDumpPath, switchPath, FeosPathMaterial1, FeosPathMaterial2, cycleDumpPath):
         """ 
         Purpose: Handles hydro init and creation of init params textfile for HeadlessHydra.
         Args:
@@ -121,13 +121,13 @@ def SetFluidParam(fluidNx, cq, gamma, cfl, laserWavelength,  laserPower, durOfLa
         #Set Hydro param
         hydroparam = SetHydro.set_hydro_init(fluidNx, cq, gamma, cfl, laserWavelength,  laserPower,
                                             durOfLaser, laserLoc, steps, fluidTMax, initialDt,dtGlobalMax, dtGlobalMin, outputFrequency, 
-                                            boundaryCondition, fluidInitPath, fluidDumpPath, switchPath) 
+                                            boundaryCondition, fluidInitPath, fluidDumpPath, switchPath, FeosPathMaterial1, FeosPathMaterial2) 
 
         # Handling templating to create the init file for fluid code
         templating(tmpfilePath = os.environ['BASEDIR'] +'/tmpHydroParameterInit.txt', writePath = cycleDumpPath, fileName = "HydroParameterInit.txt", parameters = hydroparam)
 
 def SetFluidSwitches(cycleDumpPath, viscosityOn = "true", velocityOn = "true", heatConductionOn = "false", exchangeOn = "false",
-                     bremsstrahlungOn = "false", invBremOn = "false", singleTemperatureOn = "false", mode = 'free'):
+                     bremsstrahlungOn = "false", invBremOn = "false", singleTemperatureOn = "false", mode = 'free', MultiMaterial="false", IdealGas="false"):
     """
         Purpose: Sets the fluid swithces.
         Args: 
@@ -153,7 +153,9 @@ def SetFluidSwitches(cycleDumpPath, viscosityOn = "true", velocityOn = "true", h
                 'AdiabaticMode' : "false",
                 'pDvWorkOff' : "true",
                 'mode':mode,
-                'SingleTemperature':singleTemperatureOn
+                'SingleTemperature':singleTemperatureOn,
+                'MultiMaterial':MultiMaterial,
+                'IdealGas':IdealGas
                 }
     templating(tmpfilePath = os.environ['BASEDIR'] + '/tmpFluidSwitch.txt', writePath = cycleDumpPath, fileName="HydroSwitches.txt", parameters = switches)
     
