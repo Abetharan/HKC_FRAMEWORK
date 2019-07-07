@@ -276,19 +276,19 @@ def custom_routine(L, nx, ne, temperature, gamma, Z, massNumber):
     
     return(initial_coord, density, ne, ni, temperatureE, temperatureI, Z, Ar)
 
-nx = 100
+nx = 30
 x_l = 0
-x_u = 4.89902e-07 * 1000
+x_u = 4.40585e-06 * 300
 L = x_u - x_l
-massNumber = 16
-Z = 8
+massNumber = 157
+Z = 64
 testName = "hydro_energy_diff"
 gammaFactor = 1.4
 laserWavelength = 1E-9
 LaserPower = 0
 coulombLog = 11
 #Ev
-temperature = 30*11600
+temperature = 300*11600
 
 ne = 1E26
 nc = 1.1E15 / pow(laserWavelength, 2)

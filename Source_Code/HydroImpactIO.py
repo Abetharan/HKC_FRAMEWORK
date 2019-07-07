@@ -217,7 +217,7 @@ def ImpactToHydro1(normalisedValues, nextStepFluidInit,  previousFluidInit, prev
     varArrays = cf.load_dict(previousKineticOutPath, runName, var, str(time_step), iter_number = None)
     varList = varArrays['mat'][:] 
     #outputVar = "electron_heat_flow"
-    normConst = 9.11E-31 * pow(normalisedValues['vte'],3) * normalisedValues['ne'] * 1e21 * 1e6 
+    normConst = me * pow(normalisedValues['vte'],3) * normalisedValues['ne'] * 1e21 * 1e6 
     qxX = varList * normConst
     remain.AltCalculateRemain(qxX, normalisedValues, nextStepFluidInit, previousFluidInit, previousFluidOutPath, previousKineticOutPath)
     

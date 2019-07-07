@@ -7,7 +7,7 @@ _KINETIC_nx = 30
 _KINETIC_ny = 1 
 _KINETIC_nv = 150
 _KINETIC_np = 1
-_FLUID_nx = 100
+_FLUID_nx = 30
 _CYCLES  = 100
 
 #Material Properties
@@ -15,8 +15,8 @@ atomicZ = 8
 atomicAr = 16
 
 #Kinetic parameters
-kineticDt = 0.01 #as a ratio of collisional time i.e. 1 is collision time 
-kineticTMax = 0.01  #Number of collision times 
+kineticDt = 0.1 #as a ratio of collisional time i.e. 1 is collision time 
+kineticTMax = 0.1 #Number of collision times 
 
 #Fluid initial parameters 
 cq = 2
@@ -38,7 +38,7 @@ else:
 
 boundaryCondition = "rigid" 
 #Set Environement variafbles for compiling
-RUN_NAME_ = "coupleS"
+RUN_NAME_ = "couple5"
 BASE_DIR_ = "/media/abetharan/DATADRIVE1/Abetharan/"
 IMPACT_SRC_DIR_ = "/home/abetharan/IMPACT/src"
 FLUID_SRC_DIR_ = "/home/abetharan/HeadlessHydra/Source_Code/run"
@@ -72,6 +72,7 @@ for i in range(0, _CYCLES, 1):
         mode = "free"
         steps = 1
         fluidTMax = 0
+
         outputFrequency = round(0.05 * fluidTMax/initialDt)
 
         ##Generates all tmp files to be changes
@@ -91,6 +92,7 @@ for i in range(0, _CYCLES, 1):
         mode = "couple"
         steps = 1
         fluidTMax = 0
+
         outputFrequency = round(0.05 * fluidTMax/initialDt)
 
     #Set Switches for fluid run as well as fluid parameters
@@ -121,7 +123,7 @@ for i in range(0, _CYCLES, 1):
     #Compile on first step this can be modified if we are doing dynamic gridding for IMPACT
     if i == 0:
         cpl.KineticCompile(runPath)
-
+        
     #Launch Impact
     cpl.Kinetic(runPath,_KINETIC_np)
 

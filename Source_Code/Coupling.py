@@ -61,6 +61,7 @@ def KineticCompile(runPath):
     templating(tmpfilePath = os.environ['BASEDIR'] +'/prof.f', writePath = runPath, fileName = runName + "_prof.f", parameters = custom_param)        
     #Start Coupling sequence
     #os.system('./fp2df1_compile_run.sh')
+    os.chdir(os.getcwd() + "/Source_Code")
     os.system('./hydra_kappa.sh')
 
 
