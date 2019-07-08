@@ -254,19 +254,19 @@ def custom_routine(L, nx, ne, temperature, gamma, Z, massNumber):
     # Ar[int(nx*0.7):] = 157.25
     ni = ne / Z
     density = Ar * 1.67E-27 * ni
-    # temperatureE = np.zeros(nx)
+    temperatureE = np.zeros(nx) + temperature
     # temperatureE[0:int(nx*0.7)] = 100 * (electronCharge/kb)
     # temperatureE[int(nx*0.7):] = 4* (electronCharge/kb) 
-    temperatureE = temperature * prof.load_profile(nx = nx,
-                                                    xmin = 0,
-                                                    xmax = 1000,
-                                                    avg = 1.0,
-                                                    amp = 0.0005,
-                                                    pos = 0.0,
-                                                    nwl = 0.5,
-                                                    wid = 1000.0,
-                                                    func = '+cos'
-                                                        )
+    # temperatureE = temperature * prof.load_profile(nx = nx,
+    #                                                 xmin = 0,
+    #                                                 xmax = 1000,
+    #                                                 avg = 1.0,
+    #                                                 amp = 0.0005,
+    #                                                 pos = 0.0,
+    #                                                 nwl = 0.5,
+    #                                                 wid = 1000.0,
+    #                                                 func = '+cos'
+    #                                                     )
   
    # temperatureE = temperature + np.linspace(11600*10, temperature, nx)
    
@@ -278,17 +278,17 @@ def custom_routine(L, nx, ne, temperature, gamma, Z, massNumber):
 
 nx = 100
 x_l = 0
-x_u = 4.89902e-07 * 1000
+x_u = 1e-3
 L = x_u - x_l
-massNumber = 16
-Z = 8
+massNumber = 157
+Z = 64
 testName = "hydro_energy_diff"
 gammaFactor = 1.4
 laserWavelength = 1E-9
 LaserPower = 0
 coulombLog = 11
 #Ev
-temperature = 30*11600
+temperature = 300
 
 ne = 1E26
 nc = 1.1E15 / pow(laserWavelength, 2)
