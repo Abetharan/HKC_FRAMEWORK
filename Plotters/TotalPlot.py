@@ -3,8 +3,9 @@ import matplotlib.pyplot as plt
 
 
 
-k = np.loadtxt("/media/abetharan/DATADRIVE1/Abetharan/coupleS/cycle_2/fluid_input/ne.txt")
-k1=  np.loadtxt("/home/abetharan/HeadlessHydra/data_out/NumberDensityE_2.txt")
+k = np.loadtxt("/media/abetharan/DATADRIVE1/Abetharan/couple5/cycle_2/fluid_input/qe.txt")
+k = np.loadtxt("/home/abetharan/HeadlessHydra/data_out/TemperatureE_2.txt")
+k1=  np.loadtxt("/home/abetharan/HeadlessHydra/data_out/TemperatureE_-1.txt")
 
 plt.plot(k, 'r')
 plt.plot(k1, 'k--')

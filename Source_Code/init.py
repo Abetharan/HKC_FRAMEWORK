@@ -238,15 +238,13 @@ def TextDump(path, coord, velocity, density, ne, ni, Te, Ti, mass, Z, Ar):
     
 
 #### Custom routines
-def custom_routine(L, nx, ne, temperature, gamma, Z, massNumber):
+def custom_routine(L, nx, nc, temperature, gamma, Z, massNumber):
     x_l = 0
     x_u = L
     initial_coord = initial_coord = np.linspace(x_l, x_u, nx+1)
-    ne = np.zeros(nx) + ne
-    # ne[0:int(nx*0.7)] = 1e25
-    # ne[int(nx*0.7):] = 1e27
-    Z = np.zeros(nx) + Z
-    Ar = np.zeros(nx) + massNumber
+    ne = np.zeros(nx) + nc
+
+
     # Z[0:int(nx*0.7)] = 2
     # Z[int(nx*0.7):] = 64
     # Ar = np.zeros(nx)
@@ -254,7 +252,7 @@ def custom_routine(L, nx, ne, temperature, gamma, Z, massNumber):
     # Ar[int(nx*0.7):] = 157.25
     ni = ne / Z
     density = Ar * 1.67E-27 * ni
-    # temperatureE = np.zeros(nx)
+    temperatureE = np.zeros(nx) + 3
     # temperatureE[0:int(nx*0.7)] = 100 * (electronCharge/kb)
     # temperatureE[int(nx*0.7):] = 4* (electronCharge/kb) 
     temperatureE = temperature * prof.load_profile(nx = nx,
@@ -267,36 +265,38 @@ def custom_routine(L, nx, ne, temperature, gamma, Z, massNumber):
                                                     wid = 1000.0,
                                                     func = '+cos'
                                                         )
-  
+
    # temperatureE = temperature + np.linspace(11600*10, temperature, nx)
-   
+
 
 
     temperatureI = temperatureE
-    
+
     return(initial_coord, density, ne, ni, temperatureE, temperatureI, Z, Ar)
+
 
 nx = 30
 x_l = 0
-x_u = 4.40585e-06 * 300
+x_u = 1000 * 4.40585e-06
 L = x_u - x_l
-massNumber = 157
-Z = 64
+Ar = np.zeros(nx) + 157
+Z = np.zeros(nx) + 64
 testName = "hydro_energy_diff"
 gammaFactor = 1.4
-laserWavelength = 1E-9
+laserWavelength = 188E-9
 LaserPower = 0
 coulombLog = 11
 #Ev
-temperature = 300*11600
+temperature = 300 * 11604
+
 
 ne = 1E26
-nc = 1.1E15 / pow(laserWavelength, 2)
+nc = ne#1.1E15 / pow(laserWavelength, 2)
 
 velocity = np.zeros(nx + 1) #+ add any function
 #path = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/init_data/"
 path = "/home/abetharan/HeadlessHydra/init_data/"
-coord, density, numberDensityE, numberDensityI, temperatureE, temperatureI, Z, Ar  = custom_routine(L, nx, ne, temperature, gammaFactor, Z, massNumber)
+coord, density, numberDensityE, numberDensityI, temperatureE, temperatureI, Z, Ar  = custom_routine(L, nx, nc, temperature, gammaFactor, Z, Ar)
 mass = CalculateMass(coord, density, nx)
 
 plt.figure(1)

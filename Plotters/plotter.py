@@ -5,14 +5,16 @@ import numpy as np
 import os
 #BASE_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/"
 BASE_DIR_ = "/media/abetharan/DATADRIVE1/Abetharan/"
-RUN_NAME_ = "couple3"
+RUN_NAME_ = "couple5"
 RUN_DIR = os.path.join(BASE_DIR_, RUN_NAME_)
 _NO_CYCLES = 3
+another_path = "/home/abetharan/HeadlessHydra/data_out/"
 f = plt.figure(figsize = (20, 20))
 total_time = 0
 nx = 100
-cycle_path_0 = os.path.join(RUN_DIR, "cycle_0/fluid_output/TemperatureE_0.txt")
-cycle_path_1 = os.path.join(RUN_DIR, "cycle_1/fluid_output/TemperatureE_47.txt")
+cycle_path_0 = os.path.join(RUN_DIR, "cycle_1/fluid_input/qe.txt")
+cycle_path_1 = os.path.join(another_path, "HeatConductionE_-1.txt")
+
 cycle_path_5 = os.path.join(RUN_DIR, "cycle_6/fluid_output/TemperatureE_47.txt")
 cycle_path_9 = os.path.join(RUN_DIR, "cycle_9/fluid_output/TemperatureE_47.txt")
 
@@ -22,18 +24,18 @@ cycle_path_9 = os.path.join(RUN_DIR, "cycle_9/fluid_output/TemperatureE_47.txt")
 #path9 = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/data_out/TemperatureE_1999.txt"
 te0 = np.loadtxt(cycle_path_0)
 te1 = np.loadtxt(cycle_path_1) 
-te5 = np.loadtxt(cycle_path_5)
-te9 = np.loadtxt(cycle_path_9)
+#te5 = np.loadtxt(cycle_path_5)
+#te9 = np.loadtxt(cycle_path_9)
 
 # te1 = np.loadtxt(path1) 
 # te5 = np.loadtxt(path5)
 # te9 = np.loadtxt(path9)
 
 plt.figure(1)
-plt.plot(te0/11600, label = "cycle 0")
-plt.plot(te1/11600, label = "cycle 1")
-plt.plot(te5/11600, label = "cycle 3")
-plt.plot(te9/11600, label = "cycle 4")
+plt.plot(te0, label = "cycle 0")
+plt.plot(te1, label = "Sh Fluid")
+# plt.plot(te5/11600, label = "cycle 3")
+# plt.plot(te9/11600, label = "cycle 4")
 plt.xlabel('Grid position')
 plt.ylabel('Temperature/eV')
 plt.legend()

@@ -41,6 +41,7 @@ mode=$mode
 SingleTemperature=$mode
 MultiMaterial=$MultiMaterial
 IdealGas=$IdealGas
+FullyIonized=$FullyIonized
     """
     kappa = open(runPath + "/tmpFluidSwitch.txt", "w")
     kappa.write(writeStatement)

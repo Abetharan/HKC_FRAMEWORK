@@ -169,7 +169,7 @@ def CalculateRemain(kinetic_ne, kinetic_Te, kinetic_qe, normalisationValues, gam
         Ti = np.loadtxt(PreviousFluidOutPath + "TemperatureI_" + str(LargestIndex) + ".txt")
         coord = np.loadtxt(PreviousFluidOutPath + "Coord_" + str(LargestIndex) + ".txt")
         velocity = np.loadtxt(PreviousFluidOutPath + "Velocity_" + str(LargestIndex) + ".txt")
-        Z = np.loadtxt(PreviousFluidOutPath + "Z_" + str(LargestIndex) + ".txt")
+        Z = np.loadtxt(PreviousFluidOutPath + "Zbar_" + str(LargestIndex) + ".txt")
         Ar = np.loadtxt(PreviousFluidOutPath + "Ar_"+ str(LargestIndex) + ".txt")
     #material
     # Ar = normalisationValues['Ar']
@@ -289,7 +289,7 @@ def AltCalculateRemain(kinetic_qe, normalisationValues, nextStepFluidInit, previ
     shutil.copyfile(os.path.join(previousFluidOutPath + "/Brem_" + str(LargestIndex) +".txt")    ,os.path.join(nextStepFluidInit,"brem.txt"))
     shutil.copyfile(os.path.join(previousFluidOutPath + "/Exchange_" + str(LargestIndex) +".txt")    ,os.path.join(nextStepFluidInit,"exchange.txt"))
     shutil.copyfile(os.path.join(previousFluidOutPath + "/HeatConductionI_" + str(LargestIndex) +".txt")    ,os.path.join(nextStepFluidInit,"qi.txt"))
-    shutil.copyfile(os.path.join(previousFluidOutPath + "/Z_" + str(LargestIndex) +".txt")    ,os.path.join(nextStepFluidInit, "Z.txt"))
+    shutil.copyfile(os.path.join(previousFluidOutPath + "/Zbar_" + str(LargestIndex) +".txt")    ,os.path.join(nextStepFluidInit, "Z.txt"))
     shutil.copyfile(os.path.join(previousFluidOutPath + "/Ar_" + str(LargestIndex) +".txt")    ,os.path.join(nextStepFluidInit, "Ar.txt"))
 
 
