@@ -3,21 +3,22 @@ import shutil
 import Coupling as cpl
 import TmpFileCreator as tfc
 # simulation domain sizes and number of processors to use
-_KINETIC_nx = 30
+_KINETIC_nx = 100
 _KINETIC_ny = 1
 _KINETIC_nv = 150
 _KINETIC_np = 1
-_FLUID_nx = 30
-_CYCLES = 5
+_FLUID_nx = 90
+_CYCLES = 50
 
 # Material Properties
 atomicZ = 64
 atomicAr = 157
 
 # Kinetic parameters
-kineticDt = 0.1  # as a ratio of collisional time i.e. 1 is collision time
-kineticTMax = 0.1  # Number of collision times
-
+kineticDt = 0.2  # as a ratio of collisional time i.e. 1 is collision time
+kineticTMax = 100  # Number of collision times
+kineticXmax = 1000.0
+kineticVmax = 13.0
 # Fluid initial parameters
 cq = 2
 gamma = 1.4
@@ -28,7 +29,7 @@ durOfLaser = 1e-10
 laserLoc = 'left'
 steps = 75
 fluidTMax = 0  # 1e-15
-initialDt = 1e-10
+initialDt = 1e-15
 dtGlobalMax = 1e-12
 dtGlobalMin = 1e-16
 if fluidTMax == 0:
@@ -38,22 +39,23 @@ else:
 
 boundaryCondition = "rigid"
 # Set Environement variafbles for compiling
-RUN_NAME_ = "couple5"
+interpolation_method = "linear"
+RUN_NAME_ = "klin90"
 BASE_DIR_ = "/media/abetharan/DATADRIVE1/Abetharan/"
 IMPACT_SRC_DIR_ = "/home/abetharan/IMPACT/src"
 FLUID_SRC_DIR_ = "/home/abetharan/HeadlessHydra/Source_Code/run"
-#FLUID_SRC_DIR_ = "/home/abetharan/HeadlessHydra/run"
-INITIAL_CONDITIONS_FILE_PATH_ = "/home/abetharan/HeadlessHydra/init_data/"
-#BASE_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HYDRO_IMPACT_COUPLING/"
-#IMPACT_SRC_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./IMPACT/src"
-#FLUID_SRC_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/Source_Code/run"
-#INITIAL_CONDITIONS_FILE_PATH_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/init_data/"
+# FLUID_SRC_DIR_ = "/home/abetharan/HeadlessHydra/run"
+#INITIAL_CONDITIONS_FILE_PATH_ = "/media/abetharan/DATADRIVE1/Abetharan/lin30/cycle_0/fluid_input"
+INITIAL_CONDITIONS_FILE_PATH_ = "/media/abetharan/DATADRIVE1/Abetharan/fluid_input_spitzer_30/"
+# BASE_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HYDRO_IMPACT_COUPLING/"
+# IMPACT_SRC_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./IMPACT/src"
+# FLUID_SRC_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/Source_Code/run"
+# INITIAL_CONDITIONS_FILE_PATH_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/init_data/"
 # Return path is Run directory
 runPath = cpl.SetEnvVar.setEnvVar(_KINETIC_nx, _KINETIC_ny, _KINETIC_nv, _KINETIC_np, RUN_NAME_, IMPACT_SRC_DIR_,
                                   BASE_DIR_)
-
 # If set true any conflicting files will be created
-_OVERWRITE_OK_ = True
+_OVERWRITE_OK_ = False
 
 if os.path.exists(runPath):
 
@@ -71,9 +73,8 @@ for i in range(0, _CYCLES, 1):
         os.rmdir(fluid_input_path)
         shutil.copytree(INITIAL_CONDITIONS_FILE_PATH_, fluid_input_path)
         mode = "free"
-        steps = -1
+        steps = 0
         fluidTMax = 0
-
         outputFrequency = round(0.05 * fluidTMax/initialDt)
 
         # Generates all tmp files to be changes
@@ -90,10 +91,10 @@ for i in range(0, _CYCLES, 1):
         #     cpl.io.ImpactToHydro(fluid_input_path, previous_fluid_output_path, previous_kinetic_output_path,
         #                         normalised_values, gamma, laserWavelength, laserPower, _FLUID_nx)
         cpl.io.ImpactToHydro1(normalised_values, fluid_input_path,  previous_fluid_input_path,
-                              previous_fluid_output_path, previous_kinetic_output_path)
+                              previous_fluid_output_path, previous_kinetic_output_path, interpolator=interpolation_method)
         mode = "couple"
-        steps = 1
-        fluidTMax = 0
+        steps = 0
+        fluidTMax = 10e-12
 
         outputFrequency = round(0.05 * fluidTMax/initialDt)
 
@@ -113,17 +114,17 @@ for i in range(0, _CYCLES, 1):
     switchPath = cycle_dump_path + "/HydroSwitches.txt"
     cpl.SetFluidParam(_FLUID_nx, cq, gamma, cfl, laserWavelength,  laserPower, durOfLaser, laserLoc,
                       steps, fluidTMax, initialDt, dtGlobalMax, dtGlobalMin, outputFrequency, boundaryCondition,
-                      fluid_input_path, fluid_output_path, switchPath, "None", "None", cycle_dump_path)
+                      fluid_input_path, fluid_output_path, switchPath, "/home/abetharan/HeadlessHydra/feos_tables/He/He", "/home/abetharan/HeadlessHydra/feos_tables/Gd/Gd", cycle_dump_path)
     # Launch hydro
     cpl.Fluid(cycle_dump_path, FLUID_SRC_DIR_)
 
     # Handle file transfers for hydro to impact
     normalised_values, _ = cpl.io.HydroToImpact(
-        fluid_output_path, kinetic_output_path, runPath, laserWavelength, _FLUID_nx, atomicAr)
-
+        fluid_output_path, kinetic_output_path, runPath, laserWavelength, _FLUID_nx, interpolator=interpolation_method,
+        normNe=1e20, normTe=300, normZ=64, normAr=157)
     # Creates fort10 file and sets the values
     cpl.SetKineticParam(normalised_values, _KINETIC_nv, _KINETIC_nx,
-                        _KINETIC_ny, kineticDt, kineticTMax, cycle_dump_path, runPath)
+                        _KINETIC_ny, kineticDt, kineticTMax, kineticXmax, kineticVmax, cycle_dump_path, runPath)
 
     # Compile on first step this can be modified if we are doing dynamic gridding for IMPACT
     if i == 0:
@@ -134,7 +135,7 @@ for i in range(0, _CYCLES, 1):
 
     # IO for last step
     if i == _CYCLES - 1:
-        previous_kinetic_output_path = cycle_dump_path + "/kinetic_output/"
-        previous_kinetic_input_path = cycle_dump_path + "/kinetic_input/"
+        previous_kinetic_output_path=cycle_dump_path + "/kinetic_output/"
+        previous_kinetic_input_path=cycle_dump_path + "/kinetic_input/"
         cpl.moveIMPACTFILE(runPath, cycle_dump_path,
                            previous_kinetic_input_path, previous_kinetic_output_path)

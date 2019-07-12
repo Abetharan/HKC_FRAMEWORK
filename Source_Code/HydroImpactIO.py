@@ -69,7 +69,8 @@ def fileWriteFormat(tmpFileLocation, OpenFile, coord, varData, var):
     return(0)
 
 
-def HydroToImpact(fluidOutPath, kineticOutPath, cyclePath,  laserWaveLength, fluidNx, Ar):
+def HydroToImpact(fluidOutPath, kineticOutPath, cyclePath,  laserWaveLength, fluidNx, interpolator,
+                  normNe=None, normTe=None, normZ=None, normAr=None):
 
     lastIndex = findLastIndex(fluidOutPath, "Coord", "fluid")
     fluid_x = np.loadtxt(fluidOutPath + "/Coord_" + str(lastIndex) + ".txt")
@@ -87,11 +88,21 @@ def HydroToImpact(fluidOutPath, kineticOutPath, cyclePath,  laserWaveLength, flu
         fluidOutPath + "/Density_" + str(lastIndex) + ".txt")
     fluid_Z = np.loadtxt(fluidOutPath + "/Zbar_" + str(lastIndex) + ".txt")
     fluid_Ar = np.loadtxt(fluidOutPath + "/Ar_" + str(lastIndex) + ".txt")
-    avgNe = np.average(fluid_ne) * 1e-6  # 1e21
-    avgTe = np.average(fluid_Te) * (kb / e)  # 1000 #
-    avgZ = np.average(fluid_Z)
-    avgAr = np.average(fluid_Ar)
-    normalised_values = ImNorms.impact_inputs(avgNe, avgTe, avgZ, avgAr, Bz=0)
+
+    if normNe is None:
+        normNe = np.average(fluid_ne) * 1e-6  # 1e21
+
+    if normTe is None:
+        normTe = round(np.average(fluid_Te) * (kb / e))  # 1000 #
+
+    if normZ is None:
+        normZ = round(np.average(fluid_Z))
+
+    if normAr is None:
+        normAr = round(np.average(fluid_Ar))
+
+    normalised_values = ImNorms.impact_inputs(
+        normNe, normTe, normZ, normAr, Bz=0)
     with open(os.path.join(kineticOutPath, "normValues.pkl"), 'wb') as f:
         pickle.dump(normalised_values, f, pickle.HIGHEST_PROTOCOL)
 
@@ -124,19 +135,27 @@ def HydroToImpact(fluidOutPath, kineticOutPath, cyclePath,  laserWaveLength, flu
     fluid_centered_x = [(x_norm[i + 1] + x_norm[i])/2 for i in range(fluidNx)]
     kinetic_centered_x = [(kinetic_x[i + 1] + kinetic_x[i]) /
                           2 for i in range(int(os.environ["NXM"]))]
-    cs_ne = CubicSpline(fluid_centered_x, ne_norm)
-    cs_ni = CubicSpline(fluid_centered_x, ni_norm)
-    cs_Te = CubicSpline(fluid_centered_x, Te_norm)
-    cs_laser = CubicSpline(fluid_centered_x, laser_norm)
-    cs_brem = CubicSpline(fluid_centered_x, brem_norm)
-    cs_Z = CubicSpline(fluid_centered_x, Z_norm)
 
-    # cs_ne = interpolate.interp1d(fluid_centered_x, ne_norm,fill_value="extrapolate")#CubicSpline(fluid_centered_x, ne_norm)
-    # cs_ni = interpolate.interp1d(fluid_centered_x, ni_norm,fill_value="extrapolate")
-    # cs_Te = interpolate.interp1d(fluid_centered_x, Te_norm,fill_value="extrapolate")
-    # cs_laser = interpolate.interp1d(fluid_centered_x, laser_norm,fill_value="extrapolate")
-    # cs_brem = interpolate.interp1d(fluid_centered_x, brem_norm,fill_value="extrapolate")
-    # cs_Z = interpolate.interp1d(fluid_centered_x, Z_norm,fill_value="extrapolate")
+    if(interpolator == "cubic"):
+        cs_ne = CubicSpline(fluid_centered_x, ne_norm)
+        cs_ni = CubicSpline(fluid_centered_x, ni_norm)
+        cs_Te = CubicSpline(fluid_centered_x, Te_norm)
+        cs_laser = CubicSpline(fluid_centered_x, laser_norm)
+        cs_brem = CubicSpline(fluid_centered_x, brem_norm)
+        cs_Z = CubicSpline(fluid_centered_x, Z_norm)
+    else:
+        cs_ne = interpolate.interp1d(
+            fluid_centered_x, ne_norm, fill_value="extrapolate")
+        cs_ni = interpolate.interp1d(
+            fluid_centered_x, ni_norm, fill_value="extrapolate")
+        cs_Te = interpolate.interp1d(
+            fluid_centered_x, Te_norm, fill_value="extrapolate")
+        cs_laser = interpolate.interp1d(
+            fluid_centered_x, laser_norm, fill_value="extrapolate")
+        cs_brem = interpolate.interp1d(
+            fluid_centered_x, brem_norm, fill_value="extrapolate")
+        cs_Z = interpolate.interp1d(
+            fluid_centered_x, Z_norm, fill_value="extrapolate")
 
     kinetic_ne = cs_ne(kinetic_centered_x)
     kinetic_ni = cs_ni(kinetic_centered_x)
@@ -237,7 +256,7 @@ def CoordGenerator(xNorm, velocity, kineticNx, numberSmoothingCellsRatio, number
     return(kinetic_coord)
 
 
-def ImpactToHydro1(normalisedValues, nextStepFluidInit,  previousFluidInit, previousFluidOutPath, previousKineticOutPath):
+def ImpactToHydro1(normalisedValues, nextStepFluidInit,  previousFluidInit, previousFluidOutPath, previousKineticOutPath, interpolator):
 
     # Convert to SI from Impact Norms
     var = "qxX"
@@ -255,4 +274,4 @@ def ImpactToHydro1(normalisedValues, nextStepFluidInit,  previousFluidInit, prev
         pow(normalisedValues['vte'], 3) * normalisedValues['ne'] * 1e21 * 1e6
     qxX = varList * normConst
     remain.AltCalculateRemain(qxX, normalisedValues, nextStepFluidInit,
-                              previousFluidInit, previousFluidOutPath, previousKineticOutPath)
+                              previousFluidInit, previousFluidOutPath, previousKineticOutPath, interpolator)

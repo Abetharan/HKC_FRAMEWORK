@@ -241,7 +241,7 @@ def CalculateRemain(kinetic_ne, kinetic_Te, kinetic_qe, normalisationValues, gam
         )
 
 
-def AltCalculateRemain(kinetic_qe, normalisationValues, nextStepFluidInit, previousFluidInPath, previousFluidOutPath, previousKineticOutPath):
+def AltCalculateRemain(kinetic_qe, normalisationValues, nextStepFluidInit, previousFluidInPath, previousFluidOutPath, previousKineticOutPath, interpolator):
     import glob
     LargestIndex = 0
     for file in os.listdir(previousFluidOutPath):
@@ -263,7 +263,11 @@ def AltCalculateRemain(kinetic_qe, normalisationValues, nextStepFluidInit, previ
 
     kinetic_x = np.loadtxt(previousKineticOutPath + "ReturnToHydro_xf.xy", delimiter = "\n") * normalisationValues['lambda_mfp'] 
     
-    cs_qe = CubicSpline(kinetic_x, kinetic_qe)
+    if(interpolator == "cubic"):
+        cs_qe = CubicSpline(kinetic_x, kinetic_qe)
+    else:
+        cs_qe = interpolate.interp1d(kinetic_x, kinetic_qe,fill_value="extrapolate")
+
     qe = cs_qe(coord)
     electronheatflow= Heatflow(qe, mass)
     np.savetxt(os.path.join(nextStepFluidInit, "qe.txt"), electronheatflow)

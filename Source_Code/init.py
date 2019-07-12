@@ -7,12 +7,12 @@ import impact_norms_py3 as norm
 import matplotlib.pyplot as plt
 
 #global constants
-kb = 1.38064852e-23;
-protonMass = 1.6726219e-27;
-electronMass = 9.10938356e-31;
-epsilon_0 = 8.85418782e-12;
-electronCharge = 1.60217662e-19;
-hbar = 1.054571800e-34;
+kb = 1.38064852e-23
+protonMass = 1.6726219e-27
+electronMass = 9.10938356e-31
+epsilon_0 = 8.85418782e-12
+electronCharge = 1.60217662e-19
+hbar = 1.054571800e-34
 c = 299792458;
 
 def LoadTestProblem(testName, nx, gammaFactor, x_l = 0, x_u = 1):
@@ -230,8 +230,8 @@ def TextDump(path, coord, velocity, density, ne, ni, Te, Ti, mass, Z, Ar):
     np.savetxt((path+"density.txt"), density)
     np.savetxt((path+"ne.txt"), ne)
     np.savetxt((path+"ni.txt"), ni)
-    np.savetxt((path+"electron_temperature.txt"), Te)
-    np.savetxt((path+"ion_temperature.txt"), Ti)
+    #np.savetxt((path+"electron_temperature.txt"), Te)
+    #np.savetxt((path+"ion_temperature.txt"), Ti)
     np.savetxt((path+"mass.txt"), mass)
     np.savetxt((path+"Z.txt"), Z)    
     np.savetxt((path+"Ar.txt"), Ar)
@@ -242,8 +242,21 @@ def custom_routine(L, nx, nc, temperature, gamma, Z, massNumber):
     x_l = 0
     x_u = L
     initial_coord = initial_coord = np.linspace(x_l, x_u, nx+1)
-    ne = np.zeros(nx) + nc
-
+    index_for_high_z = [i for i in range(len(initial_coord)) if initial_coord[i] > 0.06e-3]
+    Z = np.zeros(nx) + 64
+    Ar = np.zeros(nx) + 157
+    # Z[:index_for_high_z[0]] = 40
+    # Z[index_for_high_z[0]:] = 2
+    # Ar[:index_for_high_z[0]] = 157
+    # Ar[index_for_high_z[0]:] = 4
+    
+    # density = np.zeros(nx)
+    # density[:index_for_high_z[0]] = 19.3
+    # density[index_for_high_z[0]:] = 0.3
+    
+    ne = np.zeros(nx) + 1e26
+    # ne[:index_for_high_z[0]] = 10 * nc
+    # ne[index_for_high_z[0]:] = 9e25
 
     # Z[0:int(nx*0.7)] = 2
     # Z[int(nx*0.7):] = 64
@@ -251,20 +264,18 @@ def custom_routine(L, nx, nc, temperature, gamma, Z, massNumber):
     # Ar[0:int(nx*0.7)] = 4
     # Ar[int(nx*0.7):] = 157.25
     ni = ne / Z
-    density = Ar * 1.67E-27 * ni
-    temperatureE = np.zeros(nx) + 3
-    # temperatureE[0:int(nx*0.7)] = 100 * (electronCharge/kb)
-    # temperatureE[int(nx*0.7):] = 4* (electronCharge/kb) 
-    temperatureE = temperature * prof.load_profile(nx = nx,
-                                                    xmin = 0,
-                                                    xmax = 1000,
-                                                    avg = 1.0,
-                                                    amp = 0.0005,
-                                                    pos = 0.0,
-                                                    nwl = 0.5,
-                                                    wid = 1000.0,
-                                                    func = '+cos'
-                                                        )
+    density = Ar * ni * protonMass
+    temperatureE = np.zeros(nx) + 11604 * 5e-3
+    # temperatureE = temperature * prof.load_profile(nx = nx,
+    #                                                 xmin = 0,
+    #                                                 xmax = 1000,
+    #                                                 avg = 1.0,
+    #                                                 amp = 0.0005,
+    #                                                 pos = 0.0,
+    #                                                 nwl = 0.5,
+    #                                                 wid = 1000.0,
+    #                                                 func = '+cos'
+    #                                                     )
 
    # temperatureE = temperature + np.linspace(11600*10, temperature, nx)
 
@@ -275,9 +286,9 @@ def custom_routine(L, nx, nc, temperature, gamma, Z, massNumber):
     return(initial_coord, density, ne, ni, temperatureE, temperatureI, Z, Ar)
 
 
-nx = 30
+nx = 60
 x_l = 0
-x_u = 1000 * 4.40585e-06
+x_u = 600 * 5.75919e-07
 L = x_u - x_l
 Ar = np.zeros(nx) + 157
 Z = np.zeros(nx) + 64

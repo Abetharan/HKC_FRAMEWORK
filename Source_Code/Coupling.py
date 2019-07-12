@@ -179,7 +179,7 @@ def SetFluidSwitches(cycleDumpPath, viscosityOn="true", velocityOn="true", heatC
                writePath=cycleDumpPath, fileName="HydroSwitches.txt", parameters=switches)
 
 
-def SetKineticParam(normalised_values, _KINETIC_nv, _KINETIC_nx, _KINETIC_ny, dt, kineticTMax, cycle_dump_path, runPath, fort12Output=["1.0d0", "5.0d0", "10.0d0", "20.0d0", "30.0d0", "50.0d0", "100.0d0", "200.0d0"],):
+def SetKineticParam(normalised_values, _KINETIC_nv, _KINETIC_nx, _KINETIC_ny, dt, kineticTMax, kineticXmax, kineticVmax, cycle_dump_path, runPath, fort12Output=["1.0d0", "5.0d0", "10.0d0", "20.0d0", "30.0d0", "50.0d0", "100.0d0", "200.0d0"],):
     """
     Purpose: Handles the IO side for launching IMPACT. Involves creation of fort files and moving of files and renaming. Furthermore, handles moving of files 
     when IMPACT completes.
@@ -201,7 +201,8 @@ def SetKineticParam(normalised_values, _KINETIC_nv, _KINETIC_nx, _KINETIC_ny, dt
     Z = normalised_values["Z"]
     A = normalised_values["Ar"]
     fort10Param = setFort10.set_fort_10(wpe_over_nuei=wpe_over_nu_ei, c_over_vte=c_over_vte,
-                                        atomic_Z=Z, atomic_A=A, nv=_KINETIC_nv, nx=_KINETIC_nx, ny=_KINETIC_ny, dt=dt, tmax=kineticTMax, vmax=13, do_user_prof_sub=".true.")
+                                        atomic_Z=Z, atomic_A=A, nv=_KINETIC_nv, nx=_KINETIC_nx, ny=_KINETIC_ny, dt=dt, tmax=kineticTMax,
+                                        xmax = kineticXmax, do_user_prof_sub=".true.")
 
     templating(tmpfilePath=os.environ['BASEDIR'] + '/tmpfort.10',
                writePath=runPath, fileName="fort.10", parameters=fort10Param)
