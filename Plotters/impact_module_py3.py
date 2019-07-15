@@ -49,7 +49,6 @@ def load_dict(path,fprefix,var,time, iter_number):
         dict = fpg_get_info(fname)
     '''
     fname = construct_fname(path,fprefix,var,time, iter_number)
-    
     #dict = MyDict()
     #mat = np.loadtxt(fname,skiprows=out_l)
     info = open(fname, 'r')
