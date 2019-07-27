@@ -164,8 +164,8 @@ def HydroToImpact(fluidOutPath, kineticOutPath, cyclePath,  laserWaveLength, flu
     kinetic_brem = cs_brem(kinetic_centered_x)
     kinetic_Z = cs_Z(kinetic_centered_x)
     # import matplotlib.pyplot as plt
-    # plot(kinetic_Te)
-    # plt.show()plt.
+    # plt.plot(kinetic_Te)
+    # plt.show()
     if not os.path.exists(cyclePath + "/tmpWrite.txt"):
         tfc.impactOutputformat(cyclePath)
 

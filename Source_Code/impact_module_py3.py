@@ -38,7 +38,7 @@ def construct_fname(path,fprefix,var,time, iter_number):
     #fprefix = 'thydro_hi'
     #time = '00'
     if iter_number is not None:
-        fname = path + '/' + fprefix +'_' + var + '_' + time + '.' + iter_number + suffix
+        fname = path + '/' + fprefix + '_' + var + '.' + suffix
     else:
         fname = path + '/' + fprefix +'_' + var + '_' + time + suffix
     return fname

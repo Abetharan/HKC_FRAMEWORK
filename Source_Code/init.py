@@ -286,7 +286,7 @@ def custom_routine(L, nx, nc, temperature, gamma, Z, massNumber):
     return(initial_coord, density, ne, ni, temperatureE, temperatureI, Z, Ar)
 
 
-nx = 60
+nx = 120
 x_l = 0
 x_u = 600 * 5.75919e-07
 L = x_u - x_l

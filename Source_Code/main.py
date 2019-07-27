@@ -3,12 +3,12 @@ import shutil
 import Coupling as cpl
 import TmpFileCreator as tfc
 # simulation domain sizes and number of processors to use
-_KINETIC_nx = 100
+_KINETIC_nx = 60
 _KINETIC_ny = 1
-_KINETIC_nv = 150
+_KINETIC_nv = 300
 _KINETIC_np = 1
-_FLUID_nx = 90
-_CYCLES = 50
+_FLUID_nx = 60
+_CYCLES = 51
 
 # Material Properties
 atomicZ = 64
@@ -16,9 +16,9 @@ atomicAr = 157
 
 # Kinetic parameters
 kineticDt = 0.2  # as a ratio of collisional time i.e. 1 is collision time
-kineticTMax = 100  # Number of collision times
+kineticTMax = 18  # Number of collision times
 kineticXmax = 1000.0
-kineticVmax = 13.0
+kineticVmax = 30.0
 # Fluid initial parameters
 cq = 2
 gamma = 1.4
@@ -29,8 +29,8 @@ durOfLaser = 1e-10
 laserLoc = 'left'
 steps = 75
 fluidTMax = 0  # 1e-15
-initialDt = 1e-15
-dtGlobalMax = 1e-12
+initialDt = 1e-17
+dtGlobalMax = 1e-13
 dtGlobalMin = 1e-16
 if fluidTMax == 0:
     outputFrequency = 1
@@ -39,14 +39,15 @@ else:
 
 boundaryCondition = "rigid"
 # Set Environement variafbles for compiling
-interpolation_method = "linear"
-RUN_NAME_ = "klin90"
+interpolation_method = "cubic"
+RUN_NAME_ = "Ncubf1"
 BASE_DIR_ = "/media/abetharan/DATADRIVE1/Abetharan/"
 IMPACT_SRC_DIR_ = "/home/abetharan/IMPACT/src"
 FLUID_SRC_DIR_ = "/home/abetharan/HeadlessHydra/Source_Code/run"
 # FLUID_SRC_DIR_ = "/home/abetharan/HeadlessHydra/run"
-#INITIAL_CONDITIONS_FILE_PATH_ = "/media/abetharan/DATADRIVE1/Abetharan/lin30/cycle_0/fluid_input"
-INITIAL_CONDITIONS_FILE_PATH_ = "/media/abetharan/DATADRIVE1/Abetharan/fluid_input_spitzer_30/"
+INITIAL_CONDITIONS_FILE_PATH_ = "/media/abetharan/DATADRIVE1/Abetharan/Results/fixed_nx/Ncub60/cycle_0/fluid_input/"
+#INITIAL_CONDITIONS_FILE_PATH_ = "/home/abetharan/HeadlessHydra/init_data/"
+
 # BASE_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HYDRO_IMPACT_COUPLING/"
 # IMPACT_SRC_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./IMPACT/src"
 # FLUID_SRC_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/Source_Code/run"
@@ -94,7 +95,7 @@ for i in range(0, _CYCLES, 1):
                               previous_fluid_output_path, previous_kinetic_output_path, interpolator=interpolation_method)
         mode = "couple"
         steps = 0
-        fluidTMax = 10e-12
+        fluidTMax = 1e-12
 
         outputFrequency = round(0.05 * fluidTMax/initialDt)
 

@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 #BASE_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/"
-BASE_DIR_ = "/media/abetharan/DATADRIVE1/Abetharan/data_results/fixed_nx/"
-RUN_NAME_ = "Ncub60"
+BASE_DIR_ = "/media/abetharan/DATADRIVE1/Abetharan/data_results/fluid_fixed_nx_varied_kinetic_nx/"
+RUN_NAME_ = "kcub90"
 RUN_DIR = os.path.join(BASE_DIR_, RUN_NAME_)
 _NO_CYCLES = 3
 another_path = "/home/abetharan/HeadlessHydra/data_out/"
@@ -13,13 +13,13 @@ f = plt.figure(figsize = (20, 20))
 total_time = 0
 nx = 100
 qcycle_path_0 = os.path.join(RUN_DIR, "cycle_1/fluid_input/qe.txt")
-qcycle_path_1 = os.path.join(RUN_DIR, "cycle_2/fluid_input/qe.txt")
-qcycle_path_5 = os.path.join(RUN_DIR, "cycle_3/fluid_input/qe.txt")
-qcycle_path_9 = os.path.join(RUN_DIR, "cycle_5/fluid_input/qe.txt")
+qcycle_path_1 = os.path.join(RUN_DIR, "cycle_20/fluid_input/qe.txt")
+qcycle_path_5 = os.path.join(RUN_DIR, "cycle_30/fluid_input/qe.txt")
+qcycle_path_9 = os.path.join(RUN_DIR, "cycle_40/fluid_input/qe.txt")
 cycle_path_0 = os.path.join(RUN_DIR, "cycle_1/fluid_input/electron_temperature.txt")
-cycle_path_1 = os.path.join(RUN_DIR, "cycle_2/fluid_input/electron_temperature.txt")
-cycle_path_5 = os.path.join(RUN_DIR, "cycle_3/fluid_input/electron_temperature.txt")
-cycle_path_9 = os.path.join(RUN_DIR, "cycle_5/fluid_input/electron_temperature.txt")
+cycle_path_1 = os.path.join(RUN_DIR, "cycle_20/fluid_input/electron_temperature.txt")
+cycle_path_5 = os.path.join(RUN_DIR, "cycle_30/fluid_input/electron_temperature.txt")
+cycle_path_9 = os.path.join(RUN_DIR, "cycle_40/fluid_input/electron_temperature.txt")
 
 #cycle_path_9 = os.path.join(RUN_DIR, "cycle_7/fluid_output/TemperatureE_-1.txt")
 #path1 = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/data_out/TemperatureE_0.txt"
@@ -43,23 +43,23 @@ plt.subplots_adjust(hspace =0.3)
 ax = f.add_subplot(211)
 ax2 = f.add_subplot(212)
 ax.plot(te0, label = "cycle 1")
-ax.plot(te1, label = "cycle 2")
-ax.plot(te5, label = "cycle 3")
-ax.plot(te9, label = "cycle 5")
+ax.plot(te1, label = "cycle 20")
+ax.plot(te5, label = "cycle 30")
+ax.plot(te9, label = "cycle 40")
 ax.set_title("Temperature")
 ax.set_ylabel("Temperature/K")
 ax.set_xlabel("Grid Position") 
 ax.legend()
 
 ax2.plot(qte0, label = "cycle 1")
-ax2.plot(qte1, label = "cycle 2")
-ax2.plot(qte5, label = "cycle 3")
-ax2.plot(qte9, label = "cycle 5")
+ax2.plot(qte1, label = "cycle 20")
+ax2.plot(qte5, label = "cycle 30")
+ax2.plot(qte9, label = "cycle 40")
 ax2.set_title("Heat Flow")
 ax2.set_ylabel("Heat flow / Jkg-1")
 ax2.set_xlabel("Grid Position") 
 ax2.legend()
 
-plt.savefig("/home/abetharan/HYDRO_IMPACT_COUPLING_/results/60_fluid_60_kinetic_non_local_cub.png")
+plt.savefig("/home/abetharan/HYDRO_IMPACT_COUPLING_/results/30_fluid_90_kinetic_Spitzer_cub.png")
 #plt.savefig("/home/abetharan/HYDRO_IMPACT_COUPLING_/results/30_fluid_60_kinetic_spitzer_qe.png")
-#plt.show()
+plt.show()

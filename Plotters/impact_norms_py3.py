@@ -17,7 +17,7 @@ def extract_power(x):
 #-----------------------------------------------------------------------
 
 
-def impact_inputs(ne,Te,Z,Ar,Bz):
+def impact_inputs(ne,Te,Z,Ar, Bz):
     '''
         ne, Te, Z, Bz, Ar are the IMPACT reference density [cm**-3], temperature [eV], ionisation (Z)
         magnetic field [T], relative atomic mass (Ar)
@@ -35,11 +35,10 @@ def impact_inputs(ne,Te,Z,Ar,Bz):
     dict['ne'] = ne
     dict['Te'] = Te
     dict['Z'] = Z
-
+    dict['Ar'] = Ar
     # Convert ne to 10**21 cm**-3
     ne = ne / 1.0e21
     ni = ne / Z
-    dict['ni'] = ni
 
     # Calculate Coulomb np.logarithm.
     
@@ -103,6 +102,9 @@ def impact_inputs(ne,Te,Z,Ar,Bz):
     dict['log_lambda'] = log_lambda
     dict['wpe_over_nu_ei'] = wpe_by_nu_ei 
     dict['Bz_norm'] = prof_Bz_ave
+    dict["ne"] = ne
+    dict["ni"] = ni
+    dict["Te"] = 2 * Te
     # --- get transport coeffs
     # if T in Kelvin...
     #kappa*gradT = (1/(msec))*(J/K) * (K/m) = kappa*k_b *grad (T/Kelvin)  

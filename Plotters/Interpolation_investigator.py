@@ -10,7 +10,7 @@ kb = constants.value("Boltzmann constant")
 me = constants.value("electron mass")
 mp = constants.value("proton mass")
 e = constants.value("elementary charge")
-def interpolated_plotter(path_fluid, path_fluid_coord, path_kinetic, run_name, variable, time_step, norm_const, lambda_mfp, path, heat = False, non_standard = True):
+def interpolated_plotter(path_fluid, path_fluid_mass, path_fluid_coord, path_kinetic, run_name, variable, time_step, norm_const, lambda_mfp, path, heat = False, non_standard = True):
     """ Purpose:
                 Plots any variable at specificed time step with SI units. 
         Args:
@@ -37,12 +37,12 @@ def interpolated_plotter(path_fluid, path_fluid_coord, path_kinetic, run_name, v
 
     if heat:
         fluid_HeatConduction = np.loadtxt(os.path.join(path_fluid, "qe.txt"))
-        mass = np.loadtxt(os.path.join(path_fluid, "mass.txt"))
+        mass = np.loadtxt(path_fluid_mass)
         nx = len(var_array) - 1
         
         kinetic_HeatConduction = np.zeros(nx)
         for i in range(nx):
-            kinetic_HeatConduction[i] = - (var_array[i + 1] - var_array[i]) / mass[0]
+            kinetic_HeatConduction[i] = - (var_array[i + 1] - var_array[i]) / mass[i]
         
 
         plt.plot(kinetic_grid, kinetic_HeatConduction, "k-", label = "Not Interpolated")
@@ -54,7 +54,7 @@ def interpolated_plotter(path_fluid, path_fluid_coord, path_kinetic, run_name, v
         plt.plot(xgrid[1:-1], var_array[1:-1, 1], "r--", label = "Interpolated")
 
     plt.legend()
-    plt.xlabel('grid')
+    plt.xlabel('x/m')
     if heat:
         plt.ylabel('Heat Flow/JKg-1')
     else:
@@ -106,12 +106,12 @@ normal_dict = IN.impact_inputs(ne, Te, Z, Bz, Ar)
 
 #path_fluid = "/media/abetharan/DATADRIVE1/Abetharan/fixed_nx/lin30_/cycle_1/fluid_input/"
 #_base_path = "/media/abetharan/DATADRIVE1/Abetharan/data_results/fluid_varied_nx_fixed_kinetic_nx/"
-_base_path = "/media/abetharan/DATADRIVE1/Abetharan/data_results/fluid_fixed_nx_varied_kinetic_nx/"
-run_name = "klin60"
-cycle_no = 40
+_base_path = "/media/abetharan/DATADRIVE1/Abetharan/data_results/fixed_nx/"
+run_name = "Nlin60"
+cycle_no = 1
 cycle_name = "cycle_" + str(cycle_no)
-fluid_no = 0
-# #Temperature
+# fluid_no = 73
+# # #Temperature
 # path_1 = os.path.join(_base_path, run_name, "cycle_" + str(cycle_no))
 # path_fluid = os.path.join(path_1, "fluid_output/TemperatureE_" + str(fluid_no) + ".txt")
 # path_fluid_coord = os.path.join(path_1, "fluid_output/Coord_" + str(fluid_no) + ".txt")
@@ -121,7 +121,12 @@ fluid_no = 0
 # time_step = "00"
 # norm_const = 2 * normal_dict['Te'] * (e/kb)
 
-#Heat Flow
+# dump_path = "/home/abetharan/HYDRO_IMPACT_COUPLING_/results/Te_" + cycle_name + "_lin_30_fluid_60_kinetic.png"
+# path_fluid_mass = None
+# interpolated_plotter(path_fluid, path_fluid_mass, path_fluid_coord, path_kinetic, run_name, variable, time_step, norm_const, 
+#                     normal_dict['lambda_mfp'], dump_path, False, True)
+
+# # ##Heat Flow
 # path_1 = os.path.join(_base_path, run_name, "cycle_" + str(cycle_no + 1))
 # path_2 = os.path.join(_base_path, run_name, "cycle_" + str(cycle_no))
 # path_fluid = os.path.join(path_1, "fluid_input/")
@@ -130,27 +135,30 @@ fluid_no = 0
 # run_name = "default"
 # variable = "qxX"
 # time_step = "03"
-# norm_const = 9.11E-31 * normal_dict['vte']**3 * normal_dict['ne'] * 1e6 * 1e21
+# norm_const = 9.11E-31 * normal_dict['vte']**3 * normal_dict['ne'] * 1e6
 
-# path_fluid_coord = "/media/abetharan/DATADRIVE1/Abetharan/fixed_nx/lin30_/cycle_1/fluid_input/coord.txt"
-# path_kinetic = "/media/abetharan/DATADRIVE1/Abetharan/fixed_nx/lin30_/cycle_0/kinetic_output/"
+# #30
+# #path_fluid_mass = "/media/abetharan/DATADRIVE1/Abetharan/data_results/fixed_nx/cub30_/cycle_0/fluid_input/mass.txt"
+# #60
+# path_fluid_mass = "/media/abetharan/DATADRIVE1/Abetharan/data_results/fluid_varied_nx_fixed_kinetic_nx/cub60_/cycle_0/fluid_input/mass.txt"
+# #90
+# #path_fluid_mass = "/media/abetharan/DATADRIVE1/Abetharan/data_results/fluid_varied_nx_fixed_kinetic_nx/cub90_/cycle_0/fluid_input/mass.txt"
 
-# 
-# dump_path = "/home/abetharan/HYDRO_IMPACT_COUPLING_/results/Te_" + cycle_name + "_cub_fluid_out_kinetic_in_30_fluid_60_kinetic.png"
+# dump_path = "/home/abetharan/HYDRO_IMPACT_COUPLING_/results/qe_" + cycle_name + "_lin_30_fluid_60_kinetic.png"
 
-# interpolated_plotter(path_fluid, path_fluid_coord, path_kinetic, run_name, variable, time_step, norm_const, 
-#                     normal_dict['lambda_mfp'], dump_path, False, True)
-
+# interpolated_plotter(path_fluid, path_fluid_mass, path_fluid_coord, path_kinetic, run_name, variable, time_step, norm_const, 
+#                     normal_dict['lambda_mfp'], dump_path, True, False)
 
 
-#grid
-#Heat Flow
+
+# #grid
+# #Heat Flow
 path_1 = os.path.join(_base_path, run_name, "cycle_" + str(cycle_no))
 path_2 = os.path.join(_base_path, run_name, "cycle_" + str(cycle_no))
-path_fluid = os.path.join(path_1, "fluid_output/Coord_73.txt")
+path_fluid = os.path.join(path_1, "fluid_output/Coord_0.txt")
 path_kinetic = os.path.join(path_2, "kinetic_input/")
-
-dump_path = "/home/abetharan/HYDRO_IMPACT_COUPLING_/results/grid_" + cycle_name + "_lin_60_fluid_30_kinetic.png"
+run_name = "Nlin60"
+dump_path = "/home/abetharan/HYDRO_IMPACT_COUPLING_/results/grid_" + cycle_name + "non_local_lin_60_fluid_60_kinetic.png"
 grid_plotter(path_fluid, path_kinetic, run_name, normal_dict, dump_path)
 
 

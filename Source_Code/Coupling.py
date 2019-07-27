@@ -143,7 +143,7 @@ def SetFluidParam(fluidNx, cq, gamma, cfl, laserWavelength,  laserPower, durOfLa
                writePath=cycleDumpPath, fileName="HydroParameterInit.txt", parameters=hydroparam)
 
 
-def SetFluidSwitches(cycleDumpPath, viscosityOn="true", velocityOn="true", heatConductionOn="false", exchangeOn="false",
+def SetFluidSwitches(cycleDumpPath, viscosityOn="true", velocityOn="false", heatConductionOn="false", exchangeOn="false",
                      bremsstrahlungOn="false", invBremOn="false", singleTemperatureOn="false", mode='free', MultiMaterial="false", IdealGas="false", FullyIonized="false"):
     """
         Purpose: Sets the fluid swithces.
@@ -179,7 +179,7 @@ def SetFluidSwitches(cycleDumpPath, viscosityOn="true", velocityOn="true", heatC
                writePath=cycleDumpPath, fileName="HydroSwitches.txt", parameters=switches)
 
 
-def SetKineticParam(normalised_values, _KINETIC_nv, _KINETIC_nx, _KINETIC_ny, dt, kineticTMax, kineticXmax, kineticVmax, cycle_dump_path, runPath, fort12Output=["1.0d0", "5.0d0", "10.0d0", "20.0d0", "30.0d0", "50.0d0", "100.0d0", "200.0d0"],):
+def SetKineticParam(normalised_values, _KINETIC_nv, _KINETIC_nx, _KINETIC_ny, dt, kineticTMax, kineticXmax, kineticVmax, cycle_dump_path, runPath, fort12Output=["0.2d0", "0.8d0", "1.0d0", "2.0d0", "3.0d0", "5.0d0", "10.0d0", "15.0d0"],):
     """
     Purpose: Handles the IO side for launching IMPACT. Involves creation of fort files and moving of files and renaming. Furthermore, handles moving of files 
     when IMPACT completes.
@@ -202,7 +202,7 @@ def SetKineticParam(normalised_values, _KINETIC_nv, _KINETIC_nx, _KINETIC_ny, dt
     A = normalised_values["Ar"]
     fort10Param = setFort10.set_fort_10(wpe_over_nuei=wpe_over_nu_ei, c_over_vte=c_over_vte,
                                         atomic_Z=Z, atomic_A=A, nv=_KINETIC_nv, nx=_KINETIC_nx, ny=_KINETIC_ny, dt=dt, tmax=kineticTMax,
-                                        xmax = kineticXmax, do_user_prof_sub=".true.")
+                                        xmax = kineticXmax,vmax=kineticVmax, do_user_prof_sub=".true.")
 
     templating(tmpfilePath=os.environ['BASEDIR'] + '/tmpfort.10',
                writePath=runPath, fileName="fort.10", parameters=fort10Param)
