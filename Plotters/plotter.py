@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 #BASE_DIR_ = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/"
-BASE_DIR_ = "/media/abetharan/DATADRIVE1/Abetharan/data_results/fluid_fixed_nx_varied_kinetic_nx/"
-RUN_NAME_ = "kcub90"
+BASE_DIR_ = "/media/abetharan/DATADRIVE1/Abetharan/"
+RUN_NAME_ = "nloh5"
 RUN_DIR = os.path.join(BASE_DIR_, RUN_NAME_)
 _NO_CYCLES = 3
 another_path = "/home/abetharan/HeadlessHydra/data_out/"
@@ -13,22 +13,22 @@ f = plt.figure(figsize = (20, 20))
 total_time = 0
 nx = 100
 qcycle_path_0 = os.path.join(RUN_DIR, "cycle_1/fluid_input/qe.txt")
-qcycle_path_1 = os.path.join(RUN_DIR, "cycle_20/fluid_input/qe.txt")
-qcycle_path_5 = os.path.join(RUN_DIR, "cycle_30/fluid_input/qe.txt")
-qcycle_path_9 = os.path.join(RUN_DIR, "cycle_40/fluid_input/qe.txt")
+qcycle_path_1 = os.path.join(RUN_DIR, "cycle_2/fluid_input/qe.txt")
+qcycle_path_5 = os.path.join(RUN_DIR, "cycle_3/fluid_input/qe.txt")
+qcycle_path_9 = os.path.join(RUN_DIR, "cycle_4/fluid_input/qe.txt")
 cycle_path_0 = os.path.join(RUN_DIR, "cycle_1/fluid_input/electron_temperature.txt")
-cycle_path_1 = os.path.join(RUN_DIR, "cycle_20/fluid_input/electron_temperature.txt")
-cycle_path_5 = os.path.join(RUN_DIR, "cycle_30/fluid_input/electron_temperature.txt")
-cycle_path_9 = os.path.join(RUN_DIR, "cycle_40/fluid_input/electron_temperature.txt")
+cycle_path_1 = os.path.join(RUN_DIR, "cycle_2/fluid_input/electron_temperature.txt")
+cycle_path_5 = os.path.join(RUN_DIR, "cycle_3/fluid_input/electron_temperature.txt")
+cycle_path_9 = os.path.join(RUN_DIR, "cycle_4/fluid_input/electron_temperature.txt")
 
 #cycle_path_9 = os.path.join(RUN_DIR, "cycle_7/fluid_output/TemperatureE_-1.txt")
 #path1 = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/data_out/TemperatureE_0.txt"
 #path5 = "/Users/shiki/Documents/I                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           mperial_College_London/Ph.D./HeadlessHydra/data_out/TemperatureE_1000.txt"
 #path9 = "/Users/shiki/Documents/Imperial_College_London/Ph.D./HeadlessHydra/data_out/TemperatureE_1999.txt"
-te0 = np.loadtxt(cycle_path_0)
-te1 = np.loadtxt(cycle_path_1) 
-te5 = np.loadtxt(cycle_path_5)
-te9 = np.loadtxt(cycle_path_9)
+te0 = np.loadtxt(cycle_path_0) / 11604
+te1 = np.loadtxt(cycle_path_1)  / 11604
+te5 = np.loadtxt(cycle_path_5) / 11604
+te9 = np.loadtxt(cycle_path_9) / 11604
 qte0 = np.loadtxt(qcycle_path_0)
 qte1 = np.loadtxt(qcycle_path_1) 
 qte5 = np.loadtxt(qcycle_path_5)

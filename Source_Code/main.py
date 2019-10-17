@@ -2,6 +2,27 @@ import os
 import shutil
 import Coupling as cpl
 import TmpFileCreator as tfc
+import IMPACT_COUPLING as impactcouple
+
+class main:
+    """
+    main class i.e. where all objects are passed into and the coupling is run.
+    """
+    def __init__(self, kinetic_nx, kinetic_ny, kinetic_nx, kinetic_np, fluid_nx, cycles)
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
 # simulation domain sizes and number of processors to use
 _KINETIC_nx = 60
 _KINETIC_ny = 1
@@ -40,7 +61,7 @@ else:
 boundaryCondition = "rigid"
 # Set Environement variafbles for compiling
 interpolation_method = "cubic"
-RUN_NAME_ = "Ncubf1"
+RUN_NAME_ = "Ncub18"
 BASE_DIR_ = "/media/abetharan/DATADRIVE1/Abetharan/"
 IMPACT_SRC_DIR_ = "/home/abetharan/IMPACT/src"
 FLUID_SRC_DIR_ = "/home/abetharan/HeadlessHydra/Source_Code/run"
@@ -95,7 +116,7 @@ for i in range(0, _CYCLES, 1):
                               previous_fluid_output_path, previous_kinetic_output_path, interpolator=interpolation_method)
         mode = "couple"
         steps = 0
-        fluidTMax = 1e-12
+        fluidTMax = 10e-12
 
         outputFrequency = round(0.05 * fluidTMax/initialDt)
 

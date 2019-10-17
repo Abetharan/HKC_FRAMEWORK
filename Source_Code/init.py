@@ -281,7 +281,7 @@ def custom_routine(L, nx, nc, temperature, gamma, Z, massNumber):
 
 
 
-    temperatureI = temperatureE
+    temperatureI = 0
 
     return(initial_coord, density, ne, ni, temperatureE, temperatureI, Z, Ar)
 
