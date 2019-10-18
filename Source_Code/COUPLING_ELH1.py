@@ -1,9 +1,12 @@
 import numpy as np 
+import os
 import TmpFileCreator as tfc 
 import subprocess
 import Templating as temple 
+import SetHydroInit as setinit
+from Fluid import Fluid
 
-class Fluid:
+class ELH1(Fluid):
 
     def __init__(self, basedir, nx, laserwavelength, laserpower, 
                 duroflaser, steps, fluidtmax, initialdt,
@@ -13,6 +16,7 @@ class Fluid:
         self._nx = nx
         self._laser_wavelength = laserwavelength
         self._laser_power = laserpower
+        self._laser_loc = "left"
         self._dur_of_laser = duroflaser
         self._nt = steps,
         self._fluid_time_max = fluidtmax
@@ -23,13 +27,29 @@ class Fluid:
         self._fluid_run_path = fluidsrcpath
         self._init_file_path = initpath        
         self._base_dir = basedir
- 
+        self._cq = 2
+        self._cfl = 0.85
+        self._gamma = 5/3
+        self._boundary_condition = boundarycondition
         if self._fluid_time_max == 0:
             self._output_freq = 1
         else:
             self._output_freq = int(percentageoutputfreq * 
                         self._fluid_time_max/self._dt_global_min)
- 
+        
+        self.makeTmpFiles()
+    
+        hydroparam = setinit.set_hydro_init(self._nx, self._cq, self._gamma, self._cfl, self._laser_wavelength,  
+                                            self._laser_power, self._dur_of_laser, self.laser_loc, self._nt, 
+                                            self._fluid_time_max, self._initial_dt, self._dt_global_max, self._dt_global_min, 
+                                            self._output_freq, self._boundary_condition, fluidInitPath, 
+                                            fluidDumpPath, switchPath, FeosPathMaterial1, 
+                                            FeosPathMaterial2)
+
+        # Handling templating to create the init file for fluid code
+        temple.templating(tmpfilePath=os.environ['BASEDIR'] + '/tmpHydroParameterInit.txt',
+                writePath=cycleDumpPath, fileName="HydroParameterInit.txt", parameters=hydroparam)
+
     def setSwitches(self, viscosityon, velocityon, heatconductionon, 
                     exchangeon, bremsstrahlungon, invbremon, 
                     singletemperatureon, mode, multimaterial,
@@ -46,31 +66,34 @@ class Fluid:
         self._multi_material = multimaterial
         self._ideal_gas_mode = idealgas
         self._fully_ionized_mode = fullyionized
+    
+        switches = {
+            'Viscosity': viscosityOn,
+            'Velocity': velocityOn,
+            'HeatConduction': heatConductionOn,
+            'Exchange': exchangeOn,
+            'Bremsstrahlung': bremsstrahlungOn,
+            'InvBremsstrahlung': invBremOn,
+            'IsothermalMode': "false",
+            'AdiabaticMode': "false",
+            'pDvWorkOff': "true",
+            'mode': mode,
+            'SingleTemperature': singleTemperatureOn,
+            'MultiMaterial': MultiMaterial,
+            'IdealGas': IdealGas,
+            'FullyIonized':FullyIonized
+        }
+        templating(tmpfilePath=os.environ['BASEDIR'] + '/tmpFluidSwitch.txt',
+                writePath=cycleDumpPath, fileName="HydroSwitches.txt", parameters=switches)
 
     def makeTmpFiles(self):
         tfc.hydroParameter(self._base_dir)
         tfc.hydroSwitches(self._base_dir)
-
-
-    def execute(self,parameterPath, fluidSrcDir):
-        """  
-        Purpose: Launches Impact and Sets the number of cores
-
-        Args:
-            parameterPath = path where the fluid parameter file is located
-            fluidSrcDir = path to fluid exe
-        """
+    
+    def ELH1Run(self):
         cmd = [fluidSrcDir,'-p',
-                        parameterPath+'/HydroParameterInit.txt']
-        try:
-            subprocess.run(cmd, stderr=subprocess.PIPE)
-        except subprocess.CalledProcessError as e:
-            import sys
-            print(e.output)
-            sys.exit(1)
-
-
-
+                parameterPath+'/HydroParameterInit.txt']
+        Fluid.Execute(cmd)
     def SetFluidParam(self, fluidInitPath, fluidDumpPath, switchPath, FeosPathMaterial1, FeosPathMaterial2, cycleDumpPath):
         """ 
         Purpose: Handles hydro init and creation of init params textfile for HeadlessHydra.
@@ -99,11 +122,3 @@ class Fluid:
         """
 
         # Set Hydro param
-        hydroparam = SetHydro.set_hydro_init(fluidNx, cq, gamma, cfl, laserWavelength,  laserPower,
-                                            durOfLaser, laserLoc, steps, fluidTMax, initialDt, dtGlobalMax, dtGlobalMin, outputFrequency,
-                                            boundaryCondition, fluidInitPath, fluidDumpPath, switchPath, FeosPathMaterial1, FeosPathMaterial2)
-
-        # Handling templating to create the init file for fluid code
-        templating(tmpfilePath=os.environ['BASEDIR'] + '/tmpHydroParameterInit.txt',
-                writePath=cycleDumpPath, fileName="HydroParameterInit.txt", parameters=hydroparam)
-
