@@ -8,117 +8,99 @@ from Fluid import Fluid
 
 class ELH1(Fluid):
 
-    def __init__(self, basedir, nx, laserwavelength, laserpower, 
-                duroflaser, steps, fluidtmax, initialdt,
-                dtglobalmax, dtglobalmin, percentageoutputfreq,
-                boundaycondition, fluidsrcpath, initpath):
-
-        self._nx = nx
-        self._laser_wavelength = laserwavelength
-        self._laser_power = laserpower
+    def __init__(self, IO, nx_, laser_wave_length_, laser_power_, 
+                dur_of_laser_, steps_, fluid_t_max_, initial_dt_,
+                dt_global_max_, dt_global_min_, percentage_output_freq_,
+                bounday_condition_):
+        self._templater = temple.Templating()
+        self._nx = nx_
+        self._laser_wavelength = laser_wave_length_
+        self._laser_power = laser_power_
         self._laser_loc = "left"
-        self._dur_of_laser = duroflaser
-        self._nt = steps,
-        self._fluid_time_max = fluidtmax
-        self._initial_dt = initialdt
-        self._dt_global_max = dtglobalmax
-        self._dt_global_min = dtglobalmin
-        self._output_freq = 0
-        self._fluid_run_path = fluidsrcpath
-        self._init_file_path = initpath        
-        self._base_dir = basedir
+        self._dur_of_laser = dur_of_laser_
+        self._nt = steps_,
+        self._fluid_time_max = fluid_t_max_
+        self._initial_dt = initial_dt_
+        self._dt_global_max = dt_global_max_
+        self._dt_global_min = dt_global_min_
+        self._output_freq = 1
+        self._fluid_src_dir = IO._F_SRC_DIR
+        self._init_file_path = IO.F_INIT_PATH        
+        self._base_dir = IO._BASE_DIR
+        self._switch_path = IO._F_SWITCH_PATH
+        self._out_file_path = IO._F_OUT_PATH
+        self._feos_material_1 = IO._F_FEOS_1_PATH 
+        self._feos_material_2 = IO.F_FEOS_2_PATH
+        self._cycle_dump_path = IO.cycle_dump_path
         self._cq = 2
         self._cfl = 0.85
         self._gamma = 5/3
-        self._boundary_condition = boundarycondition
+        self._boundary_condition = bounday_condition_
         if self._fluid_time_max == 0:
             self._output_freq = 1
         else:
-            self._output_freq = int(percentageoutputfreq * 
+            self._output_freq = int(percentage_output_freq_ * 
                         self._fluid_time_max/self._dt_global_min)
         
+
         self.makeTmpFiles()
     
         hydroparam = setinit.set_hydro_init(self._nx, self._cq, self._gamma, self._cfl, self._laser_wavelength,  
-                                            self._laser_power, self._dur_of_laser, self.laser_loc, self._nt, 
+                                            self._laser_power, self._dur_of_laser, self._laser_loc, self._nt, 
                                             self._fluid_time_max, self._initial_dt, self._dt_global_max, self._dt_global_min, 
-                                            self._output_freq, self._boundary_condition, fluidInitPath, 
-                                            fluidDumpPath, switchPath, FeosPathMaterial1, 
-                                            FeosPathMaterial2)
+                                            self._output_freq, self._boundary_condition, self._init_file_path, 
+                                            self._out_file_path, self._switch_path, self._feos_material_1, 
+                                            self._feos_material_2)
 
         # Handling templating to create the init file for fluid code
-        temple.templating(tmpfilePath=os.environ['BASEDIR'] + '/tmpHydroParameterInit.txt',
-                writePath=cycleDumpPath, fileName="HydroParameterInit.txt", parameters=hydroparam)
+        self._templater.templating(tmpfilePath=self._base_dir + '/tmpHydroParameterInit.txt',
+                writePath=self._cycle_dump_path, fileName="HydroParameterInit.txt", parameters=hydroparam)
 
-    def setSwitches(self, viscosityon, velocityon, heatconductionon, 
-                    exchangeon, bremsstrahlungon, invbremon, 
-                    singletemperatureon, mode, multimaterial,
-                    idealgas, fullyionized):
+    def setSwitches(self, viscosity_on_, velocity_on_, heat_conduction_on_, 
+                    exchange_on_, bremsstrahlung_on_, inv_brem_on_, 
+                    single_temperature_on_, mode_, multi_material_,
+                    ideal_gas_, fully_ionized_):
         
-        self._viscosity = viscosityon
-        self._velocity = velocityon
-        self._heat_conduction = heatconductionon
-        self._exchange = exchangeon
-        self._bremstrahlung = bremsstrahlungon
-        self._inv_brem = invbremon
-        self._single_temp_mode = singletemperatureon
-        self._couple_mode = mode
-        self._multi_material = multimaterial
-        self._ideal_gas_mode = idealgas
-        self._fully_ionized_mode = fullyionized
-    
+        self.viscosity = viscosity_on_
+        self.velocity = velocity_on_
+        self.heat_conduction = heat_conduction_on_
+        self.exchange = exchange_on_
+        self.bremsstrahlung = bremsstrahlung_on_
+        self.inv_brem = inv_brem_on_
+        self.single_temp_mode = single_temperature_on_
+        self.couple_mode = mode_
+        self.multi_material = multi_material_
+        self.ideal_gas_mode = ideal_gas_
+        self.fully_ionized_mode = fully_ionized_
+        self.isothermal_mode = False
+        self.adibatic_mode = False
+        self.p_dv_work_off = False
+        
         switches = {
-            'Viscosity': viscosityOn,
-            'Velocity': velocityOn,
-            'HeatConduction': heatConductionOn,
-            'Exchange': exchangeOn,
-            'Bremsstrahlung': bremsstrahlungOn,
-            'InvBremsstrahlung': invBremOn,
-            'IsothermalMode': "false",
-            'AdiabaticMode': "false",
-            'pDvWorkOff': "true",
-            'mode': mode,
-            'SingleTemperature': singleTemperatureOn,
-            'MultiMaterial': MultiMaterial,
-            'IdealGas': IdealGas,
-            'FullyIonized':FullyIonized
+            'Viscosity' : self.viscosity,
+            'Velocity' : self.velocity,
+            'HeatConduction' : self.heat_conduction,
+            'Exchange' : self.exchange,
+            'Bremsstrahlung' : self.bremsstrahlung,
+            'InvBremsstrahlung' : self.inv_brem,
+            'IsothermalMode' : self.isothermal_mode,
+            'AdiabaticMode' : self.adibatic_mode,
+            'pDvWorkOff' : self.p_dv_work_off,
+            'mode' : self.couple_mode,
+            'SingleTemperature' : self.single_temp_mode,
+            'MultiMaterial' : self.multi_material,
+            'IdealGas' : self.ideal_gas_mode,
+            'FullyIonized':self.fully_ionized_mode
         }
-        templating(tmpfilePath=os.environ['BASEDIR'] + '/tmpFluidSwitch.txt',
-                writePath=cycleDumpPath, fileName="HydroSwitches.txt", parameters=switches)
-
+        self._templater.templating(tmpfilePath= self._base_dir + '/tmpFluidSwitch.txt',
+                writePath=self._cycle_dump_path, fileName="HydroSwitches.txt", parameters=switches)
+   
     def makeTmpFiles(self):
         tfc.hydroParameter(self._base_dir)
         tfc.hydroSwitches(self._base_dir)
     
     def ELH1Run(self):
-        cmd = [fluidSrcDir,'-p',
-                parameterPath+'/HydroParameterInit.txt']
-        Fluid.Execute(cmd)
-    def SetFluidParam(self, fluidInitPath, fluidDumpPath, switchPath, FeosPathMaterial1, FeosPathMaterial2, cycleDumpPath):
-        """ 
-        Purpose: Handles hydro init and creation of init params textfile for HeadlessHydra.
-        Args:
-        fluidNx = number of grid points.
-        atomicAr  = Mass Number of material
-        atomicZ = Ionisation state(fully ionized gas atm so it will just be its atomic number)
-        cq = Von-Neumann Richtmyer zonal spread number
-        gamma = Gas constant
-        cfl = PLACEHOLDER NOT IN USE ANYMORE ... DEFAULT TO 0.85
-        laserWavelength = Wavelength of laser in m
-        laserPower = Power of laser in W
-        durOfLaser = Duration of laser in s
-        laserLoc = Direction that laser strikes from if left laser goes left -> right vice versa.
-        steps = number of steps.
-        fluidTMax = Time maximum
-        initialDt = initial step size in t
-        dtGlobalMax = Max step size
-        dtGlobalMin = Min step size
-        outputFrequency = Frequency of dumping data files
-        boundaryCondition = Boundary conditions for velocity
-        fluidInitPath = Fluid Initialisation files locations
-        fluidDumpPath = Fluid Dumping path
-        switchPath = path to txt file containin switches.
-        cycleDumpPath = Dump path for coupling cycle
-        """
-
-        # Set Hydro param
+        cmd = [self._fluid_src_dir,'-p',
+                self._cycle_dump_path+'/HydroParameterInit.txt']
+        super().Execute(cmd)
+    

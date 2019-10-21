@@ -3,9 +3,6 @@ from IO import IO
 
 class Templating:
 
-    def __init__(self, IO):
-        d = 1
-
     def templating(self, tmpfilePath, writePath, fileName, parameters):
         """
         Purpose: Handles the creation and templating of files.

@@ -40,3 +40,4 @@ def setEnvVar(nx, ny, nv, np, runName, srcDir, baseDir = None):
     os.environ["NYM"] =  str(ny)
     # ...  Text output behaviour  ...
     os.environ["TEXTOUTPUT_TO_STDOUT_ROOT "]    = "1"
+    return(os.environ['BASEIDR']+os.environ['RUN']+'/')
