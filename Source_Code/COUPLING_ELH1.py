@@ -11,9 +11,10 @@ class ELH1(Fluid):
     def __init__(self, IO, nx_, laser_wave_length_, laser_power_, 
                 dur_of_laser_, steps_, fluid_t_max_, initial_dt_,
                 dt_global_max_, dt_global_min_, percentage_output_freq_,
-                bounday_condition_):
+                bounday_condition_, initialise_start_files_run_ = True):
         self._templater = temple.Templating()
         self._nx = nx_
+        self._f_io_obj = IO
         self._laser_wavelength = laser_wave_length_
         self._laser_power = laser_power_
         self._laser_loc = "left"
@@ -25,12 +26,11 @@ class ELH1(Fluid):
         self._dt_global_min = dt_global_min_
         self._output_freq = 1
         self._fluid_src_dir = IO._F_SRC_DIR
-        self._init_file_path = IO.F_INIT_PATH        
+        self._init_file_path = IO.fluid_input_path       
         self._base_dir = IO._BASE_DIR
-        self._switch_path = IO._F_SWITCH_PATH
-        self._out_file_path = IO._F_OUT_PATH
+        self._out_file_path = IO.fluid_output_path
         self._feos_material_1 = IO._F_FEOS_1_PATH 
-        self._feos_material_2 = IO.F_FEOS_2_PATH
+        self._feos_material_2 = IO._F_FEOS_2_PATH
         self._cycle_dump_path = IO.cycle_dump_path
         self._cq = 2
         self._cfl = 0.85
@@ -44,7 +44,12 @@ class ELH1(Fluid):
         
 
         self.makeTmpFiles()
-    
+        self.setSwitches()    
+        if initialise_start_files_run_:
+            self.setSwitches(mode_='free')
+            self._nt = 1
+            self._laser_power = 0            
+            
         hydroparam = setinit.set_hydro_init(self._nx, self._cq, self._gamma, self._cfl, self._laser_wavelength,  
                                             self._laser_power, self._dur_of_laser, self._laser_loc, self._nt, 
                                             self._fluid_time_max, self._initial_dt, self._dt_global_max, self._dt_global_min, 
@@ -56,10 +61,13 @@ class ELH1(Fluid):
         self._templater.templating(tmpfilePath=self._base_dir + '/tmpHydroParameterInit.txt',
                 writePath=self._cycle_dump_path, fileName="HydroParameterInit.txt", parameters=hydroparam)
 
-    def setSwitches(self, viscosity_on_, velocity_on_, heat_conduction_on_, 
-                    exchange_on_, bremsstrahlung_on_, inv_brem_on_, 
-                    single_temperature_on_, mode_, multi_material_,
-                    ideal_gas_, fully_ionized_):
+    def setSwitches(self, viscosity_on_ = True, velocity_on_ = True, 
+                    heat_conduction_on_ = True, exchange_on_ = False,
+                    bremsstrahlung_on_ = False, inv_brem_on_ = False, 
+                    single_temperature_on_ = False, multi_material_ = False,
+                    ideal_gas_ = True, fully_ionized_ = True, mode_ = 'couple'):
+                
+
         
         self.viscosity = viscosity_on_
         self.velocity = velocity_on_
@@ -94,7 +102,8 @@ class ELH1(Fluid):
         }
         self._templater.templating(tmpfilePath= self._base_dir + '/tmpFluidSwitch.txt',
                 writePath=self._cycle_dump_path, fileName="HydroSwitches.txt", parameters=switches)
-   
+        self._switch_path = os.path.join(self._cycle_dump_path,"HydroSwitches.txt")
+    
     def makeTmpFiles(self):
         tfc.hydroParameter(self._base_dir)
         tfc.hydroSwitches(self._base_dir)

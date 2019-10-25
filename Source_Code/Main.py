@@ -1,21 +1,55 @@
 import os
 import shutil
-import Coupling as cpl
 import TmpFileCreator as tfc
 import COUPLING_ELH1 as elh1
 import COUPLING_IMPACT as impact
 import IO as io
 import Templating as temple
 import Material as material
-import impact_norms_py3 as norms
+
+def mapBitToChar(im, col, row):
+    if im.getpixel((col, row)): return ' '
+    else: return '#'
+
+def prettyprint(text):
+    length_to_print = 100 + len(text)
+    print("#"*length_to_print)
+    print('\033[1m' + '#'*50 + text +'#'*50 + '\033[0m')
+    print('\n')   
 
 class main:
     """
     main class i.e. where all objects are passed into and the coupling is run.
     """
-    base_dir = "/media/abetharan/DATADRIVE1/Abetharan/"
+    #OPTIONS ARE SOL-KiT(1D NO B-field but e-e anisotropy)/IMPACT(2D with B no e-e anisotropy)
+    _SWITCH_KINETIC_CODE = "IMPACT"
+    _SWITCH_HYDRO_CODE = "ELH1"
+
+    from PIL import Image, ImageFont, ImageDraw
+    ShowText = 'COUPLING ' + _SWITCH_HYDRO_CODE + '-' + _SWITCH_KINETIC_CODE
+
+    font = ImageFont.load_default().font #load the font
+    font = ImageFont.truetype("/home/abetharan/Downloads/arial.ttf",15)
+    size = font.getsize(ShowText)  #calc the size of text in pixels
+    image = Image.new('1', size, 1)  #create a b/w image
+    draw = ImageDraw.Draw(image)
+    draw.text((0, 0), ShowText, font=font) #render the text to the bitmap
+    for rownum in range(size[1]): 
+    #scan the bitmap:
+    # print ' ' for black pixel and 
+    # print '#' for white one
+        line = []
+        for colnum in range(size[0]):
+            if image.getpixel((colnum, rownum)): line.append(' '),
+            else: line.append('#'),
+        print(''.join(line))
+    #for r in range(size[1]):
+    #    print(''.join([mapBitToChar(image, c, r) for c in range(size[0])]))
+
+    print('\n')   
+    base_dir = "/home/abetharan/test/"
     k_src_dir = "/home/abetharan/IMPACT/src"
-    run_name = "Ncub18"
+    run_name = "kap"
     k_nx = 60  
     k_ny = 1
     k_nv = 120
@@ -34,11 +68,10 @@ class main:
     Te = 1000
     ne = 1e27
     Bz = 0
-    normalisation = norms.impact_inputs(ne, Te, Z, Ar, Bz)
 
     # Fluid initial parameters
     f_init_path ="/media/abetharan/DATADRIVE1/Abetharan/Results/fixed_nx/Ncub60/cycle_0/fluid_input/"     
-    f_src_dir = "/home/abetharan/HeadlessHydra/Source_Code/run"
+    f_src_dir = "/home/abetharan/HeadlessHydra/Source_Code/ELH1"
 
     f_nx =60
     f_cq = 2
@@ -57,18 +90,48 @@ class main:
     f_feos_path_2 = None
     f_output_freq = 1
     f_boundary_condition = "rigid"
+    f_initialise_start_file_run = True
+    initialise_all_folders = True
 
     for cycle_no in range(cycles):
+        
+        if cycle_no > 1:
+            f_initialise_start_file_run = False
+            initialise_all_folders = False
 
-        io_obj = io.IO(base_dir, k_src_dir, run_name, f_src_dir, f_init_path,f_feos_path_1, f_feos_path_2, cycle_no)
+        io_obj = io.IO(base_dir, k_src_dir, run_name, f_src_dir, f_init_path,f_feos_path_1, f_feos_path_2, cycle_no, initialise_all_folders, cycles)
+        if cycle_no == 0:
+            io_obj.copyFluidInit(f_init_path)
 
-        impact_obj = impact.IMPACT(io_obj, normalisation, k_np, k_nv, k_nx, k_ny, k_dt, k_t_max, k_x_max, k_v_max)
-
+        prettyprint(' RUNNING ' + _SWITCH_HYDRO_CODE)
         elh1_obj = elh1.ELH1(io_obj, f_nx, f_laser_wavelength, f_laser_power, f_dur_of_laser, 
                              f_steps, f_fluid_t_max, f_initial_dt, f_dt_global_max, f_dt_global_min,
-                             f_output_freq, f_boundary_condition)
+                             f_output_freq, f_boundary_condition, f_initialise_start_file_run )
+        elh1_obj.ELH1Run()
 
+        impact_obj = impact.IMPACT(io_obj, k_np, k_nv, k_nx, k_ny, k_dt, k_t_max, k_x_max, k_v_max)
+
+        if cycle_no < 1:
+            #Find normalisation and prepare IMAPCT for compiling and compile.
+            prettyprint(' COMPILING' + _SWITCH_KINETIC_CODE)
+            norms = impact_obj.normalised_values(calc = True, ne_ = ne, Te_ = Te, Z_ = Z, Ar_ = Ar,  Bz_ = 0)
+            impact_obj.setEnvVar()
+            impact_obj.SetIMPACTParam()
+            impact_obj.IMPACTCompile()            
+        else:
+            norms = impact_obj.normalised_values(calc = False)
+
+        prettyprint(' CONVERT ' + _SWITCH_HYDRO_CODE + 'TO ' + _SWITCH_KINETIC_CODE + 'COMPATIBLE ')
+        #Convert ELH1 output to IMPACT Fortmat
+        impact_obj.TxtToImpact()        
+
+        #RUN IMPACT
+        prettyprint(' RUN ' + _SWITCH_KINETIC_CODE )
+        impact_obj.IMPACTRun()
         
+        prettyprint(' CONVERT ' + _SWITCH_KINETIC_CODE + 'TO ' + _SWITCH_HYDRO_CODE + 'COMPATIBLE ')
+        #Convert IMPACT FILES To ELH1 readable files
+        impact_obj.ImpactToTxt()
 
 
 
