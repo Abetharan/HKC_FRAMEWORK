@@ -38,10 +38,11 @@ IsothermalMode=$IsothermalMode
 AdiabaticMode=$AdiabaticMode
 pDvWorkOff=$pDvWorkOff
 mode=$mode
-SingleTemperature=$mode
+SingleTemperature=$SingleTemperature
 MultiMaterial=$MultiMaterial
 IdealGas=$IdealGas
 FullyIonized=$FullyIonized
+CreateOutputFolder=false
     """
     kappa = open(runPath + "/tmpFluidSwitch.txt", "w")
     kappa.write(writeStatement)
@@ -51,9 +52,9 @@ def impactOutputformat(cyclePath):
     writeStatement = """Version:2
 0
 2
-$leadingDim
+$leadingdim
 $maxparam
-$Len     
+$len     
 $xlist\n
 $arraylist
 """
@@ -155,7 +156,7 @@ def impactFort10(runPath):
 
     do_out_data_compress = .false.
     op_time_mon_skip     = 10000
-    op_restart_freq      = 100
+    op_restart_freq      = $op_restart_freq
     $end
     """
 
@@ -207,7 +208,7 @@ c (31/07/17) RK
       character*60 ip_bname
       character*61 dir 
       character*61 cycle
-      character*120 fname_tmp
+      character*200 fname_tmp
 c (05/03/19) AA 
 c      parameter( dir = '/home/abetharan/IMPACT/RUNS/A6_INITIAL_DATA/')
 c      parameter( cycle = 'cycle_1/')

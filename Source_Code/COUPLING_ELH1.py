@@ -47,7 +47,7 @@ class ELH1(Fluid):
         self.setSwitches()    
         if initialise_start_files_run_:
             self.setSwitches(mode_='free')
-            self._nt = 1
+            self._nt = 0
             self._laser_power = 0            
             
         hydroparam = setinit.set_hydro_init(self._nx, self._cq, self._gamma, self._cfl, self._laser_wavelength,  
@@ -85,20 +85,20 @@ class ELH1(Fluid):
         self.p_dv_work_off = False
         
         switches = {
-            'Viscosity' : self.viscosity,
-            'Velocity' : self.velocity,
-            'HeatConduction' : self.heat_conduction,
-            'Exchange' : self.exchange,
-            'Bremsstrahlung' : self.bremsstrahlung,
-            'InvBremsstrahlung' : self.inv_brem,
-            'IsothermalMode' : self.isothermal_mode,
-            'AdiabaticMode' : self.adibatic_mode,
-            'pDvWorkOff' : self.p_dv_work_off,
-            'mode' : self.couple_mode,
-            'SingleTemperature' : self.single_temp_mode,
-            'MultiMaterial' : self.multi_material,
-            'IdealGas' : self.ideal_gas_mode,
-            'FullyIonized':self.fully_ionized_mode
+            'Viscosity' : str(self.viscosity).lower(),
+            'Velocity' : str(self.velocity).lower(),
+            'HeatConduction' : str(self.heat_conduction).lower(),
+            'Exchange' : str(self.exchange).lower(),
+            'Bremsstrahlung' : str(self.bremsstrahlung).lower(),
+            'InvBremsstrahlung' : str(self.inv_brem).lower(),
+            'IsothermalMode' : str(self.isothermal_mode).lower(),
+            'AdiabaticMode' : str(self.adibatic_mode).lower(),
+            'pDvWorkOff' : str(self.p_dv_work_off).lower(),
+            'mode' : str(self.couple_mode).lower(),
+            'SingleTemperature' : str(self.single_temp_mode).lower(),
+            'MultiMaterial' : str(self.multi_material).lower(),
+            'IdealGas' : str(self.ideal_gas_mode).lower(),
+            'FullyIonized':str(self.fully_ionized_mode).lower()
         }
         self._templater.templating(tmpfilePath= self._base_dir + '/tmpFluidSwitch.txt',
                 writePath=self._cycle_dump_path, fileName="HydroSwitches.txt", parameters=switches)

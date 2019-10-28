@@ -57,7 +57,8 @@ nonlin_tol = "1.0d-12",
 nonlin_itmax = "25",
 CCee0_00_its_delta = "10",
 initial_cond_rel_dt = "1.0d-2",
-initial_cond_nt = 2):
+initial_cond_nt = 2,
+op_restart_freq = 100):
 
     kappa = {
     'user_inp' : "$user_inp",
@@ -119,6 +120,7 @@ initial_cond_nt = 2):
     'CCee0_00_its_delta': CCee0_00_its_delta,
     'initial_cond_rel_dt': initial_cond_rel_dt,
     'initial_cond_nt': initial_cond_nt,
+    'op_restart_freq':op_restart_freq,
     'end' : "$end"
     }
     return(kappa)

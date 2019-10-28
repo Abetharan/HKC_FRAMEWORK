@@ -13,7 +13,7 @@
 #--------------------------------------------------------------------------------
 
 #-----  ESSENTIAL variables  -----
-#set RUN="kappa"
+#set RUN="kap"
 ## laptop
 #set SRCDIR="${HOME}/IMPACT/src"
 #set BASEDIR="`pwd`"
@@ -58,7 +58,7 @@ echo "NYM = ${NYM}"
 #set SMT_PC_COLS_ON = 0
 #set NP  =  36
 #set NP  =  24
-#set NP  =   1
+#set NP  =   5
 #set NVM = 10
 ##set NXM =   6 ## Set for 36 Cores
 #set NXM =   9

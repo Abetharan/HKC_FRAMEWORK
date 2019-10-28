@@ -23,13 +23,14 @@ class IO:
         self.kinetic_output_path = None
         self.next_fluid_input_path = None
 
-        self.__OVERWRITE_OK = False
+        self.__OVERWRITE_OK = True
         self.preserved_cycle_path = []
         self.preserved_fluid_input_path = []
         self.preserved_fluid_output_path = []  
         self.preserved_kinetic_input_path = []
         self.preserved_kinetic_output_path = []
-        self.setPaths()
+        #self.setPaths()
+        self.nextCyclePathManager()
         if initialise_all_folders_:
             if len(arg) > 1:
                 print("Only one entry allowed which is Number of cycles. Try again")
@@ -49,7 +50,6 @@ class IO:
         self.fluid_output_path = os.path.join(self.cycle_dump_path + "/FLUID_OUTPUT/")
         self.kinetic_input_path = os.path.join(self.cycle_dump_path + "/KINETIC_INPUT/")
         self.kinetic_output_path = os.path.join(self.cycle_dump_path + "/KINETIC_OUTPUT/")
-        self._F_OUT_PATH = self.fluid_output_path
 
     def copyFluidInit(self,f_init_path_):
         print("#"*100)
@@ -62,6 +62,7 @@ class IO:
         print("#"*100)
         print('\033[1m' + '#'*50 + ' CREATING ALL FOLDERS ' + '#'*50 + '\033[0m')
         print('\n')
+        path_exists = False
         if os.path.exists(self._RUN_PATH):
             path_exists = True
             if self.__OVERWRITE_OK:
@@ -127,7 +128,7 @@ class IO:
         self.kinetic_input_path = os.path.join(self.cycle_dump_path + "/kinetic_input/")
         self.kinetic_output_path = os.path.join(self.cycle_dump_path + "/kinetic_output/")
         self.next_fluid_input_path = os.path.join(self._RUN_PATH + "cycle_" + str(self.cycle_counter + 1), "/fluid_input/")
-        
+        self._F_OUT_PATH = self.fluid_output_path
         if not os.path.exists(self.next_fluid_input_path):
             import sys
             print("NEXT FLUID PATH HAS NOT BEEN CREATED")

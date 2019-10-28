@@ -3,7 +3,7 @@ import os
 import fnmatch
 import string
 import subprocess
-import shutil
+import shutil 
 from scipy import constants
 import TmpFileCreator as tfc
 import SetFort10Param as sf10p
@@ -21,17 +21,18 @@ e = constants.value("elementary charge")
 
 class IMPACT(Kinetic):
         
-    def __init__(self, IO, np_, nv_, nx_, ny_, dt_, t_max_, x_max_, v_max_,
+    def __init__(self, IO, np_, nv_, nx_, ny_, dt_, t_max_, x_max_, v_max_, restart_freq_,
                     fort12Output=["0.2d0", "0.8d0", "1.0d0", "2.0d0", "3.0d0", "5.0d0", "10.0d0", "15.0d0"], unit_check = False):
         
         self._Kinetic = Kinetic()
-        self._templater = Templating(IO) 
+        self._templater = Templating() 
         self._kinetic_io_obj = IO
         self._run_name = IO._RUN_NAME
         self._run_path = IO._RUN_PATH
         self._base_dir = IO._BASE_DIR
         self._src_dir = IO._K_SRC_DIR
-        self._cycle_path = IO._cycle_path
+        self._fluid_output_path = IO.fluid_output_path
+        self._cycle_path = IO.cycle_dump_path
         self._nv = nv_
         self._nx = nx_
         self._ny = ny_
@@ -40,6 +41,7 @@ class IMPACT(Kinetic):
         self._x_max = x_max_
         self._v_max = v_max_
         self._np = np_
+        self._restart_freq = restart_freq_
         self.normalised_values = None
         self._fort12Output = fort12Output
         self.makeTmpFiles()
@@ -72,11 +74,28 @@ class IMPACT(Kinetic):
         tfc.impactUserCustom(self._run_path)
         tfc.impactOutputformat(self._cycle_path)
 
-    def createFort12String(self):
-        timeArray = [len(self._fort12Output)] + self._fort12Output
-        strTimeArray = [str(i) for i in timeArray]
-        strTimes = """ {} """.format("\n".join(strTimeArray))
-        return(strTimes)
+    def createFort14(self):
+    
+        fort14 = """$user_gra_sel
+        op_save_on(20,1) = 1
+        op_save_on(20,3) = 1
+        op_save_on(21,3) = 1
+        op_save_on(22,3) = 1
+        op_save_on(23,3) = 1
+        op_save_on(24,3) = 1
+        op_save_on(33,3) = 1
+        $end 
+        """
+        
+        file14 = open(os.path.join(self._run_path, 'fort.14'), 'w')
+        file14.write(fort14)
+
+    def createFort12(self):
+        time_array = [len(self._fort12Output)] + self._fort12Output
+        str_time_array = [str(i) for i in time_array]
+        str_times = """ {} """.format("\n".join(str_time_array))
+        file12 = open(os.path.join(self._run_path, 'fort.12'), 'w')
+        file12.write(str_times)
 
     def SetIMPACTParam(self):
         """
@@ -101,15 +120,12 @@ class IMPACT(Kinetic):
         A = self.normalised_values["Ar"]
         fort10Param = sf10p.set_fort_10(wpe_over_nuei=wpe_over_nu_ei, c_over_vte=c_over_vte,
                                             atomic_Z=Z, atomic_A=A, nv= self._nv,nx =self._nx, ny=self._ny, dt=self._dt, tmax=self._t_max,
-                                            xmax = self._x_max,vmax=self._v_max, do_user_prof_sub=".true.")
+                                            xmax = self._x_max,vmax=self._v_max, do_user_prof_sub=".true.", op_restart_freq = self._restart_freq)
 
-        self._templater.templating(tmpfilePath= self._base_dir + '/tmpfort.10',
+        self._templater.templating(tmpfilePath= self._run_path + '/tmpfort.10',
                 writePath=self._run_path, fileName="fort.10", parameters=fort10Param)
-
-        fort12TimeStr = self.createFort12String()
-
-        fg.fort_generator(self._run_path, fort12TimeStr)
-
+        self.createFort12()
+        self.createFort14()
     
     def IMPACTCompile(self):
         """  
@@ -118,20 +134,27 @@ class IMPACT(Kinetic):
         Args:
             self._run_path = Path where IMPACT looks for reference files 
         """
-        self._run_path = os.environ['RUN']
         # Copy and Rename custom functions to run directory
-        shutil.copyfile(os.environ["BASEDIR"] + "/heating.f",
-                        self._run_path + "/" + self._run_name + "_heating.f")
-        shutil.copyfile(os.environ["BASEDIR"] + "/control.dat.dummy",
-                        self._run_path + "/fp2df1_control.dat.dummy")
-        custom_param = {'PATH': "\'" + self._run_path +
-                        "\'", 'RUNNAME': "\'" + self._run_path + "\'"}
-        self._templater.templating(tmpfilePath=self._base_dir + '/user_custom.f', writePath=self._run_path,
-                fileName=self._run_path + "_user_custom.f", parameters=custom_param)
-        self._templater.templating(tmpfilePath=self._base_dir + '/prof.f', writePath=self._run_path,
-                fileName=self._run_path + "_prof.f", parameters=custom_param)
+        shutil.copyfile(os.path.join(self._run_path, "heating.f"),
+                        os.path.join(self._run_path, self._run_name + "_heating.f"))
+        shutil.copyfile(os.path.join(self._run_path, "control.dat.dummy"),
+                        os.path.join(self._run_path, "fp2df1_control.dat.dummy"))
+        
+        custom_param = {'PATH': "\'" + self._cycle_path +
+                        "\'", 'RUNNAME': "\'/" + self._run_name + "\'"}
+        
+        self._templater.templating(tmpfilePath= os.path.join(self._run_path, 'user_custom.f'), writePath=self._run_path,
+                fileName=self._run_name + "_user_custom.f", parameters=custom_param)
+        
+        self._templater.templating(tmpfilePath=os.path.join(self._run_path, 'prof.f'), writePath=self._run_path,
+                fileName=self._run_name + "_prof.f", parameters=custom_param)
         # Start Coupling sequence
         # os.system('./fp2df1_compile_run.sh')
+        os.remove(os.path.join(self._run_path, "heating.f"))
+        os.remove(os.path.join(self._run_path, "control.dat.dummy"))
+        os.remove(os.path.join(self._run_path, 'user_custom.f'))
+        os.remove(os.path.join(self._run_path, 'prof.f'))
+        os.remove(os.path.join(self._run_path, "tmpfort.10"))
         if(os.path.basename(os.path.normpath(os.getcwd())) == "Source_Code"):
             os.system('./hydra_kappa.sh')
         else:                
@@ -186,13 +209,13 @@ class IMPACT(Kinetic):
         
         # Convert to SI from Impact Norms
         var = "qxX"
-        timeStep = self.findLastIndex(self._kinetic_io_obj.previous_kinetic_output_path, var, "kinetic")
+        timeStep = self.findLastIndex(self._run_path, var, "kinetic")
         runName = "default"
         #runName = os.environ['RUN']
         if timeStep < 10:
             time_step = "0" + str(timeStep)
 
-        varArrays = cf.load_dict(self._kinetic_io_obj.previous_kinetic_output_path,
+        varArrays = cf.load_dict(self._run_path,
                                 runName, var, str(time_step), iter_number=None)
         varList = varArrays['mat'][:]
         #outputVar = "electron_heat_flow"
@@ -222,53 +245,23 @@ class IMPACT(Kinetic):
         mass = np.loadtxt(self._kinetic_io_obj.fluid_input_path + "/mass.txt")        
         electronheatflow= Heatflow(qe, mass)
         
-        np.savetxt(os.path.join(self._kinetic_io_obj.next_fluid_input_path, "qe.txt"), electronheatflow)    
+        np.savetxt(os.path.join(self._kinetic_io_obj.next_fluid_input_path, "/qe.txt"), electronheatflow)    
 
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "/Coord_" + str(LargestIndex) +".txt")    
+        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "CELL_WALL_X/x_cell_wall_" + str(LargestIndex) +".txt")    
                                         ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"coord.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "/Velocity_" + str(LargestIndex) +".txt") 
+        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "VELOCITY/Velocity_" + str(LargestIndex) +".txt") 
                                         ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"velocity.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "/Density_" + str(LargestIndex) +".txt")  
+        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "DENSITY/Density_" + str(LargestIndex) +".txt")  
                                         ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"density.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "/NumberDensityE_" + str(LargestIndex) +".txt") 
-                                        ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"ne.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "/NumberDensityI_" + str(LargestIndex) +".txt") 
-                                        ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"ni.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "/TotalPressure_" + str(LargestIndex) +".txt")  
-                                        ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"total_pressure.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "/PressureI_" + str(LargestIndex) +".txt")   
-                                        ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"ion_pressure.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "/PressureE_" + str(LargestIndex) +".txt")   
-                                        ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"electron_pressure.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "/TemperatureE_" + str(LargestIndex) +".txt")
+        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "ELECTRON_TEMPERATURE/Te_" + str(LargestIndex) +".txt")
                                         ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"electron_temperature.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "/TemperatureI_" + str(LargestIndex) +".txt")
+        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "ION_TEMPERATURE/Ti_" + str(LargestIndex) +".txt")
                                         ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"ion_temperature.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "/InternalEnergyE_" + str(LargestIndex) +".txt")
-                                        ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"electron_internal_energy.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "/InternalEnergyI_" + str(LargestIndex) +".txt")
-                                        ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"ion_internal_energy.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "/DpDtE_" + str(LargestIndex) +".txt")   
-                                        ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"electron_dp_dt.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "/DpDtI_" + str(LargestIndex) +".txt")   
-                                        ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"ion_dp_dt.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "/SpecificHeatE_" + str(LargestIndex) +".txt") 
-                                    ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"electron_specific_heat.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "/SpecificHeatI_" + str(LargestIndex) +".txt") 
-                                    ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"ion_specific_heat.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_input_path + "/mass.txt")
+        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_input_path + "MASS/Mass_.txt")
                                         ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"mass.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "/InverseBrem_" + str(LargestIndex) +".txt")       
-                                        ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"inv_brem.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "/Brem_" + str(LargestIndex) +".txt")              
-                                        ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"brem.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "/Exchange_" + str(LargestIndex) +".txt")          
-                                        ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"exchange.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "/HeatConductionI_" + str(LargestIndex) +".txt")   
-                                        ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"qi.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "/Zbar_" + str(LargestIndex) +".txt")
+        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "ZBAR/Zbar_" + str(LargestIndex) +".txt")
                                         ,os.path.join(self._kinetic_io_obj.next_fluid_input_path, "Z.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "/Ar_" + str(LargestIndex) +".txt")  
+        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "MASS_NUMBER/Ar_" + str(LargestIndex) +".txt")  
                                     ,os.path.join(self._kinetic_io_obj.next_fluid_input_path, "Ar.txt"))
         
     def findLastIndex(self, path, var, which):
@@ -322,10 +315,10 @@ class IMPACT(Kinetic):
             maxparam = "0.000000000000000e+00"
             length = len(coord_)
             template_swap_dict = {'leadingdim': leadingdim, 'maxparam': maxparam, 'len': length, 'xlist': ' '.join(str(coo) for coo in coord_),
-                                'arraylist': '\n'.join(str(var_) for var in var_data_)}
+                                'arraylist': '\n'.join(str(var) for var in var_data_)}
 
         tmp_file_in = open(tmp_file_location_)
-        src = Template(tmp_file_in.read())
+        src = string.Template(tmp_file_in.read())
         result = src.substitute(template_swap_dict)
         open_file_.write(result)
         open_file_.close()
@@ -335,23 +328,23 @@ class IMPACT(Kinetic):
 
     def TxtToImpact(self):
 
-        lastIndex = self.findLastIndex(self._kinetic_io_obj.fluid_output_path, "Coord", "fluid")
-        f_x_grid = np.loadtxt(self._kinetic_io_obj.f_output_path + "/x_grid_cell_wall_" + str(lastIndex) + ".txt")
-        f_x_centered_grid = np.loadtxt(self._kinetic_io_obj.f_output_path + "/x_grid_cell_centered_" + str(lastIndex) + ".txt")
-        f_v = np.loadtxt(self._kinetic_io_obj.f_output_path + "/Velocity_" + str(lastIndex) + ".txt")
+        lastIndex = self.findLastIndex(os.path.join(self._fluid_output_path, "CELL_WALL_X"), "Cell_Centre_X", "fluid")
+        f_x_grid = np.loadtxt(self._fluid_output_path + "CELL_WALL_X/Cell_Wall_X_" + str(lastIndex) + ".txt")
+        f_x_centered_grid = np.loadtxt(self._fluid_output_path + "CELL_CENTRE_X/Cell_Centre_X_" + str(lastIndex) + ".txt")
+        f_v = np.loadtxt(self._fluid_output_path + "VELOCITY/Velocity_" + str(lastIndex) + ".txt")
         f_ne = np.loadtxt(
-                self._kinetic_io_obj.f_output_path + "/NumberDensityE_" + str(lastIndex) + ".txt")
+                self._fluid_output_path + "ELECTRON_NUMBER_DENSITY/Ne_" + str(lastIndex) + ".txt")
         f_ni = np.loadtxt(
-                self._kinetic_io_obj.f_output_path + "/NumberDensityI_" + str(lastIndex) + ".txt")
+                self._fluid_output_path + "ION_NUMBER_DENSITY/Ni_" + str(lastIndex) + ".txt")
         f_Te = np.loadtxt(
-             self._kinetic_io_obj.f_output_path + "/TemperatureE_" + str(lastIndex) + ".txt")
+             self._fluid_output_path + "ELECTRON_TEMPERATURE/Te_" + str(lastIndex) + ".txt")
         f_laser = np.loadtxt(
-            self._kinetic_io_obj.f_output_path + "/InverseBrem_" + str(lastIndex) + ".txt")
-        f_brem = np.loadtxt(self._kinetic_io_obj.f_output_path + "/Brem_" + str(lastIndex) + ".txt")
+            self._fluid_output_path + "INVERSE_BREM/Inverse_Brem_" + str(lastIndex) + ".txt")
+        f_brem = np.loadtxt(self._fluid_output_path + "BREM/Brem_" + str(lastIndex) + ".txt")
         f_density = np.loadtxt(
-            self._kinetic_io_obj.f_output_path + "/Density_" + str(lastIndex) + ".txt")
-        f_Z = np.loadtxt(self._kinetic_io_obj.f_output_path + "/Zbar_" + str(lastIndex) + ".txt")
-        f_Ar = np.loadtxt(self._kinetic_io_obj.f_output_path + "/Ar_" + str(lastIndex) + ".txt")
+            self._fluid_output_path + "DENSITY/Density_" + str(lastIndex) + ".txt")
+        f_Z = np.loadtxt(self._fluid_output_path + "ZBAR/Zbar_" + str(lastIndex) + ".txt")
+        f_Ar = np.loadtxt(self._fluid_output_path + "MASS_NUMBER/Ar_" + str(lastIndex) + ".txt")
 
         # Energy normlisation
         Un = me * self.normalised_values['vte']**2 * \
@@ -448,7 +441,8 @@ class IMPACT(Kinetic):
 
         if self._run_unit_test:
             unit_tester = f_x_centered_grid
-
+        else:
+            unit_tester = None
         self.ImpactFileWriteFormat(self._cycle_path + "/tmpWrite.txt",
                         impactNeFile, IMPACT_x_grid, IMPACT_ne, "ne", unit_tester)
         self.ImpactFileWriteFormat(self._cycle_path + "/tmpWrite.txt",
