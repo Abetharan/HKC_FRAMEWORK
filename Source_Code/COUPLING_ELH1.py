@@ -19,7 +19,7 @@ class ELH1(Fluid):
         self._laser_power = laser_power_
         self._laser_loc = "left"
         self._dur_of_laser = dur_of_laser_
-        self._nt = steps_,
+        self._nt = steps_
         self._fluid_time_max = fluid_t_max_
         self._initial_dt = initial_dt_
         self._dt_global_max = dt_global_max_
@@ -105,8 +105,8 @@ class ELH1(Fluid):
         self._switch_path = os.path.join(self._cycle_dump_path,"HydroSwitches.txt")
     
     def makeTmpFiles(self):
-        tfc.hydroParameter(self._base_dir)
-        tfc.hydroSwitches(self._base_dir)
+        tfc.ELH1Parameter(self._base_dir)
+        tfc.ELH1Switches(self._base_dir)
     
     def ELH1Run(self):
         cmd = [self._fluid_src_dir,'-p',

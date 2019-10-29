@@ -57,15 +57,14 @@ class main:
     base_dir = "/home/abetharan/test/"
     k_src_dir = "/home/abetharan/IMPACT/src"
     run_name = "kap"
-    k_nx = 60  
+    k_nx = 60 
     k_ny = 1
     k_nv = 120
-    k_np = 1
+    k_np = 2
     k_dt = 0.9
     k_t_max = 1
     k_x_max = 1000
     k_v_max = 30
-    cycles = 50
     
     
     # Material Properties
@@ -98,15 +97,28 @@ class main:
     f_output_freq = 1
     f_boundary_condition = "rigid"
     f_initialise_start_file_run = True
+    
+    
     initialise_all_folders = True
+    overwrite = True
+    last_cycle = False
+    cycles = 5
+    
+    
+    if _SWITCH_KINETIC_CODE:
+        k_nx = int(k_nx / k_np)
 
     for cycle_no in range(cycles):
         
-        if cycle_no > 1:
+        if cycle_no >= 1:
             f_initialise_start_file_run = False
             initialise_all_folders = False
-
-        io_obj = io.IO(base_dir, k_src_dir, run_name, f_src_dir, f_init_path,f_feos_path_1, f_feos_path_2, cycle_no, initialise_all_folders, cycles)
+            overwrite = False
+        if cycle_no == cycles - 1:
+            last_cycle = True
+        
+        io_obj = io.IO(base_dir, k_src_dir, run_name, f_src_dir, f_init_path,f_feos_path_1, f_feos_path_2, 
+                        cycle_no, overwrite, last_cycle, initialise_all_folders, cycles)
         if cycle_no == 0:
             io_obj.copyFluidInit(f_init_path)
 
@@ -117,13 +129,13 @@ class main:
         elh1_obj.ELH1Run()
 
         impact_obj = impact.IMPACT(io_obj, k_np, k_nv, k_nx, k_ny, k_dt, k_t_max, k_x_max, k_v_max, restart_freq_ = 100)
-
+        norms = impact_obj.normalisation(calc = True, ne = ne, Te = Te, Z = Z, Ar = Ar,  Bz = 0)
         if cycle_no < 1:
             #Find normalisation and prepare IMAPCT for compiling and compile.
             prettyprint(' COMPILING' + _SWITCH_KINETIC_CODE)
-            norms = impact_obj.normalisation(calc = True, ne = ne, Te = Te, Z = Z, Ar = Ar,  Bz = 0)
             impact_obj.setEnvVar()
-            impact_obj.SetIMPACTParam()
+            impact_obj.setIMPACTParam()
+            impact_obj.setCustomFuncs()
             impact_obj.IMPACTCompile()            
         else:
             norms = impact_obj.normalisation(calc = False)
@@ -138,8 +150,11 @@ class main:
         
         prettyprint(' CONVERT ' + _SWITCH_KINETIC_CODE + 'TO ' + _SWITCH_HYDRO_CODE + 'COMPATIBLE ')
         #Convert IMPACT FILES To ELH1 readable files
-        impact_obj.ImpactToTxt()
-
+        if not last_cycle:
+            impact_obj.ImpactToTxt()
+            io_obj.moveIMPACTFile()
+        else:
+            io_obj.moveIMPACTFile()
 
 
 

@@ -3,7 +3,7 @@ import shutil
 from distutils.dir_util import copy_tree
 class IO:
 
-    def __init__(self, base_dir_, k_src_dir_, run_name_, f_src_dir_, f_init_path_, f_feos_1_, f_feos_2_, cycle_counter_, initialise_all_folders_, *arg):
+    def __init__(self, base_dir_, k_src_dir_, run_name_, f_src_dir_, f_init_path_, f_feos_1_, f_feos_2_, cycle_counter_, overwrite_,last_cycle_, initialise_all_folders_, *arg):
 
         self._BASE_DIR = base_dir_
         self._K_SRC_DIR = k_src_dir_
@@ -13,7 +13,8 @@ class IO:
         self._F_INIT_PATH = f_init_path_
         self._F_FEOS_1_PATH = f_feos_1_
         self._F_FEOS_2_PATH = f_feos_2_
-        
+
+        self.last_cycle = last_cycle_        
         self._RUN_PATH = os.path.join(self._BASE_DIR, self._RUN_NAME)
         self.cycle_counter = cycle_counter_
         self.cycle_dump_path = None
@@ -23,14 +24,13 @@ class IO:
         self.kinetic_output_path = None
         self.next_fluid_input_path = None
 
-        self.__OVERWRITE_OK = True
+        self.__OVERWRITE_OK = overwrite_
         self.preserved_cycle_path = []
         self.preserved_fluid_input_path = []
         self.preserved_fluid_output_path = []  
         self.preserved_kinetic_input_path = []
         self.preserved_kinetic_output_path = []
         #self.setPaths()
-        self.nextCyclePathManager()
         if initialise_all_folders_:
             if len(arg) > 1:
                 print("Only one entry allowed which is Number of cycles. Try again")
@@ -39,6 +39,7 @@ class IO:
 
             self.createDirectoryOfOperation(int(arg[0]))
     
+        self.nextCyclePathManager()
         
     def setPaths(self):
 
@@ -103,10 +104,8 @@ class IO:
                     'xf', 'eden', 'laserdep', 'tmat', 'zstar']
 
         for name in filenames:
-            if os.path.splitext(self.cycle_dump_path + "/" + self._RUN_NAME + "_" + name + ".xy")[-1] != ".xy":
-                continue
-            shutil.move(self._RUN_PATH + "/" + self._RUN_PATH + "_" + name + ".xy",
-                        self.kinetic_input_path + "/" + self._RUN_PATH + "_" + name + ".xy", )
+            shutil.move(self._RUN_PATH + "/" + self._RUN_NAME + "_" + name + ".xy",
+            self.kinetic_input_path + "/" + self._RUN_NAME + "_" + name + ".xy", )
 
         for file in os.listdir(self._RUN_PATH):
             _, extension = os.path.splitext(file)
@@ -121,15 +120,16 @@ class IO:
             cycleStep = cycle number.
         """
 
-        self.cycle_dump_path = self._RUN_PATH + "cycle_" + str(self.cycle_counter)
+        self.cycle_dump_path = self._RUN_PATH + "/CYCLE_" + str(self.cycle_counter)
         self._F_SWITCH_PATH = os.path.join(self.cycle_dump_path, "/HydroSwitches.txt")
-        self.fluid_input_path = os.path.join(self.cycle_dump_path + "/fluid_input/")
-        self.fluid_output_path = os.path.join(self.cycle_dump_path + "/fluid_output/")
-        self.kinetic_input_path = os.path.join(self.cycle_dump_path + "/kinetic_input/")
-        self.kinetic_output_path = os.path.join(self.cycle_dump_path + "/kinetic_output/")
-        self.next_fluid_input_path = os.path.join(self._RUN_PATH + "cycle_" + str(self.cycle_counter + 1), "/fluid_input/")
+        self.fluid_input_path = os.path.join(self.cycle_dump_path + "/FLUID_INPUT/")
+        self.fluid_output_path = os.path.join(self.cycle_dump_path + "/FLUID_OUTPUT/")
+        self.kinetic_input_path = os.path.join(self.cycle_dump_path + "/KINETIC_INPUT/")
+        self.kinetic_output_path = os.path.join(self.cycle_dump_path + "/KINETIC_OUTPUT/")
+        new_cycle_path = self._RUN_PATH + "/CYCLE_" + str(self.cycle_counter + 1)
+        self.next_fluid_input_path = os.path.join(new_cycle_path, "FLUID_INPUT/")
         self._F_OUT_PATH = self.fluid_output_path
-        if not os.path.exists(self.next_fluid_input_path):
+        if not os.path.exists(self.next_fluid_input_path) and not self.last_cycle:
             import sys
             print("NEXT FLUID PATH HAS NOT BEEN CREATED")
             print(self.preserved_fluid_input_path)

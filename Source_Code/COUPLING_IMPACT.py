@@ -1,3 +1,5 @@
+import sys
+import pprint
 import numpy as np 
 import os
 import fnmatch
@@ -50,7 +52,7 @@ class IMPACT(Kinetic):
     def IMPACTRun(self):
         os.chdir(self._run_path)
         cmd = ["mpirun", "-np", str(self._np), "./fp2df1_fast"]    
-        super().Execute(cmd)
+        super().Execute(cmd, self._cycle_path)
 
     def test_units(self):
         self._run_unit_test = True
@@ -97,7 +99,7 @@ class IMPACT(Kinetic):
         file12 = open(os.path.join(self._run_path, 'fort.12'), 'w')
         file12.write(str_times)
 
-    def SetIMPACTParam(self):
+    def setIMPACTParam(self):
         """
         Purpose: Handles the IO side for launching IMPACT. Involves creation of fort files and moving of files and renaming. Furthermore, handles moving of files 
         when IMPACT completes.
@@ -126,21 +128,15 @@ class IMPACT(Kinetic):
                 writePath=self._run_path, fileName="fort.10", parameters=fort10Param)
         self.createFort12()
         self.createFort14()
-    
-    def IMPACTCompile(self):
-        """  
-        Purpose: Handles movement of neccessary template files for custom operators for IMPACT and compiles the code
 
-        Args:
-            self._run_path = Path where IMPACT looks for reference files 
-        """
-        # Copy and Rename custom functions to run directory
+    def setCustomFuncs(self):
+
         shutil.copyfile(os.path.join(self._run_path, "heating.f"),
                         os.path.join(self._run_path, self._run_name + "_heating.f"))
         shutil.copyfile(os.path.join(self._run_path, "control.dat.dummy"),
                         os.path.join(self._run_path, "fp2df1_control.dat.dummy"))
         
-        custom_param = {'PATH': "\'" + self._cycle_path +
+        custom_param = {'PATH': "\'" + self._run_path +
                         "\'", 'RUNNAME': "\'/" + self._run_name + "\'"}
         
         self._templater.templating(tmpfilePath= os.path.join(self._run_path, 'user_custom.f'), writePath=self._run_path,
@@ -155,11 +151,30 @@ class IMPACT(Kinetic):
         os.remove(os.path.join(self._run_path, 'user_custom.f'))
         os.remove(os.path.join(self._run_path, 'prof.f'))
         os.remove(os.path.join(self._run_path, "tmpfort.10"))
-        if(os.path.basename(os.path.normpath(os.getcwd())) == "Source_Code"):
-            os.system('./hydra_kappa.sh')
-        else:                
-            os.chdir(os.getcwd() + "/Source_Code")
-            os.system('./hydra_kappa.sh')
+
+    def IMPACTCompile(self):
+        """  
+        Purpose: Handles movement of neccessary template files for custom operators for IMPACT and compiles the code
+
+        Args:
+            self._run_path = Path where IMPACT looks for reference files 
+        """
+        cmd = ["tcsh",'-c',"source "  + self._src_dir + "/"+"fp2df1_compile_run.sh"]    
+        #cmd = ["bash",'-c',"source "  + os.getcwd() + "/" + "hydra_kappa.sh"]    
+        
+        subprocess.Popen(cmd, stdout = sys.stdout, stderr = sys.stderr).communicate()
+        # for line in proc.stdout:
+        #    (key, _, value) = line.partition("=")
+        #    os.environ[key] = value
+        #    proc.communicate()
+
+        # pprint.pprint(dict(os.environ))
+#        subprocess.run(cmd, stderr=subprocess.PIPE)
+        # if(os.path.basename(os.path.normpath(os.getcwd())) == "Source_Code"):
+        #     os.system('./hydra_kappa.sh')
+        # else:                
+        #     os.chdir(os.getcwd() + "/Source_Code")
+        #     os.system('./hydra_kappa.sh')
 
 
     def setEnvVar(self):
@@ -245,9 +260,9 @@ class IMPACT(Kinetic):
         mass = np.loadtxt(self._kinetic_io_obj.fluid_input_path + "/mass.txt")        
         electronheatflow= Heatflow(qe, mass)
         
-        np.savetxt(os.path.join(self._kinetic_io_obj.next_fluid_input_path, "/qe.txt"), electronheatflow)    
+        np.savetxt(os.path.join(self._kinetic_io_obj.next_fluid_input_path, "qe.txt"), electronheatflow)    
 
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "CELL_WALL_X/x_cell_wall_" + str(LargestIndex) +".txt")    
+        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "CELL_WALL_X/Cell_Wall_X_" + str(LargestIndex) +".txt")    
                                         ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"coord.txt"))
         shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "VELOCITY/Velocity_" + str(LargestIndex) +".txt") 
                                         ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"velocity.txt"))
@@ -257,7 +272,7 @@ class IMPACT(Kinetic):
                                         ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"electron_temperature.txt"))
         shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "ION_TEMPERATURE/Ti_" + str(LargestIndex) +".txt")
                                         ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"ion_temperature.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_input_path + "MASS/Mass_.txt")
+        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "MASS/Mass_.txt")
                                         ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"mass.txt"))
         shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "ZBAR/Zbar_" + str(LargestIndex) +".txt")
                                         ,os.path.join(self._kinetic_io_obj.next_fluid_input_path, "Z.txt"))
@@ -424,38 +439,38 @@ class IMPACT(Kinetic):
         # plt.plot(kinetic_Te)
         # plt.show()
 
-        if not os.path.exists(self._cycle_path + "/tmpWrite.txt"):
-            tfc.impactOutputformat(self._cycle_path)
+        if not os.path.exists(self._run_path + "/tmpWrite.txt"):
+            tfc.impactOutputformat(self._run_path)
 
-        impactNeFile = open(self._cycle_path + "/" + os.environ["RUN"] + "_eden.xy", "w")
+        impactNeFile = open(self._run_path + "/" + os.environ["RUN"] + "_eden.xy", "w")
         impactNiFile = open(
-            self._cycle_path + "/" + os.environ["RUN"] + "_ionden.xy", "w")
-        impactTeFile = open(self._cycle_path + "/" + os.environ["RUN"] + "_tmat.xy", "w")
-        impactXFile = open(self._cycle_path + "/" + os.environ["RUN"] + "_xf.xy", "w")
-        impactZfile = open(self._cycle_path + "/" + os.environ["RUN"] + "_zstar.xy", "w")
+            self._run_path + "/" + os.environ["RUN"] + "_ionden.xy", "w")
+        impactTeFile = open(self._run_path + "/" + os.environ["RUN"] + "_tmat.xy", "w")
+        impactXFile = open(self._run_path + "/" + os.environ["RUN"] + "_xf.xy", "w")
+        impactZfile = open(self._run_path + "/" + os.environ["RUN"] + "_zstar.xy", "w")
         impactLaserFile = open(
-            self._cycle_path + "/" + os.environ["RUN"] + "_laserdep.xy", "w")
+            self._run_path + "/" + os.environ["RUN"] + "_laserdep.xy", "w")
         impactRadFile = open(
-            self._cycle_path + "/" + os.environ["RUN"] + "_rad_to_electron.xy", "w")
+            self._run_path + "/" + os.environ["RUN"] + "_rad_to_electron.xy", "w")
       
 
         if self._run_unit_test:
             unit_tester = f_x_centered_grid
         else:
             unit_tester = None
-        self.ImpactFileWriteFormat(self._cycle_path + "/tmpWrite.txt",
+        self.ImpactFileWriteFormat(self._run_path + "/tmpWrite.txt",
                         impactNeFile, IMPACT_x_grid, IMPACT_ne, "ne", unit_tester)
-        self.ImpactFileWriteFormat(self._cycle_path + "/tmpWrite.txt",
+        self.ImpactFileWriteFormat(self._run_path + "/tmpWrite.txt",
                         impactNiFile, IMPACT_x_grid, IMPACT_ni, "ni", unit_tester)
-        self.ImpactFileWriteFormat(self._cycle_path + "/tmpWrite.txt", impactXFile,
+        self.ImpactFileWriteFormat(self._run_path + "/tmpWrite.txt", impactXFile,
                         IMPACT_x_grid, IMPACT_x_grid, "coord", unit_tester)
-        self.ImpactFileWriteFormat(self._cycle_path + "/tmpWrite.txt",
+        self.ImpactFileWriteFormat(self._run_path + "/tmpWrite.txt",
                         impactTeFile, IMPACT_x_grid, IMPACT_Te, "Te", unit_tester)
-        self.ImpactFileWriteFormat(self._cycle_path + "/tmpWrite.txt", impactLaserFile,
+        self.ImpactFileWriteFormat(self._run_path + "/tmpWrite.txt", impactLaserFile,
                         IMPACT_x_grid, IMPACT_laser, "laser", unit_tester)
-        self.ImpactFileWriteFormat(self._cycle_path + "/tmpWrite.txt", impactRadFile,
+        self.ImpactFileWriteFormat(self._run_path + "/tmpWrite.txt", impactRadFile,
                         IMPACT_x_grid, IMPACT_brem, "Rad", unit_tester)
-        self.ImpactFileWriteFormat(self._cycle_path + "/tmpWrite.txt", impactZfile,
+        self.ImpactFileWriteFormat(self._run_path + "/tmpWrite.txt", impactZfile,
                        IMPACT_x_grid, IMPACT_Z, "zstar", unit_tester)
        
 
