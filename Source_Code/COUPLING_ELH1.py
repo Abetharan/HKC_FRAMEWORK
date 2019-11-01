@@ -61,7 +61,7 @@ class ELH1(Fluid):
         self._templater.templating(tmpfilePath=self._base_dir + '/tmpHydroParameterInit.txt',
                 writePath=self._cycle_dump_path, fileName="HydroParameterInit.txt", parameters=hydroparam)
 
-    def setSwitches(self, viscosity_on_ = True, velocity_on_ = True, 
+    def setSwitches(self, viscosity_on_ = False, velocity_on_ = False, 
                     heat_conduction_on_ = True, exchange_on_ = False,
                     bremsstrahlung_on_ = False, inv_brem_on_ = False, 
                     single_temperature_on_ = False, multi_material_ = False,
@@ -83,7 +83,7 @@ class ELH1(Fluid):
         self.isothermal_mode = False
         self.adibatic_mode = False
         self.p_dv_work_off = False
-        
+        self.AdapativeTimeStep = False
         switches = {
             'Viscosity' : str(self.viscosity).lower(),
             'Velocity' : str(self.velocity).lower(),
@@ -98,7 +98,8 @@ class ELH1(Fluid):
             'SingleTemperature' : str(self.single_temp_mode).lower(),
             'MultiMaterial' : str(self.multi_material).lower(),
             'IdealGas' : str(self.ideal_gas_mode).lower(),
-            'FullyIonized':str(self.fully_ionized_mode).lower()
+            'FullyIonized':str(self.fully_ionized_mode).lower(),
+            'AdapativeTimeStep':str(self.AdapativeTimeStep).lower()
         }
         self._templater.templating(tmpfilePath= self._base_dir + '/tmpFluidSwitch.txt',
                 writePath=self._cycle_dump_path, fileName="HydroSwitches.txt", parameters=switches)

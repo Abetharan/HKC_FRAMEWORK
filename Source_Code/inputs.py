@@ -1,0 +1,89 @@
+#if CX1
+# CX1 = False
+# if CX1:
+#     BASE_DIR = "$HOME/test/"
+#     IMPACT_SRC_DIR = "$HOME/IMPACT/src"
+#     SOL_KIT_SRC_DIR = "$HOME/SOL-KIT/"
+#     F_INIT_PATH = '$HOME/KINETIC_HYDRO_COUPLER/'
+#     F_SRC_DIR = "$HOME/ELH-1/Source_Code/release/ELH1"
+# else:
+#     F_INIT_PATH = '$HOME/HYDRO_KINETIC_COUPLING/'
+import os
+CX1 = False
+BASE_DIR = os.environ['HOME'] + "/test/"
+IMPACT_SRC_DIR = os.environ['HOME'] + "/IMPACT/src"
+SOL_KIT_SRC_DIR =  "/home/abetharan/SOL-KiT"
+F_INIT_PATH = os.environ['HOME'] +'/HeadlessHydra/init_data/'
+F_SRC_DIR =os.environ['HOME'] +  "/HeadlessHydra/Source_Code/release/ELH1"
+
+RUN_NAME = "K_LAMBDA_02_A_1"
+ 
+CYCLES = 50
+KINETIC_CODE = 'SOL_KIT'
+if KINETIC_CODE == 'SOL_KIT':
+    K_SRC_DIR = SOL_KIT_SRC_DIR
+else:
+    K_SRC_DIR = IMPACT_SRC_DIR
+#UNIVERSAL KINETIC PARAMETERS
+K_NX = 63
+K_NY = 1
+K_NV = 120
+K_NP = 5
+K_DT = 0.01
+#IMPACT PARAMETERS
+K_T_MAX = 1
+K_X_MAX = 1000
+K_V_MAX = 30
+
+#SOL_KIT PARAMETERS
+K_DX = 0.5
+K_DV = 0.0307
+K_DV_MULTI = 1.01
+K_NT = 1
+K_PRE_STEP_NT = 0
+K_PRE_STEP_DT = 0.001
+K_L_MAX = 1
+
+#KINETIC BOUNDARIES 
+
+#IMPACT:
+# '0' = PERIODIC
+# '1' = REFLECTIVe
+# '2' = FIXED
+
+#SOL_KIT
+# 'periodic' = PERIODIC
+# 'noflow' = REFLECTIVe
+# 'fixed' = FIXED
+
+K_BC = 'noflow'
+
+
+# NORMALISATION
+TE = float(50000)
+NE = float(1E27)
+Z  = float(37.25)
+AR = float(157.25)
+BZ = 0
+
+# FLUID INITIAL PARAMETERS
+
+F_NX =K_NX
+F_CQ = 2
+F_GAMMA = 1.4
+F_CFL = 0.85
+F_LASER_WAVELENGTH = 351E-9  # 200E-9
+F_LASER_POWER = 1E15
+F_DUR_OF_LASER = 1E-10
+F_LASER_LOC = 'left'
+F_STEPS = 0
+F_FLUID_T_MAX = 1e-11  # 1E-15
+F_INITIAL_DT = 1E-15
+F_DT_GLOBAL_MAX = 1E-13
+F_DT_GLOBAL_MIN = 1E-16
+F_FEOS_PATH_1 = None
+F_FEOS_PATH_2 = None
+F_OUTPUT_FREQ = 1
+F_BOUNDARY_CONDITION = "rigid"
+F_INITIALISE_START_FILE_RUN = True
+

@@ -23,7 +23,7 @@ e = constants.value("elementary charge")
 
 class IMPACT(Kinetic):
         
-    def __init__(self, IO, np_, nv_, nx_, ny_, dt_, t_max_, x_max_, v_max_, restart_freq_,
+    def __init__(self, IO, np_, nv_, nx_, ny_, dt_, t_max_, x_max_, v_max_, boundary_condition_, restart_freq_, 
                     fort12Output=["0.2d0", "0.8d0", "1.0d0", "2.0d0", "3.0d0", "5.0d0", "10.0d0", "15.0d0"], unit_check = False):
         
         self._Kinetic = Kinetic()
@@ -43,6 +43,7 @@ class IMPACT(Kinetic):
         self._x_max = x_max_
         self._v_max = v_max_
         self._np = np_
+        self.boundary_condition = boundary_condition_
         self._restart_freq = restart_freq_
         self.normalised_values = None
         self._fort12Output = fort12Output
@@ -56,13 +57,14 @@ class IMPACT(Kinetic):
 
     def test_units(self):
         self._run_unit_test = True
-        self.TxtToImpact()
+        self.InitIMPACTFromHydro()
 
 
     def normalisation(self, calc = False , **kwargs):
 
         if calc:
-            self.normalised_values = norms.impact_inputs(kwargs.get("ne"),kwargs.get("Te"), 
+            #1e6 dicvision as it is assumed that ne is given in m^-3
+            self.normalised_values = norms.impact_inputs(kwargs.get("ne")/1e6, kwargs.get("Te"), 
                             kwargs.get("Z"),kwargs.get("Ar"), kwargs.get("Bz"))  
         else:
             return self.normalised_values
@@ -120,7 +122,7 @@ class IMPACT(Kinetic):
         c_over_vte = self.normalised_values["c_over_vte"]
         Z = self.normalised_values["Z"]
         A = self.normalised_values["Ar"]
-        fort10Param = sf10p.set_fort_10(wpe_over_nuei=wpe_over_nu_ei, c_over_vte=c_over_vte,
+        fort10Param = sf10p.set_fort_10(wpe_over_nuei=wpe_over_nu_ei, c_over_vte=c_over_vte,x_bc_type = self.boundary_condition,
                                             atomic_Z=Z, atomic_A=A, nv= self._nv,nx =self._nx, ny=self._ny, dt=self._dt, tmax=self._t_max,
                                             xmax = self._x_max,vmax=self._v_max, do_user_prof_sub=".true.", op_restart_freq = self._restart_freq)
 
@@ -220,7 +222,7 @@ class IMPACT(Kinetic):
         os.environ["TEXTOUTPUT_TO_STDOUT_ROOT "]    = "1"
    
    
-    def ImpactToTxt(self):
+    def IMPACTInitHydroNextFiles(self):
         
         # Convert to SI from Impact Norms
         var = "qxX"
@@ -341,7 +343,7 @@ class IMPACT(Kinetic):
         return(0)
 
 
-    def TxtToImpact(self):
+    def InitIMPACTFromHydro(self):
 
         lastIndex = self.findLastIndex(os.path.join(self._fluid_output_path, "CELL_WALL_X"), "Cell_Centre_X", "fluid")
         f_x_grid = np.loadtxt(self._fluid_output_path + "CELL_WALL_X/Cell_Wall_X_" + str(lastIndex) + ".txt")

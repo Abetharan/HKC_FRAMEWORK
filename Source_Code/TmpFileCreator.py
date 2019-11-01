@@ -3,32 +3,32 @@ import os
 
 def SOL_KIT_GRID_INPUT(runPath):
       writeStatement = """Time:
-                             TIMESTEP_NUM =      $nt           Number of full length timesteps
-                          PRETIMESTEP_NUM =      $prestepnt           Number of small pre-timesteps
-                                       dt =  $dt               Timestep size
-                                   pre_dt =  $predt              Pre-timestep size
-                                   T_SAVE =  $save_freq                 Save interval (save data every T_SAVE timesteps)
+                             TIMESTEP_NUM =  $nt                              Number of full length timesteps
+                          PRETIMESTEP_NUM =  $prestepnt                       Number of small pre-timesteps
+                                       dt =  $dt                              Timestep size
+                                   pre_dt =  $predt                           Pre-timestep size
+                                   T_SAVE =  $save_freq                       Save interval (save data every T_SAVE timesteps)
 
  Harmonics:
-                                    L_MAX =              $lmax     L-number of maximum resolved harmonic
+                                    L_MAX =  $lmax                            L-number of maximum resolved harmonic
 
  Velocity:
-                                    NUM_V =       $nv          Number of cells in velocity space
-                                       dv =       $dv          Size of velocity cells
-                              V_GRID_MULT =       $v_multi        Velocity cell width common ratio
+                                    NUM_V =  $nv                              Number of cells in velocity space
+                                       dv =  $dv                              Size of velocity cells
+                              V_GRID_MULT =  $v_multi                         Velocity cell width common ratio
 
  Spatial grid:
-                                    NUM_C =        $nx          Number of spatial cells
-                                       dx =   $dx                    Size of spatial cells
-                                 SMALL_dx =   $smalldx               Size of divertor cell
-"""
+                                    NUM_C =  $nx                              Number of spatial cells
+                                       dx =  $dx                              Size of spatial cells
+                                 SMALL_dx =  $smalldx                         Size of divertor cell
 
+"""
       kappa = open(runPath + "/tmpSOL_KIT_GRID.txt", "w")
       kappa.write(writeStatement)
       kappa.close()
 
 def SOL_KIT_SWITCHES(runPath):
-      writeStatement = """Vlasov and field switches:
+      writeStatement = """ Vlasov and field switches:
                            MAXWELL_SWITCH =              T     Evolve E-field using Maxwell's equations (Ampere-Maxwell's law)
                              X_ADV_SWITCH =              T     Include spatial advection
                              E_ADV_SWITCH =              T     Include velocity space advection due to E-field
@@ -99,11 +99,11 @@ def SOL_KIT_SWITCHES(runPath):
  Fluid ion switches:
                     COLD_ION_FLUID_SWITCH =              $COLD_ION     Turn on cold ions
                       ION_CONT_OFF_SWITCH =              F     Turn off ion continuity equation and force n_i = n_e
-                ION_CONV_UPWINDING_SWITCH =              T     Use first order upwinding for ion convection term
-                         SIMPLE_CX_SWITCH =              T     Include simple (cold ion, cold neutral, constant cross-section) charge exchange
-                       ION_EL_TEMP_SWITCH =              T     Turn on ion pressure gradient term with T_i = T_e
-                  NO_EXTRAPOLATION_SWITCH =              T     Turn off extrapolation for Bohm criterion
-                 SONIC_OUTFLOW_DIV_SWITCH =              T     Fix divertor outflow to ion sound speed in last cell
+                ION_CONV_UPWINDING_SWITCH =              F     Use first order upwinding for ion convection term
+                         SIMPLE_CX_SWITCH =              F     Include simple (cold ion, cold neutral, constant cross-section) charge exchange
+                       ION_EL_TEMP_SWITCH =              F     Turn on ion pressure gradient term with T_i = T_e
+                  NO_EXTRAPOLATION_SWITCH =              F     Turn off extrapolation for Bohm criterion
+                 SONIC_OUTFLOW_DIV_SWITCH =              F     Fix divertor outflow to ion sound speed in last cell
 
  Particle source switches:
                        PART_SOURCE_SWITCH =              F     Turn on upstream particle source
@@ -115,6 +115,7 @@ def SOL_KIT_SWITCHES(runPath):
                           FULL_FLUID_MODE =              F     Run code in fluid mode, both electrons and ions
                       Z_PROFILE_FROM_FILE =              T     Load ionization profile from file
                          X_GRID_FROM_FILE =              T     Load spatial grid from file
+
 """
 
       kappa = open(runPath + "/tmpSOL_KIT_SWITCHES.txt", "w")
@@ -193,6 +194,7 @@ mode=$mode
 SingleTemperature=$SingleTemperature
 MultiMaterial=$MultiMaterial
 IdealGas=$IdealGas
+AdapativeTimeStep=$AdapativeTimeStep
 FullyIonized=$FullyIonized
 CreateOutputFolder=false
     """
