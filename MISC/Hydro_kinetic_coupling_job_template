@@ -1,0 +1,17 @@
+#PBS -lselect=1:ncpus=$num_proc:mpiprocs=$num_proc:mem=$job_mem
+#PBS -lwalltime=$job_time_h:$job_time_m:00
+
+# Load modules for any applications
+
+module load gcc/5.4.0
+module load anaconda
+
+timeout $MINS python3 Main.py -p $INPUT_PATH >/dev/null
+curr_cycle=$(<$RUN_PATH/restart_counter.txt)
+max_cycle = $(<$RUN_PATH/RESTART/restart_counter.txt)
+
+if [ "$curr_cycle" -lt "$max_cycle" ]; then
+   qsub $JOB_NAME
+fi 
+
+

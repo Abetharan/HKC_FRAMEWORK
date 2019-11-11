@@ -37,10 +37,10 @@ class ELH1(Fluid):
         self._gamma = 5/3
         self._boundary_condition = bounday_condition_
         if self._fluid_time_max == 0:
-            self._output_freq = 1
+            self._output_freq = 100
         else:
             self._output_freq = int(percentage_output_freq_ * 
-                        self._fluid_time_max/self._dt_global_min)
+                        (int(self._fluid_time_max)/int(self._dt_global_min)))
         
 
         self.makeTmpFiles()

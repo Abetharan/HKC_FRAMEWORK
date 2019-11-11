@@ -23,7 +23,7 @@ e = constants.value("elementary charge")
 
 class IMPACT(Kinetic):
         
-    def __init__(self, IO, np_, nv_, nx_, ny_, dt_, t_max_, x_max_, v_max_, boundary_condition_, restart_freq_, 
+    def __init__(self, IO, np_, nv_, nx_, ny_, dt_, t_max_, x_max_, v_max_, boundary_condition_, restart_freq_,CX1_, 
                     fort12Output=["0.2d0", "0.8d0", "1.0d0", "2.0d0", "3.0d0", "5.0d0", "10.0d0", "15.0d0"], unit_check = False):
         
         self._Kinetic = Kinetic()
@@ -43,6 +43,7 @@ class IMPACT(Kinetic):
         self._x_max = x_max_
         self._v_max = v_max_
         self._np = np_
+        self._CX1 = CX1_
         self.boundary_condition = boundary_condition_
         self._restart_freq = restart_freq_
         self.normalised_values = None
@@ -52,7 +53,12 @@ class IMPACT(Kinetic):
         
     def IMPACTRun(self):
         os.chdir(self._run_path)
-        cmd = ["mpirun", "-np", str(self._np), "./fp2df1_fast"]    
+        
+        if self._CX1:
+            cmd = ["mpiexec", "./fp2df1_fast"]    
+        else:
+            cmd = ["mpirun", "-np", str(self._np), "./fp2df1_fast"]    
+        
         super().Execute(cmd, self._cycle_path)
 
     def test_units(self):

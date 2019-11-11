@@ -24,7 +24,7 @@ bohr_radi = constants.value("Bohr radius")
 class SOL_KIT(Kinetic):
     
     def __init__(self,IO, np_, nv_, nx_, nt_, pre_step_nt_, dx_, dv_, v_multi_, dt_, pre_step_dt_,
-                    lmax_, save_freq_, norm_Z_, norm_Ar_, norm_ne_, norm_Te_, get_sol_kit_):
+                    lmax_, save_freq_, norm_Z_, norm_Ar_, norm_ne_, norm_Te_, get_sol_kit_, CX1_):
 
         self._Kinetic = Kinetic()
         self._templater = Templating() 
@@ -58,13 +58,20 @@ class SOL_KIT(Kinetic):
         self._norm_Te = norm_Te_        
         self.boundary_condition = None
         self.normalised_values = None
-
+        self.CX1 = CX1_
         self.makeTmpFiles()
         self.copySOL_KiT()
         self.normalisation()
+    
     def SOL_KITRun(self):
+        
         os.chdir(self._run_path)
-        cmd = ["mpirun", "-np", str(self._np), "./SOL-KiT"]    
+        
+        if self.CX1:
+            cmd = ["mpiexec", "./SOL-KiT"]    
+        else:
+            cmd = ["mpirun", "-np", str(self._np), "./SOL-KiT"]    
+        
         super().Execute(cmd, self._cycle_path)
     
     def normalisation(self):
@@ -259,7 +266,7 @@ class SOL_KIT(Kinetic):
             else:
                 full_x_grid[i] = SOL_KIT_x_grid[k]
                 k +=1 
-
+        SOL_KIT_x_grid = None
         if self.boundary_condition == 'periodic':
             SOL_KIT_grid = full_x_grid[:-1]
         

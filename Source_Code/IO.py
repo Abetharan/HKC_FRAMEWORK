@@ -111,6 +111,11 @@ class IO:
             _, extension = os.path.splitext(file)
             if extension == ".xy" or extension == ".xyz" or extension == ".xyv" or extension == ".xyt" or extension == ".dat" or extension == ".t":
                 shutil.move(file, self.kinetic_output_path)
+        
+        import glob
+        for file in glob.glob(str(self._RUN_PATH) + '/*.out'):
+            print(file)
+            shutil.move(file, self.cycle_dump_path)    
     
     def nextCyclePathManager(self):
         """
