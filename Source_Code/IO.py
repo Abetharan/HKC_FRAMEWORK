@@ -1,4 +1,11 @@
+"""
+Handles anything to do with input/output.
+Creates folders and retains paths required to couple.
+@author = Abetharan Antony
+Last Update = 25/11/19
+"""
 import os
+import shutil
 import shutil
 from distutils.dir_util import copy_tree
 class IO:
@@ -40,9 +47,16 @@ class IO:
             self.createDirectoryOfOperation(int(arg[0]))
     
         self.nextCyclePathManager()
-        
-    def setPaths(self):
+    
+    def zipAndDelete(self):
+        """ Purpose: To zip cycle folders to reduce memory overhead and delete the folder"""
+        zip_location = os.path.join(self._RUN_PATH, 'CYCLE_' + str(self.cycle_counter))
+        shutil.make_archive(zip_location, 'zip', self.cycle_dump_path)
+        shutil.rmtree(self.cycle_dump_path)
 
+
+    def setPaths(self):
+        """ Purpose: Create all paths based on which cycle is going to run."""
         print("#"*100)
         print('\033[1m' + '#'*50 + ' SET PATHS ' + '#'*50 + '\033[0m')
         print('\n')
@@ -53,6 +67,10 @@ class IO:
         self.kinetic_output_path = os.path.join(self.cycle_dump_path + "/KINETIC_OUTPUT/")
 
     def copyFluidInit(self,f_init_path_):
+        """ 
+        OBSOLTE --- DELETE
+        Purpose: Copies fluid input folder
+        """
         print("#"*100)
         print('\033[1m' + '#'*50 + ' COPYING INIT FLUID ' + '#'*50 + '\033[0m')
         print('\n')   
@@ -60,6 +78,9 @@ class IO:
         
     
     def createDirectoryOfOperation(self, no_cycles_):
+        """ Purpose: Creates all folders required immediately .. reduces overhead later one 
+            Args: no_cycles = no of total cycles.
+        """
         print("#"*100)
         print('\033[1m' + '#'*50 + ' CREATING ALL FOLDERS ' + '#'*50 + '\033[0m')
         print('\n')
@@ -87,35 +108,6 @@ class IO:
             os.makedirs(fluid_input_path)
             os.makedirs(kinetic_input_path)
             os.makedirs(kinetic_output_path)
-
-    def moveIMPACTFile(self):
-        """ 
-        Purpose: Moves IMPACT files and initial parameters files to correct paths.
-        Args:
-            runPath = Run path i.e. where all data is located and where fp2df1 is created. Path is BASEDIR/runName
-            cycleDumpPath = cycle path. Path is BASEDIR/runName/cycleNAME
-            previsouKineticInputPath = previous cycle kinetic input folder which is located as followeing runPath/previsousCyclePath/kinetic_input
-            previousKineticOutPut =  previous cycle kinetic output folder which is located as followeing runPath/previsousCyclePath/kinetic_output
-        """
-
-        print("#"*100)
-        print('\033[1m' + '#'*50 + ' MOVE IMPACT FILES ' + '#'*50 + '\033[0m')
-        filenames = ['ionden', 'rad_to_electron',
-                    'xf', 'eden', 'laserdep', 'tmat', 'zstar']
-
-        for name in filenames:
-            shutil.move(self._RUN_PATH + "/" + self._RUN_NAME + "_" + name + ".xy",
-            self.kinetic_input_path + "/" + self._RUN_NAME + "_" + name + ".xy", )
-
-        for file in os.listdir(self._RUN_PATH):
-            _, extension = os.path.splitext(file)
-            if extension == ".xy" or extension == ".xyz" or extension == ".xyv" or extension == ".xyt" or extension == ".dat" or extension == ".t":
-                shutil.move(file, self.kinetic_output_path)
-        
-        import glob
-        for file in glob.glob(str(self._RUN_PATH) + '/*.out'):
-            print(file)
-            shutil.move(file, self.cycle_dump_path)    
     
     def nextCyclePathManager(self):
         """

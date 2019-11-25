@@ -13,7 +13,7 @@ class Kinetic():
             _KINETIC_np = Number of cores being used 
         """
        
-        filename = path + '/test.log'
+        filename = path + '/k_test.log'
         with io.open(filename, 'wb') as writer, io.open(filename, 'rb', 1) as reader:
             process = subprocess.Popen(cmd, stdout=writer)
             while process.poll() is None:

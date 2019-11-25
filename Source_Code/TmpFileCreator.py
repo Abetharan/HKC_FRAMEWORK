@@ -190,13 +190,16 @@ InvBremsstrahlung=$InvBremsstrahlung
 IsothermalMode=$IsothermalMode
 AdiabaticMode=$AdiabaticMode
 pDvWorkOff=$pDvWorkOff
-mode=$mode
+CoupleDivQ=$CoupleDivQ
+CoupleMulti=$CoupleMulti
 SingleTemperature=$SingleTemperature
 MultiMaterial=$MultiMaterial
 IdealGas=$IdealGas
 AdapativeTimeStep=$AdapativeTimeStep
 FullyIonized=$FullyIonized
 CreateOutputFolder=false
+ConstantCoulombLog=true
+TwoBath=false
     """
     kappa = open(runPath + "/tmpFluidSwitch.txt", "w")
     kappa.write(writeStatement)
@@ -802,10 +805,3 @@ c234567890---------20--------3---------4---------5---------6---------7-2-----8
     kappa.write(writeStatement)
     kappa.close()
 
-
-
-
-SOL_KIT_NORMS("/home/abetharan/")
-SOL_KIT_SWITCHES("/home/abetharan/")
-SOL_KIT_GRID_INPUT("/home/abetharan/")
-SOL_KIT_SOLVER_PARAMS("/home/abetharan/")

@@ -33,6 +33,8 @@ class IMPACT(Kinetic):
         self._run_path = IO._RUN_PATH
         self._base_dir = IO._BASE_DIR
         self._src_dir = IO._K_SRC_DIR
+        self._kinetic_output_path = IO.kinetic_output_path
+        self._kinetic_input_path = IO.kinetic_input_path
         self._fluid_output_path = IO.fluid_output_path
         self._cycle_path = IO.cycle_dump_path
         self._nv = nv_
@@ -227,6 +229,34 @@ class IMPACT(Kinetic):
         # ...  Text output behaviour  ...
         os.environ["TEXTOUTPUT_TO_STDOUT_ROOT "]    = "1"
    
+    def moveIMPACTFile(self):
+        """ 
+        Purpose: Moves IMPACT files and initial parameters files to correct paths.
+        Args:
+            runPath = Run path i.e. where all data is located and where fp2df1 is created. Path is BASEDIR/runName
+            cycleDumpPath = cycle path. Path is BASEDIR/runName/cycleNAME
+            previsouKineticInputPath = previous cycle kinetic input folder which is located as followeing runPath/previsousCyclePath/kinetic_input
+            previousKineticOutPut =  previous cycle kinetic output folder which is located as followeing runPath/previsousCyclePath/kinetic_output
+        """
+
+        print("#"*100)
+        print('\033[1m' + '#'*50 + ' MOVE IMPACT FILES ' + '#'*50 + '\033[0m')
+        filenames = ['ionden', 'rad_to_electron',
+                    'xf', 'eden', 'laserdep', 'tmat', 'zstar']
+
+        for name in filenames:
+            shutil.move(self._run_path + "/" + self._run_name + "_" + name + ".xy",
+            self._kinetic_input_path + "/" + self._run_name + "_" + name + ".xy", )
+
+        for file in os.listdir(self._run_path):
+            _, extension = os.path.splitext(file)
+            if extension == ".xy" or extension == ".xyz" or extension == ".xyv" or extension == ".xyt" or extension == ".dat" or extension == ".t":
+                shutil.move(file, self._kinetic_output_path)
+        
+        import glob
+        for file in glob.glob(str(self._run_path) + '/*.out'):
+            print(file)
+            shutil.move(file, self._cycle_path)    
    
     def IMPACTInitHydroNextFiles(self):
         
@@ -245,7 +275,9 @@ class IMPACT(Kinetic):
         normConst = me * \
             pow(self.normalised_values['vte'], 3) * self.normalised_values['ne'] * 1e21 * 1e6
         qe = varList * normConst
-
+        import matplotlib.pyplot as plt
+        plt.plot(qe)
+        plt.show()
         import glob
         LargestIndex = 0
         
