@@ -347,6 +347,53 @@ class SOL_KIT(Kinetic):
         # np.savetxt(os.path.join(self._SOL_KIT_INPUT_PATH, "ION_VEL_INPUT.txt"), SOL_KIT_grid)
         # np.savetxt(os.path.join(self._SOL_KIT_INPUT_PATH, "NEUT_HEAT_INPUT.txt"), SOL_KIT_heating)
 
+    def _DivQHeatFlow(self, electron_thermal_flux, mass):
+        """ Purpose: Find Div.Q
+            Args:
+                electron_thermal_flux = SOL-KiT heat flux in SI
+                mass = areal mass.
+                
+            Returns: Div.Q
+            NOTE: ONLY WORKS FOR SAME GRIDS
+        """
+        nx = len(electron_thermal_flux)
+        HeatConductionE = np.zeros(len(mass))
+        #Include first and celll wall for no flow set to 0 per no thermal influx BC = 0 
+        if self.boundary_condition =='noflow':
+            electron_thermal_flux = np.insert(electron_thermal_flux, 0, 0.)
+        #Periodic boundary condition removes last cell wall insert back and set to 0 via thermal influc BC
+        electron_thermal_flux = np.append(electron_thermal_flux, 0.)
+        #Heat flow from SOL-KiT includes celll walla and cell centre.
+        #Thus, step in 2s for 1 to 1 grid. Change if higher resolution grid of SOL-KiT is used.
+        # |.|.|.| 
+        step = 2
+        j = 0
+        for i in range(0, nx, step):   
+            HeatConductionE[j] = -(electron_thermal_flux[i + 2] - electron_thermal_flux[i]) / mass[j]
+            j += 1
+        return(HeatConductionE)
+
+    def _Multiplier(self, max_index):
+        """ Purpose: Find multipliers and exponentially extrapolate for pre-heat
+            Args: 
+                max_index : Last index for output files.
+            Returns: Multipliers
+        """
+        multiplier = np.loadtxt(os.path.join(self._run_path, "OUTPUT/SH_q_ratio/SH_q_ratio_" + str(max_index).zfill(5) + '.txt'))
+        qe = []
+        step = 2
+
+        #Get rid of cell-centre quantites
+        for i in range(1, len(multiplier) - 1, step):   
+            multi = multiplier[i]
+            #add multiplier limiter here if needed
+            qe.append(multi)
+        ##Formulate q_qsh problem.
+        
+        return(qe)
+
+
+
     def SOL_KITInitNextHydroFiles(self):
         """ Purpose: Prepare HYDRO init files.. calculate heat flow qunatities either div.q or multiplier and copy
             last hydro step files.
@@ -359,40 +406,13 @@ class SOL_KIT(Kinetic):
             qe = np.loadtxt(os.path.join(qe_path, "HEAT_FLOW_X_" + max_index_reformated + '.txt')) * norm_qe
         
             ###
-            def Heatflow(electron_thermal_flux, mass):
-                nx = len(electron_thermal_flux)
-                HeatConductionE = np.zeros(len(mass))
-                #Include first and celll wall for no flow set to 0 per no thermal influx BC = 0 
-                if self.boundary_condition =='noflow':
-                    electron_thermal_flux = np.insert(electron_thermal_flux, 0, 0.)
-                #Periodic boundary condition removes last cell wall insert back and set to 0 via thermal influc BC
-                electron_thermal_flux = np.append(electron_thermal_flux, 0.)
-                #Heat flow from SOL-KiT includes celll walla and cell centre.
-                #Thus, step in 2s for 1 to 1 grid. Change if higher resolution grid of SOL-KiT is used.
-                # |.|.|.| 
-                step = 2
-                j = 0
-                for i in range(0, nx, step):   
-                    HeatConductionE[j] = -(electron_thermal_flux[i + 2] - electron_thermal_flux[i]) / mass[j]
-                    j += 1
-                return(HeatConductionE)
-
             mass = np.loadtxt(self._kinetic_io_obj.fluid_input_path + "/mass.txt")        
-            electronheatflow= Heatflow(qe, mass)
+            electronheatflow= self._DivQHeatFlow(qe, mass)
         
             np.savetxt(os.path.join(self._kinetic_io_obj.next_fluid_input_path, "qe.txt"), electronheatflow)    
         
         elif self.CoupleMulti:
-            
-            multiplier = np.loadtxt(os.path.join(self._run_path, "OUTPUT/SH_q_ratio/SH_q_ratio_" + str(max_index).zfill(5) + '.txt'))
-            qe = []
-            step = 2
-            j = 0
-            
-            #Get rid of cell-centre quantites
-            for i in range(1, len(multiplier) - 1, step):   
-                qe.append(multiplier[i])
-                j += 1
+            qe = self._Multiplier(max_index)
             np.savetxt(os.path.join(self._kinetic_io_obj.next_fluid_input_path, "qe.txt"), qe)
 
         #Coyp last step fluid quants

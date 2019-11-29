@@ -29,6 +29,7 @@ class Input:
         self.K_PRE_STEP_DT = None
         self.K_L_MAX = None
         self.K_BC = None
+        self.K_OUTPUT_FREQ = None
         self.TE = None
         self.NE = None
         self.Z  = None
@@ -88,6 +89,7 @@ class Input:
         self.K_PRE_STEP_DT = k['K_PRE_STEP_DT']
         self.K_L_MAX = k['K_L_MAX']
         self.K_BC = k['K_BC']
+        self.K_OUTPUT_FREQ = k['K_OUTPUT_FREQ']
         self.TE = float(k['TE'])
         self.NE = float(k['NE'])
         self.Z = float(k['Z'])

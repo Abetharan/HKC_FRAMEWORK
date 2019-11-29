@@ -100,10 +100,9 @@ class Coupler:
             k_v_multi = init.K_DV_MULTI
             k_pre_step_nt = init.K_PRE_STEP_NT
             k_pre_step_dt = init.K_PRE_STEP_DT
-            k_save_freq = math.ceil(k_nt * 0.1)        
+            k_save_freq = init.K_OUTPUT_FREQ        
             k_l_max = init.K_L_MAX
             k_bc = init.K_BC
-
 
         # Material Properties
         Z = init.Z
