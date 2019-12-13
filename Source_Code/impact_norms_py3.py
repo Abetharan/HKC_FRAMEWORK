@@ -1,13 +1,13 @@
 #----
 import numpy as np
-
-
-q_e = 1.602e-19
-m_e = 9.11e-31
-m_p = 1.67e-27
-k_b = 1.38e-23
-epsilon0 = 8.854e-12
-
+from scipy import constants
+k_b = constants.value("Boltzmann constant")
+m_e = constants.value("electron mass")
+m_p = constants.value("proton mass")
+q_e = constants.value("elementary charge")
+epsilon0 = 8.854188E-12    # Vacuum dielectric constant
+planck_h = constants.value("Planck constant")
+bohr_radi = constants.value("Bohr radius")
 #-----------------------------------------------------------------------
 
 def extract_power(x):
@@ -60,7 +60,6 @@ def impact_inputs(ne,Te,Z,Ar, Bz):
     t0 = (2.588e-16) * (Te**(1.5)) / (Z*Z*ni*log_lambda)
     nu0 = 1.0 / (t0)
     l0 = (1.535e-10) * (Te*Te) / (Z*Z*ni*log_lambda)
-
     # IMPACT inputs 
     wpe_by_nu_ei = 0.4618 * (Te**(1.5)) / (Z * np.sqrt(ne) * log_lambda)
     # for tau_B instead of tau_ei as in IMPACTA - note that ln_lam will be

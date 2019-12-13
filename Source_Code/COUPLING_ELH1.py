@@ -16,7 +16,7 @@ class ELH1(Fluid):
     def __init__(self, IO, nx_, laser_wave_length_, laser_power_, 
                 dur_of_laser_, steps_, fluid_t_max_, initial_dt_,
                 dt_global_max_, dt_global_min_, percentage_output_freq_,
-                bounday_condition_, CoupleDivQ_, CoupleMulti_, initialise_start_files_run_ = True):
+                bounday_condition_, CoupleDivQ_, CoupleMulti_, PreHeatStartIndex_, PreHeatLastIndex_, initialise_start_files_run_ = True):
         self._templater = temple.Templating()
         self._nx = nx_
         self._f_io_obj = IO
@@ -43,6 +43,8 @@ class ELH1(Fluid):
         self._cfl = 0.85
         self._gamma = 5/3
         self._boundary_condition = bounday_condition_
+        self._pre_heat_start_index = PreHeatStartIndex_
+        self._pre_heat_last_index = PreHeatLastIndex_
         if self._fluid_time_max == 0:
             self._output_freq = 100
         else:
@@ -62,7 +64,7 @@ class ELH1(Fluid):
                                             self._fluid_time_max, self._initial_dt, self._dt_global_max, self._dt_global_min, 
                                             self._output_freq, self._boundary_condition, self._init_file_path, 
                                             self._out_file_path, self._switch_path, self._feos_material_1, 
-                                            self._feos_material_2)
+                                            self._feos_material_2, self._pre_heat_start_index, self._pre_heat_last_index)
 
         # Handling templating to create the init file for fluid code
         self._templater.templating(tmpfilePath=self._base_dir + '/tmpHydroParameterInit.txt',

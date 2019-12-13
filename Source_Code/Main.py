@@ -182,7 +182,7 @@ class Coupler:
             prettyprint(' RUNNING ' + _SWITCH_HYDRO_CODE, color = True)
             elh1_obj = elh1.ELH1(io_obj, f_nx, f_laser_wavelength, f_laser_power, f_dur_of_laser, 
                                 f_steps, f_fluid_t_max, f_initial_dt, f_dt_global_max, f_dt_global_min,
-                                f_output_freq, f_boundary_condition, init.COUPLEDIVQ, init.COUPLEMULTI, f_initialise_start_file_run )
+                                f_output_freq, f_boundary_condition, init.COUPLEDIVQ, init.COUPLEMULTI, 0,0, f_initialise_start_file_run )
             elh1_obj.ELH1Run()
             #Breaks here ... Last cycle allowed to run hydro step
             #kinetic would be useless as qe generated is not used. 

@@ -275,9 +275,6 @@ class IMPACT(Kinetic):
         normConst = me * \
             pow(self.normalised_values['vte'], 3) * self.normalised_values['ne'] * 1e21 * 1e6
         qe = varList * normConst
-        import matplotlib.pyplot as plt
-        plt.plot(qe)
-        plt.show()
         import glob
         LargestIndex = 0
         
@@ -302,22 +299,20 @@ class IMPACT(Kinetic):
         
         np.savetxt(os.path.join(self._kinetic_io_obj.next_fluid_input_path, "qe.txt"), electronheatflow)    
 
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "CELL_WALL_X/Cell_Wall_X_" + str(LargestIndex) +".txt")    
+        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "CELL_WALL_X/CELL_WALL_X_" + str(LargestIndex) +".txt")    
                                         ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"coord.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "VELOCITY/Velocity_" + str(LargestIndex) +".txt") 
+        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "VELOCITY/VELOCITY_" + str(LargestIndex) +".txt") 
                                         ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"velocity.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "DENSITY/Density_" + str(LargestIndex) +".txt")  
+        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "DENSITY/DENSITY_" + str(LargestIndex) +".txt")  
                                         ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"density.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "ELECTRON_TEMPERATURE/Te_" + str(LargestIndex) +".txt")
+        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "ELECTRON_TEMPERATURE/ELECTRON_TEMPERATURE_" + str(LargestIndex) +".txt")
                                         ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"electron_temperature.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "ION_TEMPERATURE/Ti_" + str(LargestIndex) +".txt")
+        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "ION_TEMPERATURE/ION_TEMPERATURE_" + str(LargestIndex) +".txt")
                                         ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"ion_temperature.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "MASS/Mass_.txt")
+        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "MASS/MASS_" + str(LargestIndex) + ".txt")
                                         ,os.path.join(self._kinetic_io_obj.next_fluid_input_path,"mass.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "ZBAR/Zbar_" + str(LargestIndex) +".txt")
+        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "ZBAR/ZBAR_" + str(LargestIndex) +".txt")
                                         ,os.path.join(self._kinetic_io_obj.next_fluid_input_path, "Z.txt"))
-        shutil.copyfile(os.path.join(self._kinetic_io_obj.fluid_output_path + "MASS_NUMBER/Ar_" + str(LargestIndex) +".txt")  
-                                    ,os.path.join(self._kinetic_io_obj.next_fluid_input_path, "Ar.txt"))
         
     def findLastIndex(self, path, var, which):
         largest_index = 0
@@ -383,23 +378,22 @@ class IMPACT(Kinetic):
 
     def InitIMPACTFromHydro(self):
 
-        lastIndex = self.findLastIndex(os.path.join(self._fluid_output_path, "CELL_WALL_X"), "Cell_Centre_X", "fluid")
-        f_x_grid = np.loadtxt(self._fluid_output_path + "CELL_WALL_X/Cell_Wall_X_" + str(lastIndex) + ".txt")
-        f_x_centered_grid = np.loadtxt(self._fluid_output_path + "CELL_CENTRE_X/Cell_Centre_X_" + str(lastIndex) + ".txt")
-        f_v = np.loadtxt(self._fluid_output_path + "VELOCITY/Velocity_" + str(lastIndex) + ".txt")
+        lastIndex = self.findLastIndex(os.path.join(self._fluid_output_path, "CELL_WALL_X"), "CELL_WALL_X", "fluid")
+        f_x_grid = np.loadtxt(self._fluid_output_path + "CELL_WALL_X/CELL_WALL_X_" + str(lastIndex) + ".txt")
+        f_x_centered_grid = np.loadtxt(self._fluid_output_path + "CELL_CENTRE_X/CELL_CENTRE_X_" + str(lastIndex) + ".txt")
+        f_v = np.loadtxt(self._fluid_output_path + "VELOCITY/VELOCITY_" + str(lastIndex) + ".txt")
         f_ne = np.loadtxt(
-                self._fluid_output_path + "ELECTRON_NUMBER_DENSITY/Ne_" + str(lastIndex) + ".txt")
+                self._fluid_output_path + "ELECTRON_NUMBER_DENSITY/ELECTRON_NUMBER_DENSITY_" + str(lastIndex) + ".txt")
         f_ni = np.loadtxt(
-                self._fluid_output_path + "ION_NUMBER_DENSITY/Ni_" + str(lastIndex) + ".txt")
+                self._fluid_output_path + "ION_NUMBER_DENSITY/ION_NUMBER_DENSITY_" + str(lastIndex) + ".txt")
         f_Te = np.loadtxt(
-             self._fluid_output_path + "ELECTRON_TEMPERATURE/Te_" + str(lastIndex) + ".txt")
+             self._fluid_output_path + "ELECTRON_TEMPERATURE/ELECTRON_TEMPERATURE_" + str(lastIndex) + ".txt")
         f_laser = np.loadtxt(
-            self._fluid_output_path + "INVERSE_BREM/Inverse_Brem_" + str(lastIndex) + ".txt")
-        f_brem = np.loadtxt(self._fluid_output_path + "BREM/Brem_" + str(lastIndex) + ".txt")
+            self._fluid_output_path + "INVERSE_BREM/INVERSE_BREM_" + str(lastIndex) + ".txt")
+        f_brem = np.loadtxt(self._fluid_output_path + "BREM/BREM_" + str(lastIndex) + ".txt")
         f_density = np.loadtxt(
-            self._fluid_output_path + "DENSITY/Density_" + str(lastIndex) + ".txt")
-        f_Z = np.loadtxt(self._fluid_output_path + "ZBAR/Zbar_" + str(lastIndex) + ".txt")
-        f_Ar = np.loadtxt(self._fluid_output_path + "MASS_NUMBER/Ar_" + str(lastIndex) + ".txt")
+            self._fluid_output_path + "DENSITY/DENSITY_" + str(lastIndex) + ".txt")
+        f_Z = np.loadtxt(self._fluid_output_path + "ZBAR/ZBAR_" + str(lastIndex) + ".txt")
 
         # Energy normlisation
         Un = me * self.normalised_values['vte']**2 * \

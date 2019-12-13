@@ -4,7 +4,7 @@ import sys
 sys.path.insert(0, "/home/abetharan/HYDRO_KINETIC_COUPLING/MISC/HKC_CX1_job_creator.py")
 import yaml
 from distutils.dir_util import copy_tree
-def templateCX1YML(write_path_, base_dir_, input_path_, run_name_, cycles_, K_NT_, K_DT_, K_OUTPUT_FREQ_, F_NT_, F_DT_):
+def templateCX1YML(write_path_, base_dir_, input_path_, run_name_, cycles_,K_NP_, K_NT_, K_DT_, K_OUTPUT_FREQ_, F_NT_, F_DT_):
     
     file_path = '/home/abetharan/HYDRO_KINETIC_COUPLING/MISC/CX1_input.yml'
     with open(file_path) as f:
@@ -17,12 +17,12 @@ def templateCX1YML(write_path_, base_dir_, input_path_, run_name_, cycles_, K_NT
     list_doc['CYCLES'] = cycles_
     
     list_doc['F_INIT_PATH'] = input_path_
-    
+    list_doc['K_NP'] = K_NP_
     list_doc['K_DT'] = K_DT_
-    list_doc['K_NX'] = 255
-    list_doc['F_NX'] = 255
+    list_doc['K_NX'] = 63 
+    list_doc['F_NX'] = 63
     list_doc['K_NT'] = K_NT_
-    list_doc['TE'] = 250
+    list_doc['TE'] = 100
     list_doc['K_OUTPUT_FREQ'] = K_OUTPUT_FREQ_
 
     list_doc['F_INITIAL_DT'] = F_DT_
@@ -144,7 +144,7 @@ def creator(main_job_name, job_names, cycles_, K_NT_, K_DT_, F_NT_, F_DT_, batch
             templateCX1PBS(main_writePath, file_name, yml_input_path, run_path, nump = np)
         else:
             loop.append(yml_input_path)
-        templateCX1YML(writePath, base_dir, init_input_path, i, cycles, K_NT, K_DT, 1, F_NT, F_DT)
+        templateCX1YML(writePath, base_dir, init_input_path, i, cycles, np, K_NT, K_DT, 1, F_NT, F_DT)
 
     if batch:
         templateCX1BATCHPBS(main_writePath, batch_name, loop, run_path, nump = np)
@@ -160,12 +160,12 @@ cycles = []
 nump = []
 mem = []
 k_dt_ = 0.01
-k_NT = 1900
+k_NT = 1872
 f_dt_ = 1e-8
-f_NT = 13338
+f_NT =  3500
 import numpy as np
-ksteps = [0.75, 1, 1.25]
-fsteps = [0.5, 1, 1.5]
+ksteps = [0.1, 0.25, 0.5, 1, 1.5, 2]
+fsteps = [0.25, 0.5, 1, 2]
 import math
 for i in ksteps:
     for j in fsteps:
@@ -177,12 +177,12 @@ for i in ksteps:
         names.append(str(i) + "_KNT_" + str(j) + "_KFNT")
         nump.append(16)
         mem.append('16GB')
-        cycles.append(10)
+        cycles.append(6)
         k_dt.append(k_dt_)
         f_dt.append(f_dt_)
 
 
-name = 'Non_linear_ramp_T0_40_div_q'
-init_path = '/home/abetharan/HYDRO_KINETIC_COUPLING/Non_Linear_Ramp_Investigation/Ramp_with_T0_40'
+name = 'EPPERLEIN_SHORT_COUPLED_02_DIV_Q_POSTER_VER'
+init_path = '/home/abetharan/HYDRO_KINETIC_COUPLING/ES_Investigation/02_init_data'
 creator(name, names, cycles, K_time_step, k_dt, f_time_step, f_dt, np_ = nump, mem_ = mem, init_path = init_path )
 #creator('test_restart', 'restart_test', [50], [1000], [0.01], [1000], [1e-7])

@@ -96,7 +96,7 @@ class SOL_KIT(Kinetic):
         def lambda_ei(n, T, T_norm = 10, n_norm = 0.25E20, Z_norm = 1.0):
             if T * T_norm < 10.00 * Z_norm ** 2:
 
-                result = 23.00 - math.log(math.sqrt(n * n_norm * 1.00E-6) * Z_norm * (T * T_norm) ** (3.00/2.00))
+                result = 23.00 - math.log(math.sqrt(n * n_norm * 1.00E-6) * Z_norm * (T * T_norm) ** (-3.00/2.00))
 
             else:
 
@@ -117,12 +117,11 @@ class SOL_KIT(Kinetic):
         gamma_ei_0 = self._norm_Z ** 2 * gamma_ee_0
 
         v_t = math.sqrt(2.0 * T_J / me)                  # Velocity normalization
-        time_norm = v_t ** 3 / (gamma_ei_0 * self._norm_ne * lambda_ei(1.0, 1.0, T_norm = self._norm_Te, n_norm = self._norm_ne, Z_norm = self._norm_Z)) # Time normalization
+        time_norm = v_t ** 3 / (gamma_ei_0 * (self._norm_ne/self._norm_Z) * lambda_ei(1.0, 1.0, T_norm = self._norm_Te, n_norm = self._norm_ne, Z_norm = self._norm_Z)) # Time normalization
         x_0 = v_t * time_norm               # Space normalization
-
         e_0 = me * v_t / (el_charge * time_norm) # Electric field normalization
         q_0 = me * self._norm_ne * (v_t ** 3)
-
+    
         dict = {}
 
         dict['ne'] = self._norm_ne
@@ -333,12 +332,12 @@ class SOL_KIT(Kinetic):
         #Require interpolation to get the centre quanties in SOL-KiT this is done via linear interpolations 
         #here we use cubic spline to smooth quanties. 
         from scipy.interpolate import CubicSpline, interp1d
-        spliner_ne = CubicSpline(SOL_KIT_x_centered_grid, SOL_KIT_ne)
-        spliner_Te = CubicSpline(SOL_KIT_x_centered_grid, SOL_KIT_Te)
-        spliner_Z = CubicSpline(SOL_KIT_x_centered_grid, SOL_KIT_Z)
-        SOL_KIT_inter_ne = spliner_ne(SOL_KIT_grid, extrapolate= True)
-        SOL_KIT_inter_Te = spliner_Te(SOL_KIT_grid, extrapolate= True)
-        SOL_KIT_inter_Z = spliner_Z(SOL_KIT_grid, extrapolate= True)
+        SOL_KIT_inter_ne = np.interp(SOL_KIT_grid, SOL_KIT_x_centered_grid, SOL_KIT_ne)
+        SOL_KIT_inter_Te = np.interp(SOL_KIT_grid, SOL_KIT_x_centered_grid, SOL_KIT_Te)
+        SOL_KIT_inter_Z =  np.interp(SOL_KIT_grid, SOL_KIT_x_centered_grid, SOL_KIT_Z)
+        #SOL_KIT_inter_ne = spliner_ne(SOL_KIT_grid)
+        #SOL_KIT_inter_Te = spliner_Te(SOL_KIT_grid)
+        #SOL_KIT_inter_Z = spliner_Z(SOL_KIT_grid)
 
         np.savetxt(os.path.join(self._SOL_KIT_INPUT_PATH, "DENS_INPUT.txt"), SOL_KIT_inter_ne, fmt = '%.19f')    
         np.savetxt(os.path.join(self._SOL_KIT_INPUT_PATH, "TEMPERATURE_INPUT.txt"), SOL_KIT_inter_Te, fmt = '%.19f')    
@@ -346,7 +345,6 @@ class SOL_KIT(Kinetic):
         np.savetxt(os.path.join(self._SOL_KIT_INPUT_PATH, "X_GRID_INPUT.txt"), SOL_KIT_grid, fmt = '%.18f')
         # np.savetxt(os.path.join(self._SOL_KIT_INPUT_PATH, "ION_VEL_INPUT.txt"), SOL_KIT_grid)
         # np.savetxt(os.path.join(self._SOL_KIT_INPUT_PATH, "NEUT_HEAT_INPUT.txt"), SOL_KIT_heating)
-
     def _DivQHeatFlow(self, electron_thermal_flux, mass):
         """ Purpose: Find Div.Q
             Args:
@@ -380,17 +378,44 @@ class SOL_KIT(Kinetic):
             Returns: Multipliers
         """
         multiplier = np.loadtxt(os.path.join(self._run_path, "OUTPUT/SH_q_ratio/SH_q_ratio_" + str(max_index).zfill(5) + '.txt'))
-        qe = []
+        kinetic_heat_profile  = np.loadtxt(os.path.join(self._run_path, "OUTPUT/HEAT_FLOW_X/HEAT_FLOW_X_" + str(max_index).zfill(5) + '.txt'))
+        
+        #Include first and celll wall for no flow set to 0 per no thermal influx BC = 0 
+        if self.boundary_condition =='noflow':
+            electron_thermal_flux = np.insert(kinetic_heat_profile, 0, 0.)
+        #Periodic boundary condition removes last cell wall insert back and set to 0 via thermal influc BC
+        kinetic_heat_profile = np.append(kinetic_heat_profile, 0.)
+
+        kinetic_grid = np.loadtxt(os.path.join(self._run_path, "OUTPUT/GRIDS/X_GRID.txt"))
+        multi_list = []
+        qe_list = []
+        cell_wall_list = []
         step = 2
 
         #Get rid of cell-centre quantites
         for i in range(1, len(multiplier) - 1, step):   
-            multi = multiplier[i]
             #add multiplier limiter here if needed
-            qe.append(multi)
-        ##Formulate q_qsh problem.
+            multi_list.append(multiplier[i])
+            qe_list.append(kinetic_heat_profile[i])
+            cell_wall_list.append(kinetic_grid[i])
         
-        return(qe)
+        ##Test for pre-heat via looking at NaN outputs expected from q/q_sh
+        #if nans
+        if(np.isnan(multi_list)):
+
+            multi_list = np.array(multi_list)
+            qe_list = np.array(qe_list)
+            NaN_args = np.argwhere(np.isnan(multi_list))
+
+            pre_heat_start_index = NaN_args[0]
+            #Determine length to tolerance
+            pre_heat_last_index = np.argwhere(qe_list > 1e-9)[0] #last point of pre heat
+        
+        else:
+            pre_heat_start_index = 0
+            pre_heat_last_index = 0 
+
+        return(multi_list, pre_heat_start_index, pre_heat_last_index)
 
 
 
@@ -400,13 +425,12 @@ class SOL_KIT(Kinetic):
         """
         qe_path =  os.path.join(self._run_path, "OUTPUT/HEAT_FLOW_X")
         max_index = self._findLargestIndex(qe_path)
+        mass = np.loadtxt(self._kinetic_io_obj.fluid_input_path + "/mass.txt")        
+
         if self.CoupleDivQ:
             max_index_reformated = '{:>05d}'.format(max_index)
             norm_qe = self.normalised_values['vth']**3 * self.normalised_values['ne'] * me
             qe = np.loadtxt(os.path.join(qe_path, "HEAT_FLOW_X_" + max_index_reformated + '.txt')) * norm_qe
-        
-            ###
-            mass = np.loadtxt(self._kinetic_io_obj.fluid_input_path + "/mass.txt")        
             electronheatflow= self._DivQHeatFlow(qe, mass)
         
             np.savetxt(os.path.join(self._kinetic_io_obj.next_fluid_input_path, "qe.txt"), electronheatflow)    

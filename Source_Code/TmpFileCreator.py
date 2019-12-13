@@ -22,6 +22,11 @@ def SOL_KIT_GRID_INPUT(runPath):
                                        dx =  $dx                              Size of spatial cells
                                  SMALL_dx =  $smalldx                         Size of divertor cell
 
+ Coupling timesteps:
+                                 fluid_dt =         0.2                         Coupling fluid timestep size
+                          c_kinetic_max_t =    20000                            Maximum kinetic number of timesteps before switching to fluid
+                            c_fluid_max_t =    20000                            Maximum fluid number of timesteps before switching to kinetic
+
 """
       kappa = open(runPath + "/tmpSOL_KIT_GRID.txt", "w")
       kappa.write(writeStatement)
@@ -115,6 +120,9 @@ def SOL_KIT_SWITCHES(runPath):
                           FULL_FLUID_MODE =              F     Run code in fluid mode, both electrons and ions
                       Z_PROFILE_FROM_FILE =              T     Load ionization profile from file
                          X_GRID_FROM_FILE =              T     Load spatial grid from file
+                INTRINSIC_COUPLING_SWITCH =              F     Run in coupling mode, switching between kinetic and fluid electron model
+                       FLUID_START_SWITCH =              F     Start from fluid mode when run in coupling
+                        RESCALE_F0_SWITCH =              F     Rescale f0 from last kinetic timestep when moving from fluid to kinetic
 
 """
 
@@ -170,6 +178,8 @@ dtGlobalMax=$dtGlobalMax
 dtGlobalMin=$dtGlobalMin
 OutputFrequency=$OutputFrequency
 BoundaryCondition=$BoundaryCondition
+PreHeatStartIndex=$PreHeatStartIndex
+PreHeatLastIndex=$PreHeatLastIndex
 InitPath=$InitPath
 OutPath=$OutPath
 SwitchPath=$SwitchPath
