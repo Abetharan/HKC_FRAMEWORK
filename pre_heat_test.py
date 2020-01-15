@@ -159,6 +159,22 @@ def NonLocalPreHeatModel(coord_local, coord_non_local, local_heat, non_local_hea
     HeatFlow = q_q_sh[preheat_start] *interp_local_heat[preheat_start] * np.exp(-1*(coord_non_local[preheat_start:] - coord_non_local[preheat_start]) / (B * L)) 
     return(preheat_start,-1, coord_non_local[preheat_start:], HeatFlow, interp_local_heat)
 
+def AltFrontHeat(coord_local, coord_non_local, local_heat, non_local_heat):
+
+    from scipy.interpolate import CubicSpline, interp1d
+    
+    interp_local_heat = np.interp(coord_non_local, coord_local, local_heat)
+    intersect = interp_local_heat / non_local_heat
+    q_q_sh = non_local_qe / interp_local_heat
+    frontheat_start = np.where(intersect != 0)[0][0]
+    frontheat_end = 0
+    L = abs(coord_non_local[frontheat_end] - coord_non_local[frontheat_start])
+    #B = -1 / (np.log10(non_local_heat[0]) / np.log10(non_local_heat[frontheat_start]) - 1)
+    B = (coord_non_local[int(frontheat_start*0.5)] - coord_non_local[frontheat_start]) /(L * (np.sqrt((np.log10(non_local_heat[int(frontheat_start*0.5)]) / np.log10(non_local_heat[frontheat_start]))) - 1))
+    
+    HeatFlow = (q_q_sh[frontheat_start] * interp_local_heat[frontheat_start]) ** pow((((coord_non_local[:(frontheat_start + 1)] - coord_non_local[frontheat_start]) / (B*L)) + 1),2)
+    return(frontheat_start, frontheat_end, coord_non_local[:(frontheat_start + 1)], HeatFlow)
+
 def FrontHeat(coord_local, coord_non_local, local_heat, non_local_heat):
 
     from scipy.interpolate import CubicSpline, interp1d
@@ -174,11 +190,25 @@ def FrontHeat(coord_local, coord_non_local, local_heat, non_local_heat):
 
     return(frontheat_start, frontheat_end, coord_non_local[:(frontheat_start + 1)], HeatFlow)
 
-norms = normlisation(3500, 1e27, 36.5)
-non_local_qe = NonLocalHeatFlow('/media/abetharan/DATADRIVE2/Abetharan/pre_heat_model_test_problem/OUTPUT/HEAT_FLOW_X/HEAT_FLOW_X_03000.txt', norms)
-coord, Local_Heat = LocalHeat('/home/abetharan/HYDRO_KINETIC_COUPLING/Non_Linear_Ramp_Investigation/Pre_Heat_Ramp/', '03000', norms)
-coord_sol = np.loadtxt('/media/abetharan/DATADRIVE2/Abetharan/pre_heat_model_test_problem/OUTPUT/GRIDS/X_GRID.txt')
+def ThermalConduc(HeatFlowE, mass):
+    nx = len(HeatFlowE) 
+    HeatConductionE = np.zeros(nx)
+    HeatFlowE = np.append(HeatFlowE, 0)
+    HeatFlowE = np.insert(HeatFlowE, 0,0)
+    j = 0
+    for i in range(0, nx - 1, 2):
+        HeatConductionE[i] = (HeatFlowE[i + 1] - HeatFlowE[i]) / mass[j];
+        j+=1
+    return(HeatConductionE)
 
+norms = normlisation(3500, 1e27, 36.5)
+#non_local_qe = NonLocalHeatFlow('/media/abetharan/DATADRIVE2/Abetharan/pre_heat_model_test_problem/OUTPUT/HEAT_FLOW_X/HEAT_FLOW_X_03000.txt', norms)
+#coord, Local_Heat = LocalHeat('/home/abetharan/HYDRO_KINETIC_COUPLING/Non_Linear_Ramp_Investigation/Pre_Heat_Ramp/', '03000', norms)
+#coord_sol = np.loadtxt('/media/abetharan/DATADRIVE2/Abetharan/pre_heat_model_test_problem/OUTPUT/GRIDS/X_GRID.txt')
+non_local_qe = NonLocalHeatFlow('/Users/shiki/Documents/Imperial_College_London/Ph.D./HYDRO_IMPACT_COUPLING/HEAT_FLOW_X_03000.txt', norms)
+coord, Local_Heat = LocalHeat('/Users/shiki/Documents/Imperial_College_London/Ph.D./HYDRO_IMPACT_COUPLING/Pre_Heat_Ramp/', '03000',norms )
+coord_sol = np.loadtxt('/Users/shiki/Documents/Imperial_College_London/Ph.D./HYDRO_IMPACT_COUPLING/X_GRID.txt')
+mass = np.loadtxt('/Users/shiki/Documents/Imperial_College_London/Ph.D./HYDRO_IMPACT_COUPLING/Pre_Heat_Ramp/mass.txt')
 unnorm_local_coord = coord/norms['lambda_mfp']
 unnorm_local_qe = -Local_Heat/norms['qe']
 unnorm_non_local_qe = non_local_qe/norms['qe']
@@ -186,14 +216,21 @@ unnorm_non_local_qe = non_local_qe/norms['qe']
 #pre_heat_start, pre_heat_end, coord_pre_heat, preheat, interpolated_local_heat = NonLocalPreHeatModel(coord,coord_sol*norms['lambda_mfp'], -Local_Heat, non_local_qe)
 pre_heat_start, pre_heat_end, coord_pre_heat, preheat, interpolated_local_heat = Alt2NonLocalPreHeatModel(unnorm_local_coord, coord_sol, unnorm_local_qe, unnorm_non_local_qe, norms)
 #front_heat_start, front_heat_end, coord_front_heat, frontheat = FrontHeat(coord, coord_sol * norms['lambda_mfp'], -Local_Heat, non_local_qe)
+front_heat_start, front_heat_end, coord_front_heat, frontheat = AltFrontHeat(coord, coord_sol * norms['lambda_mfp'], -Local_Heat, non_local_qe)
 
 #plt.plot(coord_sol * norms['lambda_mfp'], non_local_qe, 'r--', label = 'non-local')
 
-plt.plot(coord_sol[pre_heat_start:]*norms['lambda_mfp'], interpolated_local_heat[pre_heat_start:], 'k', label = 'local')
-plt.plot(coord_pre_heat, preheat, label = 'preheat')
-plt.plot(coord_sol[(pre_heat_start):] * norms['lambda_mfp'], non_local_qe[pre_heat_start:], label = 'non-local')
+# plt.plot(coord_sol[pre_heat_start:]*norms['lambda_mfp'], interpolated_local_heat[pre_heat_start:], 'k', label = 'local')
+# plt.plot(coord_pre_heat, preheat, label = 'preheat')
+# plt.plot(coord_sol[(pre_heat_start):] * norms['lambda_mfp'], non_local_qe[pre_heat_start:], label = 'non-local')
 #plt.plot(coord_sol[:front_heat_start]*norms['lambda_mfp'], interpolated_local_heat[:front_heat_start], 'k', label = 'local')
-#plt.plot(coord_front_heat, frontheat, label = 'preheat')
+
+frontconduc = ThermalConduc(frontheat, mass)
+non_local_conduc = ThermalConduc(non_local_qe[:(front_heat_start + 1)], mass)
+plt.plot(frontconduc)
+plt.plot(non_local_conduc)
+#plt.plot(coord_front_heat, frontheat, label = 'frontheat')
+#plt.plot(coord_sol[:50] * norms['lambda_mfp'], non_local_qe[:50], label = 'non-local')
 #plt.plot(coord_sol[:(front_heat_start + 1)] * norms['lambda_mfp'], non_local_qe[:(front_heat_start  + 1)], label = 'non-local')
 
 
