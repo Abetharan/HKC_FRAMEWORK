@@ -123,6 +123,7 @@ def SOL_KIT_SWITCHES(runPath):
                 INTRINSIC_COUPLING_SWITCH =              F     Run in coupling mode, switching between kinetic and fluid electron model
                        FLUID_START_SWITCH =              F     Start from fluid mode when run in coupling
                         RESCALE_F0_SWITCH =              F     Rescale f0 from last kinetic timestep when moving from fluid to kinetic
+                       MAINTAIN_F0_SWITCH =              $MAINTAIN     Rescale f0 from last kinetic timestep when moving from fluid to kinetic
 
 """
 

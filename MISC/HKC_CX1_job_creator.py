@@ -29,9 +29,9 @@ def templateCX1YML(write_path_, base_dir_, input_path_, run_name_, cycles_,K_NP_
 
     list_doc['F_STEPS'] = F_NT_
 
-    list_doc['COUPLEDIVQ'] = True
-    list_doc['COUPLEMULTI'] = False
-
+    list_doc['COUPLEDIVQ'] = False
+    list_doc['COUPLEMULTI'] = True
+    list_doc['K_MAINTAIN'] = True
     dump_path = write_path_ + '/INPUT.yml'
 
     with open(dump_path, "w") as f:
@@ -182,7 +182,7 @@ for i in ksteps:
         f_dt.append(f_dt_)
 
 
-name = 'EPPERLEIN_SHORT_COUPLED_02_DIV_Q_POSTER_VER'
+name = 'EPPERLEIN_SHORT_COUPLED_02_MULTI_WITH_F0_MAINTAINED'
 init_path = '/home/abetharan/HYDRO_KINETIC_COUPLING/ES_Investigation/02_init_data'
 creator(name, names, cycles, K_time_step, k_dt, f_time_step, f_dt, np_ = nump, mem_ = mem, init_path = init_path )
 #creator('test_restart', 'restart_test', [50], [1000], [0.01], [1000], [1e-7])

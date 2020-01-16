@@ -30,7 +30,7 @@ bohr_radi = constants.value("Bohr radius")
 class SOL_KIT(Kinetic):
     
     def __init__(self,IO, np_, nv_, nx_, nt_, pre_step_nt_, dx_, dv_, v_multi_, dt_, pre_step_dt_,
-                    lmax_, save_freq_, norm_Z_, norm_Ar_, norm_ne_, norm_Te_, get_sol_kit_, CX1_, CoupleDivQ_, CoupleMulti_):
+                    lmax_, save_freq_, norm_Z_, norm_Ar_, norm_ne_, norm_Te_, get_sol_kit_, CX1_, CoupleDivQ_, CoupleMulti_, MaintainF0_):
 
         self._Kinetic = Kinetic()
         self._templater = Templating() 
@@ -63,6 +63,7 @@ class SOL_KIT(Kinetic):
         self._norm_ne = norm_ne_
         self._norm_Te = norm_Te_        
         self.boundary_condition = None
+        self.maintain_f0 = MaintainF0_
         self.normalised_values = None
         self.CX1 = CX1_ 
         self.CoupleDivQ = CoupleDivQ_
@@ -84,6 +85,16 @@ class SOL_KIT(Kinetic):
         
         super().Execute(cmd, self._cycle_path)
     
+    def lambda_ei(self, n, T, T_norm = 10, n_norm = 0.25E20, Z_norm = 1.0):
+        if T * T_norm < 10.00 * Z_norm ** 2:
+
+            result = 23.00 - math.log(math.sqrt(n * n_norm * 1.00E-6) * Z_norm * (T * T_norm) ** (-3.00/2.00))
+
+        else:
+
+            result = 24.00 - math.log(math.sqrt(n * n_norm * 1.00E-6) / (T * T_norm))   
+
+        return result
     def normalisation(self):
         """ Purpose: Calculates SOL-KiT Normalisation
             
@@ -93,16 +104,6 @@ class SOL_KIT(Kinetic):
             
             TAKEN FROM: SOL_KiT_tools.py
         """
-        def lambda_ei(n, T, T_norm = 10, n_norm = 0.25E20, Z_norm = 1.0):
-            if T * T_norm < 10.00 * Z_norm ** 2:
-
-                result = 23.00 - math.log(math.sqrt(n * n_norm * 1.00E-6) * Z_norm * (T * T_norm) ** (-3.00/2.00))
-
-            else:
-
-                result = 24.00 - math.log(math.sqrt(n * n_norm * 1.00E-6) / (T * T_norm))   
-
-            return result
 
 
         #9.10938E-31            # Electron mass in kg
@@ -117,7 +118,8 @@ class SOL_KIT(Kinetic):
         gamma_ei_0 = self._norm_Z ** 2 * gamma_ee_0
 
         v_t = math.sqrt(2.0 * T_J / me)                  # Velocity normalization
-        time_norm = v_t ** 3 / (gamma_ei_0 * (self._norm_ne/self._norm_Z) * lambda_ei(1.0, 1.0, T_norm = self._norm_Te, n_norm = self._norm_ne, Z_norm = self._norm_Z)) # Time normalization
+        coulomb_log = self.lambda_ei(1.0, 1.0, T_norm = self._norm_Te, n_norm = self._norm_ne, Z_norm = self._norm_Z)
+        time_norm = v_t ** 3 / (gamma_ei_0 * (self._norm_ne/self._norm_Z) * coulomb_log)  # Time normalization
         x_0 = v_t * time_norm               # Space normalization
         e_0 = me * v_t / (el_charge * time_norm) # Electric field normalization
         q_0 = me * self._norm_ne * (v_t ** 3)
@@ -135,8 +137,10 @@ class SOL_KIT(Kinetic):
         dict['tau_ei'] = time_norm
         dict['nu_ei'] = 1/time_norm
         dict['lambda_mfp'] = x_0
+        dict['coulomb_log'] = coulomb_log
         dict['qe'] = q_0
         self.normalised_values = dict
+
     def makeTmpFiles(self):
         """ Purpose: Create all temporary files defined in tmpFileCreator.py
         """
@@ -231,7 +235,7 @@ class SOL_KIT(Kinetic):
                                     PERIODIC = switch_periodic, FIXEDUP = switch_fixedup, 
                                     FIXEDDOWN = switch_fixeddown, NOFLOWUP = switch_noflowup, 
                                     NOFLOWDOWN = switch_noflowdown, IMPACTMODE = switch_IMPACT_MODE_, 
-                                    COLDIONS = switch_COLD_IONS_)
+                                    COLDIONS = switch_COLD_IONS_, MAINTAIN = self.maintain_f0)
                                 
         self._templater.templating(tmpfilePath= self._run_path + '/tmpSOL_KIT_GRID.txt',
             writePath=INPUT_PATH, fileName="GRID_INPUT.txt", parameters=grid)
@@ -370,6 +374,108 @@ class SOL_KIT(Kinetic):
             HeatConductionE[j] = -(electron_thermal_flux[i + 2] - electron_thermal_flux[i]) / mass[j]
             j += 1
         return(HeatConductionE)
+    
+
+    def SpitzerHarmHeatFlow(self,cell_centre_coord, temperature, zbar, number_density):
+        """
+        Purpose: Models Spitzer Harm heat flow 
+        Args:
+            cell_centre_coord = List of cell centres
+            temperature = electron temperature.
+            zbar = ionization
+            number_density = number density of electrons
+        Returns:
+            SH_Heat_Flow = Spitzer harm heat flow
+        """
+        coulomb_log = []
+        for i in range(len(zbar)):
+            coulomb = self.lambda_ei(1.0, 1.0, T_norm = temperature[i] * (kb/e), n_norm = number_density[i], Z_norm = zbar[i])
+            coulomb_log.append(coulomb)
+
+        coulomb_log = np.array(coulomb_log)
+        kappaE = 1.843076667547614E-10 * pow(temperature, 2.5) * pow(self.normalised_values['coulomb_log'], -1) *  pow(zbar, -1)
+        
+        nx = len(temperature)
+        HeatFlowE = np.zeros(nx + 1)
+        for i in range(1, nx):
+        
+            centered_ke = 0.5 * (kappaE[i] + kappaE[i - 1])
+            HeatFlowE[i] = centered_ke *((temperature[i] - temperature[i - 1]) / (cell_centre_coord[i] - cell_centre_coord[i - 1]))
+            
+        HeatFlowE[0] = 0
+        HeatFlowE[-1] = 0
+        return(-1*HeatFlowE)
+    
+    def PreHeatModel(self, coord_non_local, local_heat, non_local_heat):
+        """ 
+        Purpose: Model Pre-heat using an exponential fitting parameter, fit parameter
+                    is spat out to be used by the fluid code.
+        Args:
+            coord = cell wall grid
+            local_heat = Spitzer-Harm heat flow
+            non_local_heat = Kinetic code heat flow
+        Returns:
+            B = Fitting paramters
+            preheat_start = start index for preheat
+            preheat_end = end index of preheat
+        """
+        #interp_local_heat = np.interp(coord_non_local, coord_local, local_heat)
+        intersect = local_heat / non_local_heat
+        q_q_sh = non_local_heat / local_heat
+        intersect[np.isnan(intersect)] = 0 
+        preheat_start = np.where(intersect[~np.isnan(intersect)] != 0)[0][-1]
+        tolerance = self._dt * self.normalised_values['tau_ei']
+        preheat_end = np.where(abs(non_local_heat[preheat_start:]) < tolerance)[0][0] + preheat_start
+        #preheat_end_value = 1e-60
+        L = coord_non_local[preheat_end] - coord_non_local[preheat_start] 
+        #B =  -1/np.log(preheat_end_value / non_local_heat[preheat_start])
+        B = []
+        for i in range(preheat_start, preheat_end):
+            b = -1* (coord_non_local[i] - coord_non_local[preheat_start]) / (L * np.log(non_local_heat[i]/non_local_heat[preheat_start]))
+            B.append(b)
+            
+        B = np.array(B)
+        
+        #HeatFlow = q_q_sh[preheat_start] *interp_local_heat[preheat_start] * np.exp(-1*(coord_non_local[preheat_start:(preheat_end + 1)] - coord_non_local[preheat_start]) / (B*L))
+        #HeatFlow = q_q_sh[preheat_start] *local_heat[preheat_start] * np.exp(-1*(((coord_non_local[preheat_start:preheat_end] - coord_non_local[preheat_start]) / (B*L))))
+        #HeatFlow = np.concatenate((HeatFlow,np.zeros(len(coord_non_local[preheat_start:]) - len(HeatFlow))))
+        
+        return(preheat_start, -1, B)
+
+    def FrontHeatModel(self, coord_non_local, local_heat, non_local_heat):
+        """
+        Purpose: Model heat wave from top of a bath.
+        Args:
+            coord = cell wall grid
+            local_heat = Spitzer-Harm heat flow
+            non_local_heat = Kinetic code heat flow
+        Returns:
+            B = Fitting paramters
+            frontheat_start = start of front heat
+            frontheat_end = end of front 
+            heat
+        """
+
+        #interp_local_heat = np.interp(coord_non_local, coord_local, local_heat)
+        intersect = local_heat / non_local_heat
+        intersect[np.isnan(intersect)] = 0 
+        frontheat_start = np.where(intersect != 0)[0][0]  
+        frontheat_end = 0
+        L = abs(coord_non_local[frontheat_end] - coord_non_local[frontheat_start])
+        
+        B = []
+
+        for i in range(0, frontheat_start+1):
+            b = -1* (coord_non_local[i] - coord_non_local[frontheat_start]) / (L * np.log(non_local_heat[i]/non_local_heat[frontheat_start]))
+            B.append(b)
+        
+        B = np.array(B)
+        #HeatFlow = (q_q_sh[frontheat_start] * local_heat[frontheat_start]) * np.exp( -1* (coord_non_local[:(frontheat_start + 1)] - coord_non_local[frontheat_start]) / (B * L))
+        
+        #HeatFlow[0] = 0
+        #HeatFlow[-1] = 0
+
+        return(frontheat_start, frontheat_end, B)
 
     def _Multiplier(self, max_index):
         """ Purpose: Find multipliers and exponentially extrapolate for pre-heat
@@ -379,13 +485,14 @@ class SOL_KIT(Kinetic):
         """
         multiplier = np.loadtxt(os.path.join(self._run_path, "OUTPUT/SH_q_ratio/SH_q_ratio_" + str(max_index).zfill(5) + '.txt'))
         kinetic_heat_profile  = np.loadtxt(os.path.join(self._run_path, "OUTPUT/HEAT_FLOW_X/HEAT_FLOW_X_" + str(max_index).zfill(5) + '.txt'))
-        
+        temperature = np.loadtxt(os.path.join(self._run_path, "OUTPUT/TEMPERATURE/TEMPERATURE_" + str(max_index).zfill(5) + '.txt'))        
+        number_density = np.loadtxt(os.path.join(self._run_path, "OUTPUT/DENSITY/DENSITY_" + str(max_index).zfill(5) + '.txt'))
+        zbar = np.loadtxt(os.path.join(self._run_path, 'INPUT/Z_PROFILE_INPUT.txt'))
         #Include first and celll wall for no flow set to 0 per no thermal influx BC = 0 
         if self.boundary_condition =='noflow':
-            electron_thermal_flux = np.insert(kinetic_heat_profile, 0, 0.)
+            kinetic_heat_profile = np.insert(kinetic_heat_profile, 0, 0.)
         #Periodic boundary condition removes last cell wall insert back and set to 0 via thermal influc BC
         kinetic_heat_profile = np.append(kinetic_heat_profile, 0.)
-
         kinetic_grid = np.loadtxt(os.path.join(self._run_path, "OUTPUT/GRIDS/X_GRID.txt"))
         multi_list = []
         qe_list = []
@@ -399,23 +506,28 @@ class SOL_KIT(Kinetic):
             qe_list.append(kinetic_heat_profile[i])
             cell_wall_list.append(kinetic_grid[i])
         
+        sh_heat = self.SpitzerHarmHeatFlow(cell_wall_list, temperature * self.normalised_values['Te']*(e/kb), zbar, number_density * self.normalised_values['ne'])
         ##Test for pre-heat via looking at NaN outputs expected from q/q_sh
         #if nans
+
+        #Detect if there is Front heat
+        #Detect if there is Pre-Heat
         if(np.isnan(multi_list)):
 
             multi_list = np.array(multi_list)
             qe_list = np.array(qe_list)
             NaN_args = np.argwhere(np.isnan(multi_list))
-
-            pre_heat_start_index = NaN_args[0]
-            #Determine length to tolerance
-            pre_heat_last_index = np.argwhere(qe_list > 1e-9)[0] #last point of pre heat
+            pre_heat_start_index, pre_heat_last_index, pre_heat_fit_params = self.PreHeatModel(cell_wall_list, sh_heat, qe_list)
+            front_heat_start_index, front_heat_last_index, front_heat_fit_params = self.FrontHeatModel(cell_wall_list, sh_heat, qe_list)
+            #pre_heat_start_index = NaN_args[0]
+                #Determine length to tolerance
+            #pre_heat_last_index = np.argwhere(qe_list > 1e-9)[0] #last point of pre heat
         
         else:
             pre_heat_start_index = 0
             pre_heat_last_index = 0 
 
-        return(multi_list, pre_heat_start_index, pre_heat_last_index)
+        return(multi_list, pre_heat_start_index, pre_heat_last_index, pre_heat_fit_params, front_heat_start_index, front_heat_last_index, front_heat_fit_params)
 
 
 
@@ -436,8 +548,11 @@ class SOL_KIT(Kinetic):
             np.savetxt(os.path.join(self._kinetic_io_obj.next_fluid_input_path, "qe.txt"), electronheatflow)    
         
         elif self.CoupleMulti:
-            qe = self._Multiplier(max_index)
-            np.savetxt(os.path.join(self._kinetic_io_obj.next_fluid_input_path, "qe.txt"), qe)
+            multi_list, pre_heat_start_index, pre_heat_last_index, pre_heat_fit_params, front_heat_start_index, front_heat_last_index, front_heat_fit_params = self._Multiplier(max_index)
+            np.savetxt(os.path.join(self._kinetic_io_obj.next_fluid_input_path, "qe.txt"), multi_list)
+            np.savetxt(os.path.join(self._kinetic_io_obj.next_fluid_input_path, "pre_heat_fit_param.txt"), pre_heat_fit_params)
+            np.savetxt(os.path.join(self._kinetic_io_obj.next_fluid_input_path, "front_heat_fit_param.txt"), front_heat_fit_params)
+
 
         #Coyp last step fluid quants
         largest_fluid_index = self._findLargestIndex(os.path.join(self._fluid_output_path, "ELECTRON_TEMPERATURE"))

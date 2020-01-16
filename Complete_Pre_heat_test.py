@@ -9,6 +9,7 @@ e = constants.value("elementary charge")
 planck_h = constants.value("Planck constant")
 bohr_radi = constants.value("Bohr radius")
 epsilon_0 = epsilon_0 = 8.854188E-12    # Vacuum dielectric constant
+
 def mCalculateKappaE(TemperatureE, CoulombLogEI, Zbar):
 
     ke = 1.843076667547614E-10 * pow(TemperatureE, 2.5) * pow(CoulombLogEI, -1) *  pow(Zbar, -1)
@@ -72,47 +73,86 @@ def normlisation(norm_Te, norm_ne, norm_Z):
     # convert ne to 10**21 cm**-3
     dict['qe'] = q_0
     return(dict)
-def PreHeatModel(coord_non_local, local_heat, non_local_heat, norms):
-    from scipy.interpolate import CubicSpline, interp1d
 
+def PreHeatModel(coord_non_local, local_heat, non_local_heat):
+    """ 
+    Purpose: Model Pre-heat using an exponential fitting parameter, fit parameter
+                is spat out to be used by the fluid code.
+    Args:
+        coord = cell wall grid
+        local_heat = Spitzer-Harm heat flow
+        non_local_heat = Kinetic code heat flow
+    Returns:
+        B = Fitting paramters
+        preheat_start = start index for preheat
+    
+    """
     #interp_local_heat = np.interp(coord_non_local, coord_local, local_heat)
     intersect = local_heat / non_local_heat
     q_q_sh = non_local_heat / local_heat
-    preheat_start = np.where(intersect != 0)[0][-1]
+    intersect[np.isnan(intersect)] = 0 
+    preheat_start = np.where(intersect[~np.isnan(intersect)] != 0)[0][-1]
     tolerance = 0.01 * norms['tau_ei']
-    preheat_end = np.where(abs(non_local_heat[preheat_start:]) < tolerance)[0][-1] + preheat_start
-    preheat_end_value = 1e-60
+    preheat_end = np.where(abs(non_local_heat[preheat_start:]) < tolerance)[0][0] + preheat_start
+    #preheat_end_value = 1e-60
     L = coord_non_local[preheat_end] - coord_non_local[preheat_start] 
-    B =  -1/np.log(preheat_end_value / non_local_heat[preheat_start])
+    #B =  -1/np.log(preheat_end_value / non_local_heat[preheat_start])
+    B = []
+    for i in range(preheat_start, preheat_end):
+       b = -1* (coord_non_local[i] - coord_non_local[preheat_start]) / (L * np.log(non_local_heat[i]/non_local_heat[preheat_start]))
+       B.append(b)
+    
+    B = np.array(B)
     
     #HeatFlow = q_q_sh[preheat_start] *interp_local_heat[preheat_start] * np.exp(-1*(coord_non_local[preheat_start:(preheat_end + 1)] - coord_non_local[preheat_start]) / (B*L))
-    HeatFlow = q_q_sh[preheat_start] *local_heat[preheat_start] * np.exp(-1*(((coord_non_local[preheat_start:(preheat_end + 1)] - coord_non_local[preheat_start]) / (B*L))))
+    HeatFlow = q_q_sh[preheat_start] *local_heat[preheat_start] * np.exp(-1*(((coord_non_local[preheat_start:preheat_end] - coord_non_local[preheat_start]) / (B*L))))
     HeatFlow = np.concatenate((HeatFlow,np.zeros(len(coord_non_local[preheat_start:]) - len(HeatFlow))))
-    return(preheat_start,-1, coord_non_local[preheat_start:] * norms['lambda_mfp'], HeatFlow * norms['qe'])
+    return(preheat_start,-1, coord_non_local[preheat_start:], HeatFlow)
 
 def FrontHeat(coord_non_local, local_heat, non_local_heat):
+    """
+    Purpose: Model heat wave from top of a bath.
+    Args:
+        coord = cell wall grid
+        local_heat = Spitzer-Harm heat flow
+        non_local_heat = Kinetic code heat flow
+    Returns:
+        B = Fitting paramters
+        frontheat_end = start index for preheat    
+    """
 
-    from scipy.interpolate import CubicSpline, interp1d
-    
     #interp_local_heat = np.interp(coord_non_local, coord_local, local_heat)
     intersect = local_heat / non_local_heat
+    intersect[np.isnan(intersect)] = 0 
     q_q_sh = non_local_heat / local_heat
-    frontheat_start = np.where(intersect != 0)[0][0]
+    frontheat_start = np.where(intersect != 0)[0][0]  
     frontheat_end = 0
     L = abs(coord_non_local[frontheat_end] - coord_non_local[frontheat_start])
-    #B = -1 / (np.log10(non_local_heat[0]) / np.log10(non_local_heat[frontheat_start]) - 1)
-    B = (coord_non_local[int(frontheat_start*0.5)] - coord_non_local[frontheat_start]) /(L * (np.sqrt((np.log10(non_local_heat[int(frontheat_start*0.5)]) / np.log10(non_local_heat[frontheat_start]))) - 1))
     
-    HeatFlow = (q_q_sh[frontheat_start] * local_heat[frontheat_start]) ** pow((((coord_non_local[:(frontheat_start + 1)] - coord_non_local[frontheat_start]) / (B*L)) + 1),2)
+    B = []
+
+    for i in range(0, frontheat_start+1):
+       b = -1* (coord_non_local[i] - coord_non_local[frontheat_start]) / (L * np.log(non_local_heat[i]/non_local_heat[frontheat_start]))
+       B.append(b)
+    
+    B = np.array(B)
+    HeatFlow = (q_q_sh[frontheat_start] * local_heat[frontheat_start]) * np.exp( -1* (coord_non_local[:(frontheat_start + 1)] - coord_non_local[frontheat_start]) / (B * L))
+    
+    HeatFlow[0] = 0
+    HeatFlow[-1] = 0
+
     return(frontheat_start, frontheat_end, coord_non_local[:(frontheat_start + 1)], HeatFlow)
+
 
 def ThermalConduc(HeatFlowE, mass):
     nx = len(HeatFlowE) 
     HeatConductionE = np.zeros(nx)
-    HeatFlowE = np.append(HeatFlowE, 0)
-    HeatFlowE = np.insert(HeatFlowE, 0,0)
+    if HeatFlowE[0] != 0:
+        HeatFlowE[0] = 0
+    #HeatFlowE = np.append(HeatFlowE, 0)
+    #HeatFlowE = np.insert(HeatFlowE, 0,0)
     j = 0
-    for i in range(0, nx - 1, 2):
+    for i in range(0, nx - 1):
         HeatConductionE[i] = (HeatFlowE[i + 1] - HeatFlowE[i]) / mass[j];
         j+=1
     return(HeatConductionE)
@@ -133,24 +173,26 @@ def LocalHeat(path, index, norms):
     ni = density/(Ar * mp)
     ne = ni * zbar
     kappaE = mCalculateKappaE(Te, norms['coulomb_log'], zbar)
-    local_heat_flow = HeatFlowE(coord, kappaE, Te, ne)
+    local_heat_flow = HeatFlowE(coord, kappaE, Te, ne) / norms['qe']
     
-    return(coord, local_heat_flow)
+    return(coord, -1* local_heat_flow)
 
 
 norms = normlisation(3500, 1e27, 36.5)
-#non_local_qe = NonLocalHeatFlow('/media/abetharan/DATADRIVE2/Abetharan/pre_heat_model_test_problem/OUTPUT/HEAT_FLOW_X/HEAT_FLOW_X_03000.txt', norms)
-#coord, Local_Heat = LocalHeat('/home/abetharan/HYDRO_KINETIC_COUPLING/Non_Linear_Ramp_Investigation/Pre_Heat_Ramp/', '03000', norms)
+kinetic_heat_profile = np.loadtxt('/media/abetharan/DATADRIVE2/Abetharan/pre_heat_model_test_problem/OUTPUT/HEAT_FLOW_X/HEAT_FLOW_X_03000.txt')
+multiplier = np.loadtxt('/media/abetharan/DATADRIVE2/Abetharan/pre_heat_model_test_problem/OUTPUT/SH_q_ratio/SH_q_ratio_03000.txt')
+coord, sh_heat = LocalHeat('/home/abetharan/HYDRO_KINETIC_COUPLING/Non_Linear_Ramp_Investigation/Pre_Heat_Ramp/', '03000', norms)
+mass = np.loadtxt('/home/abetharan/HYDRO_KINETIC_COUPLING/Non_Linear_Ramp_Investigation/Pre_Heat_Ramp/mass.txt')
 #coord_sol = np.loadtxt('/media/abetharan/DATADRIVE2/Abetharan/pre_heat_model_test_problem/OUTPUT/GRIDS/X_GRID.txt')
-non_local_qe = np.loadtxt('/Users/shiki/Documents/Imperial_College_London/Ph.D./HYDRO_IMPACT_COUPLING/HEAT_FLOW_X_03000.txt')
+#non_local_qe = np.loadtxt('/Users/shiki/Documents/Imperial_College_London/Ph.D./HYDRO_IMPACT_COUPLING/HEAT_FLOW_X_03000.txt')
 
-coord, sh_heat = LocalHeat('/Users/shiki/Documents/Imperial_College_London/Ph.D./HYDRO_IMPACT_COUPLING/Pre_Heat_Ramp/', '03000',norms )
+#coord, sh_heat = LocalHeat('/Users/shiki/Documents/Imperial_College_London/Ph.D./HYDRO_IMPACT_COUPLING/Pre_Heat_Ramp/', '03000',norms )
 #coord_sol = np.loadtxt('/Users/shiki/Documents/Imperial_College_London/Ph.D./HYDRO_IMPACT_COUPLING/X_GRID.txt')
-mass = np.loadtxt('/Users/shiki/Documents/Imperial_College_London/Ph.D./HYDRO_IMPACT_COUPLING/Pre_Heat_Ramp/mass.txt')
+#mass = np.loadtxt('/Users/shiki/Documents/Imperial_College_London/Ph.D./HYDRO_IMPACT_COUPLING/Pre_Heat_Ramp/mass.txt')
 
 
-multiplier = np.loadtxt('/Users/shiki/Documents/Imperial_College_London/Ph.D./HYDRO_IMPACT_COUPLING/SH_q_ratio_03000.txt')
-kinetic_heat_profile  = np.loadtxt('/Users/shiki/Documents/Imperial_College_London/Ph.D./HYDRO_IMPACT_COUPLING/HEAT_FLOW_X_03000.txt')
+#multiplier = np.loadtxt('/Users/shiki/Documents/Imperial_College_London/Ph.D./HYDRO_IMPACT_COUPLING/SH_q_ratio_03000.txt')
+#inetic_heat_profile  = np.loadtxt('/Users/shiki/Documents/Imperial_College_London/Ph.D./HYDRO_IMPACT_COUPLING/HEAT_FLOW_X_03000.txt')
 
 #Include first and celll wall for no flow set to 0 per no thermal influx BC = 0 
 
@@ -172,7 +214,6 @@ step = 2
 #Get rid of cell-centre quantites
 
 for i in range(0, len(multiplier), step):   
-    print(i)
     #add multiplier limiter here if needed
     multi_list.append(multiplier[i])
     qe_list.append(kinetic_heat_profile[i])
@@ -199,8 +240,21 @@ qe_list = np.array(qe_list)
 
 preheat_start, preheat_end, coord_pre_heat, preheat = PreHeatModel(cell_wall_list, sh_heat, qe_list, norms)
 frontheat_start, frontheat_end, coord_front_heat, frontheat  = FrontHeat(cell_wall_list, sh_heat, qe_list)
-heat_flow = multi_list * sh_heat * norms['qe']
-plt.plot(cell_wall_list, heat_flow, 'k-')
-plt.plot(coord_front_heat, frontheat, 'r-')
-plt.plot(coord_pre_heat, preheat, 'b-')
+
+heat_flow = multi_list * sh_heat
+combined_flow = np.concatenate((frontheat[:-1],heat_flow[~np.isnan(heat_flow)], preheat[1:]))
+
+combined_thermal_conduc = ThermalConduc(combined_flow, mass)
+kinetic_thermal_conduc = ThermalConduc(qe_list, mass)
+
+plt.plot(combined_thermal_conduc, 'k-', label = 'reci_front_heat')
+plt.plot(kinetic_thermal_conduc, 'r--')
+#plt.plot(qe_list, 'k-', label = 'sol_kit')
+#plt.plot(combined_flow, 'r-', label = 'reci_front-heat')
+#plt.plot(cell_wall_list, sh_heat, 'b--')
+#plt.ylim(0,0.0017)
+#plt.plot(cell_wall_list, heat_flow, 'k-')
+#plt.plot(coord_front_heat, frontheat, 'r-')
+#plt.plot(coord_pre_heat, preheat, 'b-')
+plt.legend()
 plt.show()

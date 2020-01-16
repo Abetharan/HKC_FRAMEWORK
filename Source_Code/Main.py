@@ -103,6 +103,7 @@ class Coupler:
             k_save_freq = init.K_OUTPUT_FREQ        
             k_l_max = init.K_L_MAX
             k_bc = init.K_BC
+            k_maintain = init.K_MAINTAIN
 
         # Material Properties
         Z = init.Z
@@ -223,7 +224,7 @@ class Coupler:
             if _SWITCH_KINETIC_CODE == "SOL_KIT":
                 sol_kit_obj = solkit.SOL_KIT(io_obj, k_np, k_nv, k_nx, k_nt, k_pre_step_nt, k_dx, 
                                     k_dv, k_v_multi, k_dt, k_pre_step_dt, k_l_max, k_save_freq, Z, Ar, ne, Te,
-                                    copy_sol_kit, _SWITCH_CX1, init.COUPLEDIVQ, init.COUPLEMULTI) 
+                                    copy_sol_kit, _SWITCH_CX1, init.COUPLEDIVQ, init.COUPLEMULTI, init.K_MAINTAIN) 
                 sol_kit_obj.setSOL_KITFiles(switch_boundary_condition_ = k_bc)
                 sol_kit_obj.InitSOL_KITFromHydro()
                 sol_kit_obj.SOL_KITRun()
