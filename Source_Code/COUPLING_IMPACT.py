@@ -132,7 +132,7 @@ class IMPACT(Kinetic):
         A = self.normalised_values["Ar"]
         fort10Param = sf10p.set_fort_10(wpe_over_nuei=wpe_over_nu_ei, c_over_vte=c_over_vte,x_bc_type = self.boundary_condition,
                                             atomic_Z=Z, atomic_A=A, nv= self._nv,nx =self._nx, ny=self._ny, dt=self._dt, tmax=self._t_max,
-                                            xmax = self._x_max,vmax=self._v_max, do_user_prof_sub=".true.", op_restart_freq = self._restart_freq)
+                                            vmax=self._v_max, do_user_prof_sub=".true.", op_restart_freq = self._restart_freq)
 
         self._templater.templating(tmpfilePath= self._run_path + '/tmpfort.10',
                 writePath=self._run_path, fileName="fort.10", parameters=fort10Param)

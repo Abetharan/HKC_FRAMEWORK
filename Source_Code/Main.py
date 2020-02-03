@@ -160,6 +160,10 @@ class Coupler:
         if _SWITCH_KINETIC_CODE == "IMPACT":
             k_nx = int(k_nx / k_np)
 
+        pre_heat_start_index = 0 
+        pre_heat_last_index = 0 
+        front_heat_start_index = 0 
+        front_heat_last_index = 0
         for cycle_no in range(start_cycle, cycles, 1):
             prettyprint(' RUNNING CYCLE ' + str(cycle_no)) 
 
@@ -179,11 +183,15 @@ class Coupler:
             if cycle_no == 0:
                 io_obj.copyFluidInit(f_init_path)
                 np.savetxt(os.path.join(run_path, 'NO_CYCLES.txt'), np.array([cycles - 1]), fmt = '%i' )       
-            
+            if pre_heat_last_index == -1:
+                pre_heat_last_index = f_nx
+                
             prettyprint(' RUNNING ' + _SWITCH_HYDRO_CODE, color = True)
             elh1_obj = elh1.ELH1(io_obj, f_nx, f_laser_wavelength, f_laser_power, f_dur_of_laser, 
                                 f_steps, f_fluid_t_max, f_initial_dt, f_dt_global_max, f_dt_global_min,
-                                f_output_freq, f_boundary_condition, init.COUPLEDIVQ, init.COUPLEMULTI, 0,0, f_initialise_start_file_run )
+                                f_output_freq, f_boundary_condition, init.COUPLEDIVQ, init.COUPLEMULTI,
+                                pre_heat_start_index, pre_heat_last_index, front_heat_start_index,
+                                front_heat_last_index, f_initialise_start_file_run )
             elh1_obj.ELH1Run()
             #Breaks here ... Last cycle allowed to run hydro step
             #kinetic would be useless as qe generated is not used. 
@@ -233,6 +241,10 @@ class Coupler:
                     sol_kit_obj.moveSOL_KITFiles()
                 else:    
                     sol_kit_obj.moveSOL_KITFiles()
+                pre_heat_start_index = sol_kit_obj.pre_heat_start_index
+                pre_heat_last_index = sol_kit_obj.pre_heat_last_index
+                front_heat_start_index = sol_kit_obj.front_heat_start_index
+                front_heat_last_index = sol_kit_obj.front_heat_last_index
 
             np.savetxt(continue_step_path, np.array([cycle_no]), fmt = '%i')
             

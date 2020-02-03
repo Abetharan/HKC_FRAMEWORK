@@ -50,7 +50,6 @@ def SOL_KIT_SWITCHES(runPath):
                               COLL_RECOMB =              F     Include radiative and 3-body recombination
 
  Grid and boundary switches:
-                   SMALL_LAST_CELL_SWITCH =              F     Set last cell to a small width
                   LOGARITHMIC_GRID_SWITCH =              F     Logarithmic grid with largest cell equal to dx and smallest to SMALL_dx
                  PERIODIC_BOUNDARY_SWITCH =              $PERIOD     Turn on periodic boundaries
                  FIXED_BOUNDARY_UP_SWITCH =              $FIXEDUP     Fix upstream boundary cell centre
@@ -91,7 +90,6 @@ def SOL_KIT_SWITCHES(runPath):
                TEMPERATURE_FROM_FILE_INIT =              T     Load electron temperature from file
        NEUTRAL_GROUND_DENS_FROM_FILE_INIT =              F     Load neutral ground state density from file
                    ION_VEL_FROM_FILE_INIT =              F     Load ion velocity from file
-                         ION_VEL_EXP_INIT =              F     Initialize exponential ion velocity
                         LOCAL_INIT_SWITCH =              $IMPACT_MODE     Initialize l=1 harmonic and E-field as local values (works for periodic boundaries as well)
          LOCAL_SAHA_BOLTZMANN_INIT_SWITCH =              F     Initialize ionization degree and excited state populations assuming local initial electron density is total density
 
@@ -116,7 +114,6 @@ def SOL_KIT_SWITCHES(runPath):
 
  Other switches: 
                  ADAPTIVE_TIMESTEP_SWITCH =              F     Use adaptive timestep (rescale dt with min(T^(3/2)/n))
-            MOMENT_FRIENDLY_INTERP_SWITCH =              F     Interpolate moments based on density weighing
                           FULL_FLUID_MODE =              F     Run code in fluid mode, both electrons and ions
                       Z_PROFILE_FROM_FILE =              T     Load ionization profile from file
                          X_GRID_FROM_FILE =              T     Load spatial grid from file
@@ -136,7 +133,6 @@ def SOL_KIT_NORMS(runPath):
                                  ATOMIC_A =   $Ar                   Atomic mass of main plasma particles
                                 TEMP_0_EV =   $Temp                    Temperature normalization in eV
                                 DENSITY_0 =   $Density               Density normalization
-                            ION_MASS_MULT =        1.00        Ion mass multiplier (default = 1)
 """
 
       kappa = open(runPath + "/tmpSOL_KIT_NORMS.txt", "w")
@@ -181,6 +177,8 @@ OutputFrequency=$OutputFrequency
 BoundaryCondition=$BoundaryCondition
 PreHeatStartIndex=$PreHeatStartIndex
 PreHeatLastIndex=$PreHeatLastIndex
+FrontHeatStartIndex=$FrontHeatStartIndex
+FrontHeatLastIndex=$FrontHeatLastIndex
 InitPath=$InitPath
 OutPath=$OutPath
 SwitchPath=$SwitchPath
@@ -211,6 +209,7 @@ FullyIonized=$FullyIonized
 CreateOutputFolder=false
 ConstantCoulombLog=true
 TwoBath=false
+FluxLimit=false
     """
     kappa = open(runPath + "/tmpFluidSwitch.txt", "w")
     kappa.write(writeStatement)

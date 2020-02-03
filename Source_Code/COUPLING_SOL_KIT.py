@@ -68,23 +68,51 @@ class SOL_KIT(Kinetic):
         self.CX1 = CX1_ 
         self.CoupleDivQ = CoupleDivQ_
         self.CoupleMulti = CoupleMulti_
+        self.pre_heat_start_index = 0 
+        self.pre_heat_last_index = 0 
+        self.front_heat_start_index = 0 
+        self.front_heat_last_index = 0 
         self.makeTmpFiles()
         self.copySOL_KiT()
         self.normalisation()
-    
+        self.sh_heat_flow = 0
+        self.mnultipliers = 0
     def SOL_KITRun(self):
         """ Purpose: Run SOL-KiT
             Logic: CX1 does not use mpirun. 
         """        
+        
+        def convergance_test(path):
+            
+            largest_fluid_index = self._findLargestIndex(os.path.join(self._fluid_output_path, "ELECTRON_TEMPERATURE"))
+            temperature = np.loadtxt(os.path.join(self._kinetic_io_obj.fluid_output_path + "ELECTRON_TEMPERATURE/ELECTRON_TEMPERATURE_" + str(largest_fluid_index) +".txt"))
+            number_density = np.loadtxt(os.path.join(self._kinetic_io_obj.fluid_output_path + "ELECTRON_NUMBER_DENSITY/ELECTRON_NUMBER_DENSITY_" + str(largest_fluid_index) +".txt"))
+            zbar = np.loadtxt(os.path.join(self._kinetic_io_obj.fluid_output_path + "ZBAR/ZBAR_" + str(largest_fluid_index) + ".txt"))
+            cell_wall_x = np.loadtxt(os.path.join(self._kinetic_io_obj.fluid_output_path + "CELL_WALL_X/CELL_WALL_X_" + str(largest_fluid_index) + ".txt")) 
+
+            self.sh_heat_flow = self.SpitzerHarmHeatFlow(np.array(cell_wall_x), temperature,
+                                            zbar,number_density)
+            kinetic_heat_profile = np.loadtxt(path)
+            #Include first and celll wall for no flow set to 0 per no thermal influx BC = 0 
+            if self.boundary_condition =='noflow':
+                kinetic_heat_profile = np.insert(kinetic_heat_profile, 0, 0.)
+            #Periodic boundary condition removes last cell wall insert back and set to 0 via thermal influc BC
+            kinetic_heat_profile = np.append(kinetic_heat_profile, 0.) * self.normalised_values['qe']
+            self.multipliers = kinetic_heat_profile[::2] / self.sh_heat_flow
+    
+            return self.multipliers
+
         os.chdir(self._run_path)
         
         if self.CX1:
             cmd = ["mpiexec", "./SOL-KiT"]    
         else:
-            cmd = ["mpirun", "-np", str(self._np), "./SOL-KiT"]    
-        
-        super().Execute(cmd, self._cycle_path)
+            cmd = ["mpirun", "-np", str(self._np), "./SOL-KiT"]
+
+        heat_flow_path = os.path.join(self._run_path, 'OUTPUT/HEAT_FLOW_X/')
+        super().Execute(cmd, self._cycle_path, heat_flow_path, convergance_test, self._nx)
     
+
     def lambda_ei(self, n, T, T_norm = 10, n_norm = 0.25E20, Z_norm = 1.0):
         if T * T_norm < 10.00 * Z_norm ** 2:
 
@@ -211,7 +239,7 @@ class SOL_KIT(Kinetic):
                             nv = self._nv, dv = self._dv, v_multi = self._v_multi, nx = self._nx,
                             dx = self._dx, smalldx=0.0) 
         
-        norms = setParams.NORMS(Z = self._norm_Z, Ar = self._norm_Ar, Density = self._norm_ne, 
+        norms = setParams.NORMS(Z = self._norm_Z, Ar = self._norm_Ar, Density = np.float(self._norm_ne), 
                                 Temp = self._norm_Te)
 
         self.boundary_condition = switch_boundary_condition_
@@ -393,12 +421,12 @@ class SOL_KIT(Kinetic):
             coulomb_log.append(coulomb)
 
         coulomb_log = np.array(coulomb_log)
-        kappaE = 1.843076667547614E-10 * pow(temperature, 2.5) * pow(self.normalised_values['coulomb_log'], -1) *  pow(zbar, -1)
-        
+        kappaE = 1.843076667547614E-10 * pow(temperature, 2.5) * pow(coulomb_log, -1) *  pow(zbar, -1)
+        cell_centre_coord = np.array([(cell_centre_coord[i+1] + cell_centre_coord[i]) / 2 for i in range(len(cell_centre_coord) - 1)]) 
         nx = len(temperature)
         HeatFlowE = np.zeros(nx + 1)
+
         for i in range(1, nx):
-        
             centered_ke = 0.5 * (kappaE[i] + kappaE[i - 1])
             HeatFlowE[i] = centered_ke *((temperature[i] - temperature[i - 1]) / (cell_centre_coord[i] - cell_centre_coord[i - 1]))
             
@@ -431,7 +459,7 @@ class SOL_KIT(Kinetic):
         #B =  -1/np.log(preheat_end_value / non_local_heat[preheat_start])
         B = []
         for i in range(preheat_start, preheat_end):
-            b = -1* (coord_non_local[i] - coord_non_local[preheat_start]) / (L * np.log(non_local_heat[i]/non_local_heat[preheat_start]))
+            b = -1* (coord_non_local[i] - coord_non_local[preheat_start]) / (L * np.log(abs(non_local_heat[i])/non_local_heat[preheat_start]))
             B.append(b)
             
         B = np.array(B)
@@ -466,7 +494,7 @@ class SOL_KIT(Kinetic):
         B = []
 
         for i in range(0, frontheat_start+1):
-            b = -1* (coord_non_local[i] - coord_non_local[frontheat_start]) / (L * np.log(non_local_heat[i]/non_local_heat[frontheat_start]))
+            b = -1* (coord_non_local[i] - coord_non_local[frontheat_start]) / (L * np.log(abs(non_local_heat[i])/non_local_heat[frontheat_start]))
             B.append(b)
         
         B = np.array(B)
@@ -483,49 +511,46 @@ class SOL_KIT(Kinetic):
                 max_index : Last index for output files.
             Returns: Multipliers
         """
-        multiplier = np.loadtxt(os.path.join(self._run_path, "OUTPUT/SH_q_ratio/SH_q_ratio_" + str(max_index).zfill(5) + '.txt'))
         kinetic_heat_profile  = np.loadtxt(os.path.join(self._run_path, "OUTPUT/HEAT_FLOW_X/HEAT_FLOW_X_" + str(max_index).zfill(5) + '.txt'))
-        temperature = np.loadtxt(os.path.join(self._run_path, "OUTPUT/TEMPERATURE/TEMPERATURE_" + str(max_index).zfill(5) + '.txt'))        
-        number_density = np.loadtxt(os.path.join(self._run_path, "OUTPUT/DENSITY/DENSITY_" + str(max_index).zfill(5) + '.txt'))
-        zbar = np.loadtxt(os.path.join(self._run_path, 'INPUT/Z_PROFILE_INPUT.txt'))
+        largest_fluid_index = self._findLargestIndex(os.path.join(self._fluid_output_path, "ELECTRON_TEMPERATURE"))
+        # temperature = np.loadtxt(os.path.join(self._kinetic_io_obj.fluid_output_path + "ELECTRON_TEMPERATURE/ELECTRON_TEMPERATURE_" + str(largest_fluid_index) +".txt"))
+        # number_density = np.loadtxt(os.path.join(self._kinetic_io_obj.fluid_output_path + "ELECTRON_NUMBER_DENSITY/ELECTRON_NUMBER_DENSITY_" + str(largest_fluid_index) +".txt"))
+        # zbar = np.loadtxt(os.path.join(self._kinetic_io_obj.fluid_output_path + "ZBAR/ZBAR_" + str(largest_fluid_index) + ".txt"))
+        cell_wall_x = np.loadtxt(os.path.join(self._kinetic_io_obj.fluid_output_path + "CELL_WALL_X/CELL_WALL_X_" + str(largest_fluid_index) + ".txt")) 
         #Include first and celll wall for no flow set to 0 per no thermal influx BC = 0 
         if self.boundary_condition =='noflow':
             kinetic_heat_profile = np.insert(kinetic_heat_profile, 0, 0.)
         #Periodic boundary condition removes last cell wall insert back and set to 0 via thermal influc BC
-        kinetic_heat_profile = np.append(kinetic_heat_profile, 0.)
-        kinetic_grid = np.loadtxt(os.path.join(self._run_path, "OUTPUT/GRIDS/X_GRID.txt"))
-        multi_list = []
-        qe_list = []
-        cell_wall_list = []
-        step = 2
+        kinetic_heat_profile = np.append(kinetic_heat_profile, 0.) * self.normalised_values['qe']
+        # sh_heat = self.SpitzerHarmHeatFlow(np.array(cell_wall_x), temperature,
+        #                                  zbar,number_density)
 
         #Get rid of cell-centre quantites
-        for i in range(1, len(multiplier) - 1, step):   
-            #add multiplier limiter here if needed
-            multi_list.append(multiplier[i])
-            qe_list.append(kinetic_heat_profile[i])
-            cell_wall_list.append(kinetic_grid[i])
-        
-        sh_heat = self.SpitzerHarmHeatFlow(cell_wall_list, temperature * self.normalised_values['Te']*(e/kb), zbar, number_density * self.normalised_values['ne'])
+        qe_list = kinetic_heat_profile[0::2]
         ##Test for pre-heat via looking at NaN outputs expected from q/q_sh
         #if nans
-
+        multi_list = qe_list/self.sh_heat_flow
         #Detect if there is Front heat
         #Detect if there is Pre-Heat
-        if(np.isnan(multi_list)):
+        #Modify as bounds will always be nan. 
+        if(any(np.isnan(multi_list)) or any(np.isinf(multi_list))):
 
             multi_list = np.array(multi_list)
             qe_list = np.array(qe_list)
             NaN_args = np.argwhere(np.isnan(multi_list))
-            pre_heat_start_index, pre_heat_last_index, pre_heat_fit_params = self.PreHeatModel(cell_wall_list, sh_heat, qe_list)
-            front_heat_start_index, front_heat_last_index, front_heat_fit_params = self.FrontHeatModel(cell_wall_list, sh_heat, qe_list)
+            pre_heat_start_index, pre_heat_last_index, pre_heat_fit_params = self.PreHeatModel(cell_wall_x, self.sh_heat_flow, qe_list)
+            front_heat_start_index, front_heat_last_index, front_heat_fit_params = self.FrontHeatModel(cell_wall_x, self.sh_heat_flow, qe_list)
             #pre_heat_start_index = NaN_args[0]
                 #Determine length to tolerance
             #pre_heat_last_index = np.argwhere(qe_list > 1e-9)[0] #last point of pre heat
         
         else:
             pre_heat_start_index = 0
-            pre_heat_last_index = 0 
+            pre_heat_last_index = 0
+            front_heat_start_index = 0
+            front_heat_last_index = 0
+            pre_heat_fit_params = 0 
+            front_heat_fit_params = 0 
 
         return(multi_list, pre_heat_start_index, pre_heat_last_index, pre_heat_fit_params, front_heat_start_index, front_heat_last_index, front_heat_fit_params)
 
@@ -548,7 +573,7 @@ class SOL_KIT(Kinetic):
             np.savetxt(os.path.join(self._kinetic_io_obj.next_fluid_input_path, "qe.txt"), electronheatflow)    
         
         elif self.CoupleMulti:
-            multi_list, pre_heat_start_index, pre_heat_last_index, pre_heat_fit_params, front_heat_start_index, front_heat_last_index, front_heat_fit_params = self._Multiplier(max_index)
+            multi_list, self.pre_heat_start_index, self.pre_heat_last_index, pre_heat_fit_params, self.front_heat_start_index, self.front_heat_last_index, front_heat_fit_params = self._Multiplier(max_index)
             np.savetxt(os.path.join(self._kinetic_io_obj.next_fluid_input_path, "qe.txt"), multi_list)
             np.savetxt(os.path.join(self._kinetic_io_obj.next_fluid_input_path, "pre_heat_fit_param.txt"), pre_heat_fit_params)
             np.savetxt(os.path.join(self._kinetic_io_obj.next_fluid_input_path, "front_heat_fit_param.txt"), front_heat_fit_params)
