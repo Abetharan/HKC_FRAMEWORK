@@ -8,13 +8,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 import os 
-kb = 1.38064852e-23;
-mp = 1.6726219e-27;
-me = 9.10938356e-31;
-epsilon_0 = 8.85418782e-12;
-e = 1.60217662e-19;
-hbar = 1.054571800e-34;
-c = 299792458;
+from scipy import constants
+
+kb = constants.value("Boltzmann constant")
+me = constants.value("electron mass")
+mp = constants.value("proton mass")
+e = constants.value("elementary charge")
+planck_h = constants.value("Planck constant")
+bohr_radi = constants.value("Bohr radius")
+epsilon_0 = 8.854188E-12    # Vacuum dielectric constant
 
 def IMPACT_plotter(path, run_name, variable, times, ne, Z, Ar, Te, Bz,iter_number = None ):
     """ Purpose:
@@ -119,24 +121,57 @@ def SOL_KIT_PLOTTER(path, variable, times, dt, Te, ne, Z, Ar):
             ylabel = r'\textbf{q_x/MWm^-2}'
             ylabel = "q_x/Wm^-2"
             Var = np.loadtxt(os.path.join(path, 'HEAT_FLOW_X/HEAT_FLOW_X_' + str(index).zfill(5) + '.txt')) * norm_constant        
-        elif variable == "Cx":
+        elif variable == "FLOW_VEL":
             norm_constant = normal_dict['vte'] 
             ylabel = r'\textbf{Cx/ms^-1}'
             ylabel = "Cx/ms^-1"
             Var = np.loadtxt(os.path.join(path, 'FLOW_VEL_X/FLOW_VEL_X_' + str(index).zfill(5) + '.txt')) * norm_constant 
+        elif variable == "ENERGY":
+            ylabel = r'\textbf{E/J}'
+            ylabel = "E/J"
+            v = np.loadtxt(os.path.join(path, 'FLOW_VEL_X/FLOW_VEL_X_' + str(index).zfill(5) + '.txt')) * normal_dict['vte'] 
+            T = np.loadtxt(os.path.join(path, 'TEMPERATURE/TEMPERATURE_' + str(index).zfill(5) + '.txt')) * normal_dict['Te'] * (e/kb)
+            n = np.loadtxt(os.path.join(path, 'DENSITY/DENSITY_' + str(index).zfill(5) + '.txt')) * normal_dict['ne']        
+            Var = n * kb * T + 0.5 * me * pow(v, 2)
+        
+        elif variable == "ohmic_heating":
+            ylabel = r'\textbf{E/J}'
+            ylabel = "E_ohmic/W"
+            v = np.loadtxt(os.path.join(path, 'FLOW_VEL_X/FLOW_VEL_X_' + str(index).zfill(5) + '.txt')) * normal_dict['vte'] 
+            n = np.loadtxt(os.path.join(path, 'DENSITY/DENSITY_' + str(index).zfill(5) + '.txt')) * normal_dict['ne']        
+            J = -e * n * v
+            Enorm = (normal_dict['lambda_mfp'] / (normal_dict['tau_ei']**2)) * (me/e)
+            E = np.loadtxt(os.path.join(path, 'E_FIELD_X/E_FIELD_X_' + str(index).zfill(5) + '.txt')) * Enorm 
+            Var = E * J
+
+        elif variable == "num_ohmic_heating":
+            ylabel = r'\textbf{E/J}'
+            ylabel = "Num heating / Wm-3"
+            v = np.loadtxt(os.path.join(path, 'FLOW_VEL_X/FLOW_VEL_X_' + str(index).zfill(5) + '.txt')) * normal_dict['vte'] 
+            n = np.loadtxt(os.path.join(path, 'DENSITY/DENSITY_' + str(index).zfill(5) + '.txt')) * normal_dict['ne']        
+            J = -e * n * v
+            Enorm = (normal_dict['lambda_mfp'] / (normal_dict['tau_ei']**2)) * (me/e)
+            E = np.loadtxt(os.path.join(path, 'E_FIELD_X/E_FIELD_X_' + str(index).zfill(5) + '.txt')) * Enorm  
+            ohmic_heating = E * J
+            norm = (normal_dict['Te'] * e * normal_dict['ne'] ) / normal_dict['tau_ei']
+            num_heating = np.loadtxt(os.path.join(path, 'NUM_DV_HEATING/NUM_DV_HEATING_' + str(index).zfill(5) + '.txt')) * norm
+            Var = num_heating - ohmic_heating
+
         elif variable == "E":
             norm_constant = (normal_dict['lambda_mfp'] / (normal_dict['tau_ei']**2)) * (me/e)
             ylabel= "V/m "
             Var = np.loadtxt(os.path.join(path, 'E_FIELD_X/E_FIELD_X_' + str(index).zfill(5) + '.txt')) * norm_constant 
+
+
         else:
             ylabel = r'\textbf{f_1}'
             norm_constant = 1
             ylabel = "f_1 x"
-    
+
         xlabel = 'x/meter'
-        plt.plot(grid_x, Var, label = 'SOL-KiT ' + str(index * dt * normal_dict['tau_ei'] * 1e12) + '/ ps', linestyle = '--')
+        plt.plot(grid_x, Var, label = 'SOL-KiT' + str(index * dt * normal_dict['tau_ei'] * 1e12) + '/ ps', linestyle = '--')
         plt.ylabel(ylabel)
-        plt.xlabel(xlabel) 
+        plt.xlabel(xlabel)
 
 def ELH_1_plotter(path, var, times, dt):
     
@@ -193,18 +228,18 @@ def ELH_1_plotter(path, var, times, dt):
 
 imp_path = "/home/abetharan/IMPACT/RUNS/high_z_epperlein_short/"
 imp_name = "high_z_epperlein_short"#"BrodrickComparison
-sol_path = '/media/abetharan/DATADRIVE2/Abetharan/Coupled_data/COUPLING_METHODOLOGY/Non_linear_ramp/PRE_HEAT/Output_SOL-KiT_job_EVOLVE/Run_1/OUTPUT'
+sol_path = '/home/abetharan/SOL-KiT/OUTPUT/'
 elh_1_path = '/home/abetharan/ELH1/data_out'
 var = 'Te'
-sol_time_step = [0, 10, 20]
-elh_time_step =  [0, 5]
+sol_time_step = [0, 1000, 2000, 3000, 4000, 5000]
+elh_time_step =  [0, 10, 20]
 ne = 1e27
 Te = 3500
 Z = 36.5
-Ar = 157.5
+Ar = 157.0
 plt.figure(1)
 # IMPACT_plotter(imp_path, imp_name, variable = var, time_step = '11', ne = ne*1e-6, Z = Z, Ar = Ar, Te = Te, Bz = 0)
-SOL_KIT_PLOTTER(sol_path, var, sol_time_step, dt = 0.1, Te = Te, ne = ne, Z = Z, Ar = Ar)
-ELH_1_plotter(elh_1_path, var, elh_time_step, dt = 1e-15)
+SOL_KIT_PLOTTER(sol_path, var, sol_time_step, dt = 0.0001, Te = Te, ne = ne, Z = Z, Ar = Ar)
+# ELH_1_plotter(elh_1_path, var, elh_time_step, dt = 1e-15)
 plt.legend()
-plt.show()
+plt.show() 

@@ -8,30 +8,48 @@ import numpy as np
 class Kinetic():
     
         
-    def Execute(self, cmd, path, output_folder_path, convergence_func, nx):
+    def Execute(self, cmd, log_path, monitor_on,  kinetic_heat_flow_output_folder_path, convergence_func, nx):
         """  
-        Purpose: Launches Impact and Sets the number of cores
-
+        Purpose: Launch the command relevant to kinetic code specified, if maintain 
+                 f_0 is on also spawns a daemon to check for convergence, only relevant
+                 for SOL-KIT.
         Args:
-            runPath = Path where IMPACT looks for reference files
-            _KINETIC_np = Number of cores being used 
+            cmd : list of commands of format ['', '', '' ]
+            log_path : path to output log file 
+            monitor_on : if maintaining f_0 only available with SOL-KiT a daemon is spawned to
+                        monitor if q/q_sh is converged and kill SOL-KiT prior to its natural end time.
+            kinetic_heat_flow_output_folder_path_path : Path to where heat flow is output by SOL-KiT
+            convergence_func : function that calculates convergance values i.e. q/q_sh
+            nx : number of cell-centrs.
         """
        
-        def ConvergenceMonitoring(proc, output_folder, convergence_func, nx):
-            #Path to heat flow
+        def ConvergenceMonitoring(proc, kinetic_heat_flow_output_folder_path, convergence_func, nx):
+            """  
+            Purpose: Function which the daemon i.e. thread is constantly doing.. checking for conergence
+            Args:
+                proc : subprocess that needs to be terminated once convergence has been achieved. 
+                log_path : path to output log file 
+                monitor_on : if maintaining f_0 only available with SOL-KiT a daemon is spawned to
+                            monitor if q/q_sh is converged and kill SOL-KiT prior to its natural end time.
+                kinetic_heat_flow_output_folder_path_path : Path to where heat flow is output by SOL-KiT
+                convergence_func : function that calculates convergance values i.e. q/q_sh
+                nx : number of cell-centrs.
+            """
+                #Path to heat flow
             convergance = 10
             file_counter = 0
             time.sleep(10)
             multipliers = np.zeros(nx + 1) 
+
             while True:
 
-                heat_flows = os.listdir(output_folder)
+                heat_flows = os.listdir(kinetic_heat_flow_output_folder_path)
                 new_file_counter = len(heat_flows)
                 #Last Heat 
                 if new_file_counter == 0:
                     latest_heat_flow_path = ''
                 else:
-                    latest_heat_flow_path = os.path.join(output_folder, heat_flows[-1])
+                    latest_heat_flow_path = os.path.join(kinetic_heat_flow_output_folder_path, heat_flows[-1])
                 
                 if os.path.exists(latest_heat_flow_path)  and new_file_counter != file_counter:
                     
@@ -56,37 +74,23 @@ class Kinetic():
 
                 file_counter = new_file_counter
 
-                if np.nanmax(convergance) < 1e-3 and np.nanmax(convergance) != 0:
+                if np.nanmax(convergance) < 1e-5 and np.nanmax(convergance) != 0:
                     proc.terminate()
                     break
-        
-        filename = path + '/k_test.log'
+            
+        ##Relevant stuff to create logs 
+        filename = log_path + '/k_test.log'
         with io.open(filename, 'wb') as writer, io.open(filename, 'rb', 1) as reader:
+            #run command provided
             process = subprocess.Popen(cmd, stdout=writer)
-            monitor = threading.Thread(target=ConvergenceMonitoring, args = (process, output_folder_path, convergence_func, nx))
-            monitor.start()
+
+            ##Spawn a thread which runs convergencemonitoring function. 
+            if monitor_on:
+                monitor = threading.Thread(target=ConvergenceMonitoring, args = (process, kinetic_heat_flow_output_folder_path, convergence_func, nx))
+                monitor.start()
 
             while process.poll() is None:
                 sys.stdout.write(reader.read().decode('utf-8'))
 
             # Read the remaining
             sys.stdout.write(reader.read().decode('utf-8'))
-       
-       
-       
-       
-       # proc = subprocess.Popen(cmd, stdout = subprocess.PIPE)
-        #subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=sys.stderr, universal_newlines=True).communicate()
-        #for line in proc.stdout:
-        #   (key, _, value) = line.partition("=")
-        #   os.environ[key] = value
-        #   proc.communicate()
-
-#        pprint.pprint(dict(os.environ))
-        # try:
-        #     subprocess.run(cmd, stderr=subprocess.PIPE)
-        # except subprocess.CalledProcessError as e:
-        #     import sys
-        #     print(e.output)
-        #     sys.exit(1)
-    
