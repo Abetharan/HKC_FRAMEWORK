@@ -84,8 +84,8 @@ def SmoothRamp(nx, L ):
                 print(Var[i])
         return Var         
 
-    Te_Up = 2.5E3
-    Te_Down = 0.27E3
+    Te_Up = 2.5E3 * ev_converter
+    Te_Down = 0.27E3 * ev_converter
     lower_limit = x_centered[19]
     upper_limit = x_centered[139]
     Te = smooth(x_centered, Te_Up, Te_Down, lower_limit, upper_limit)

@@ -121,6 +121,10 @@ def SOL_KIT_PLOTTER(path, variable, times, dt, Te, ne, Z, Ar):
             ylabel = r'\textbf{q_x/MWm^-2}'
             ylabel = "q_x/Wm^-2"
             Var = np.loadtxt(os.path.join(path, 'HEAT_FLOW_X/HEAT_FLOW_X_' + str(index).zfill(5) + '.txt')) * norm_constant        
+        elif variable == "sh_q":
+            ylabel = r'\textbf{q_{VFP}/q_{SH}}'
+            ylabel = "q_{VFP}/q_{SH}"
+            Var = np.loadtxt(os.path.join(path, 'SH_q_ratio/SH_q_ratio_' + str(index).zfill(5) + '.txt'))     
         elif variable == "FLOW_VEL":
             norm_constant = normal_dict['vte'] 
             ylabel = r'\textbf{Cx/ms^-1}'
@@ -228,10 +232,11 @@ def ELH_1_plotter(path, var, times, dt):
 
 imp_path = "/home/abetharan/IMPACT/RUNS/high_z_epperlein_short/"
 imp_name = "high_z_epperlein_short"#"BrodrickComparison
-sol_path = '/home/abetharan/SOL-KiT/OUTPUT/'
+sol_path = '/media/abetharan/DATADRIVE2/Abetharan/SOL_KIT_PRE_HEAT_TEST_EVOLVING_FROM_MAINTAIN/OUTPUT'
+sol_path_1 = '/media/abetharan/DATADRIVE2/Abetharan/Coupled_data/COUPLING_METHODOLOGY/Non_linear_ramp/PRE_HEAT/continuing_output_maintain/Output_SOL-KiT_job_MAINTAIN/Run_1/OUTPUT'
 elh_1_path = '/home/abetharan/ELH1/data_out'
-var = 'Te'
-sol_time_step = [0, 1000, 2000, 3000, 4000, 5000]
+var = 'n'
+sol_time_step = [0]
 elh_time_step =  [0, 10, 20]
 ne = 1e27
 Te = 3500
@@ -240,6 +245,7 @@ Ar = 157.0
 plt.figure(1)
 # IMPACT_plotter(imp_path, imp_name, variable = var, time_step = '11', ne = ne*1e-6, Z = Z, Ar = Ar, Te = Te, Bz = 0)
 SOL_KIT_PLOTTER(sol_path, var, sol_time_step, dt = 0.0001, Te = Te, ne = ne, Z = Z, Ar = Ar)
+SOL_KIT_PLOTTER(sol_path_1, var,[260], dt = 0.0001, Te = Te, ne = ne, Z = Z, Ar = Ar)
 # ELH_1_plotter(elh_1_path, var, elh_time_step, dt = 1e-15)
 plt.legend()
 plt.show() 
