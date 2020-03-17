@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import sys
-from ES_Investigation import Kinetic_param_finder as kpf
+#from ES_Investigation import Kinetic_param_finder as kpf
 #global constants
 kb = 1.38064852e-23;
 protonMass = 1.6726219e-27;
@@ -59,12 +59,13 @@ def epperlein_short(L, nx, Z_ = 37.25, Ar_ = 157.25, ne_ = 1e27, Te_ = 100.):
 
     return(initial_coord, density, ne, ni, temperatureE, temperatureI, Z, Ar)
 def SmoothRamp(nx, L ):
-    x_up = np.linspace(0, 0.4*L, int(nx*0.2))
+    x_up = np.linspace(0, 0.4*L, int(nx*0.3))
     step = x_up[1] - x_up[0]
-    x_ramp = np.linspace(0.4*L + step/100, 0.6*L, int(nx*0.6) + 1)
+    x_ramp = np.linspace(0.4*L + step/1000, 0.45*L, int(nx*0.4) + 1)
     step = x_ramp[1] - x_ramp[0]
-    x_down = np.linspace(0.6*L+step/10000, L, int(0.2*nx))
+    x_down = np.linspace(0.45*L+step/10000, L, int(0.3*nx))
     x = np.concatenate((x_up, x_ramp, x_down))
+    # x = np.linspace(0, L, nx + 1)
     #x = np.linspace(0, L, nx + 1)
     x_centered = [(x[i] + x[i + 1]) /2 for i in range(len(x) -  1)]
     
@@ -77,17 +78,19 @@ def SmoothRamp(nx, L ):
             elif x[i] > upper_limit:
                 Var[i] = upper_value
             else:
-                # Var[i] = (upper_value - lower_value) * (3 * ((x[i] - lower_limit) / (upper_limit - lower_limit))**2 
+                # Var[i] = (upper_value - lower_value) * np.tanh((x[i] - lower_limit) / (upper_limit - lower_limit)) + lower_value
+                # Var[i] = (upper_value - lower_value) * (1 /(1 + np.exp((x[i] - lower_limit) / (upper_limit - lower_limit))))+ lower_value
+            #     # Var[i] = (upper_value - lower_value) * (3 * ((x[i] - lower_limit) / (upper_limit - lower_limit))**2 
                 # - 2 * ((x[i] - lower_limit) / (upper_limit - lower_limit))**3) + lower_value
                 Var[i] = (upper_value - lower_value) * (6 * ((x[i] - lower_limit) / (upper_limit - lower_limit))**5 
                 - 15 * ((x[i] - lower_limit) / (upper_limit - lower_limit))**4 + 10 * ((x[i] - lower_limit) / (upper_limit - lower_limit))**3) + lower_value
-                print(Var[i])
+                # print(Var[i])
         return Var         
 
     Te_Up = 2.5E3 * ev_converter
     Te_Down = 0.27E3 * ev_converter
-    lower_limit = x_centered[19]
-    upper_limit = x_centered[139]
+    lower_limit = x_centered[59]
+    upper_limit = x_centered[121]
     Te = smooth(x_centered, Te_Up, Te_Down, lower_limit, upper_limit)
 
     ne_Up = 4.65 * 1e26
@@ -200,7 +203,7 @@ def ExponentialRamp(nx, nx_Up, nx_Down, L, T_Up, T_Down):
 nx = 200
 x_l = 0
 #x_u = 1e-19
-x_u =  10E-3
+x_u =  4E-3
 L = x_u - x_l
 Ar = np.zeros(nx) + 157
 Z = np.zeros(nx) + 37.5
@@ -218,19 +221,19 @@ nc = ne#1.1E15 / pow(laserWavelength, 2)
 velocity = np.zeros(nx + 1) #+ add any function
 path = "/home/abetharan/HYDRO_KINETIC_COUPLING/Non_Linear_Ramp_Investigation/"
 # coord, density, numberDensityE, numberDensityI, temperatureE, temperatureI, specificHeatE, DpDTe, specificHeatI, DpDTi, pressureE, pressureI, pressureTotal, IntEe, IntEi = TwoTemperatureBath(nx = 100)
-# 
+
 # coord, density, _,_ temperatureE, temperatureI, Z, Ar = epperlein_short(L,63, 64,157,1e19,100)
 # coord, density, temperatureE, temperatureI, Z, Ar = ExponentialRamp(nx, 0.4*nx, 0.5*nx, 2.3E-3, 3500*ev_converter, 0.25*3500*ev_converter)
 coord, density, temperatureE, temperatureI, Z, Ar = SmoothRamp(nx, L)
 mass = CalculateMass(coord, density, nx = nx)
 new_path ='/home/abetharan/HYDRO_KINETIC_COUPLING/Non_Linear_Ramp_Investigation/Smoothed_Pre_Heat_Ramp' 
-TextDump(   path = new_path,
-            coord= coord ,
-            velocity = velocity,
-            density = density,
-            Te = temperatureE,
-            Ti = temperatureI,
-            mass = mass,
-            Z = Z,
-            Ar = Ar
-)
+# TextDump(   path = new_path,
+#             coord= coord ,
+#             velocity = velocity,
+#             density = density,
+#             Te = temperatureE,
+#             Ti = temperatureI,
+#             mass = mass,
+#             Z = Z,
+#             Ar = Ar
+# )
