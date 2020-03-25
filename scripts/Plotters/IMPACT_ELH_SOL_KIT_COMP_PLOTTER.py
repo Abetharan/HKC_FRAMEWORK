@@ -3,7 +3,7 @@ import impact_profiles_py3 as prof
 import impact_norms_py3 as IN
 import SOL_KIT_NORMS as solnorms
 import matplotlib.pyplot
-matplotlib.rcParams.update({'font.size': 20})
+matplotlib.rcParams.update({'font.size': 12})
 import matplotlib.pyplot as plt
 import numpy as np
 import random
@@ -97,7 +97,7 @@ def IMPACT_plotter(path, run_name, variable, times, ne, Z, Ar, Te, Bz,iter_numbe
         plt.ylabel(ylabel)
         plt.xlabel(xlabel) 
 
-def SOL_KIT_PLOTTER(path, variable, times, dt, Te, ne, Z, Ar, x_arr = [0]):
+def SOL_KIT_PLOTTER(path, variable, times, dt, Te, ne, Z, Ar, x_arr = [0], line = '-', name = 'SOL'):
 
     normal_dict = solnorms.free_param_calc(Te, ne, Z, Ar)
     for x in x_arr:
@@ -159,18 +159,18 @@ def SOL_KIT_PLOTTER(path, variable, times, dt, Te, ne, Z, Ar, x_arr = [0]):
                 norm_constant = 1
                 Var = np.loadtxt(os.path.join(path, 'DIST_F/F_L' + str(0).rjust(3) +'_' +str(index).zfill(5) + '.txt'))
                 Var = Var[:, x - 1]
-                ylabel = "f_0 x"
+                ylabel = "f_0"
 
             elif variable == "f1":
                 ylabel = r'\textbf{f_1}'
                 norm_constant = 1
-                Var = np.loadtxt(os.path.join(path, 'DIST_F/F_L' + str(0).rjust(3) +'_' +str(index).zfill(5) + '.txt'))
+                Var = np.loadtxt(os.path.join(path, 'DIST_F/F_L' + str(1).rjust(3) +'_' +str(index).zfill(5) + '.txt'))
                 Var = Var[:, x - 1]
-                ylabel = "f_1 x"
+                ylabel = "f_1"
 
             if variable != "f0" and variable!= "f1":
-                xlabel = 'Grid Position'
-                plt.plot(grid_x, Var, label = 'SOL-KiT' + str(index * dt * normal_dict['tau_ei'] * 1e12) + '/ ps', linestyle = '--')
+                xlabel = 'x/m'
+                plt.plot(grid_x, Var, label = name + ' ' + str(index * dt * normal_dict['tau_ei'] * 1e12) + '/ ps', linestyle = line)
                 plt.ylabel(ylabel)
                 plt.xlabel(xlabel)
             else:
@@ -234,17 +234,19 @@ def ELH_1_plotter(path, var, times, dt):
 
 imp_path = "/home/abetharan/IMPACT/RUNS/high_z_epperlein_short/"
 imp_name = "high_z_epperlein_short"#"BrodrickComparison
-sol_path = '/Users/shiki/Documents/Imperial_College_London/Ph.D./CX1_DATA/PRE_HEAT_PROPER_INIT_HIGHER_L_OUTPUT/Run_1/OUTPUT/'
+sol_path = '/Users/shiki/Documents/Imperial_College_London/Ph.D./CX1_DATA/PRE_HEAT_STEEPER_SMOOTHED_REGULAR_EVOLVE/Run_1/OUTPUT/'
+sol_path_1 = '/Users/shiki/Documents/Imperial_College_London/Ph.D./CX1_DATA/PRE_HEAT_STEEPER_SMOOTHED_EVOLVE_L_1/Run_1/OUTPUT/'
+sol_path_2 = '/Users/shiki/Documents/Imperial_College_London/Ph.D./CX1_DATA/PRE_HEAT_STEEPER_SMOOTED_EVOLVED_L_3/Run_1/OUTPUT/'
 elh_1_path = '/home/abetharan/ELH1/data_out'
 var = 'Te'
-sol_time_step = [0, 1000]
+sol_time_step = [0, 100, 200, 300]
 elh_time_step =  [0, 10, 20]
 ne = 1.1e27
-Te = 3500
+Te = 2500
 Z = 36.5
 Ar = 157.0
 # IMPACT_plotter(imp_path, imp_name, variable = var, time_step = '11', ne = ne*1e-6, Z = Z, Ar = Ar, Te = Te, Bz = 0)
-SOL_KIT_PLOTTER(sol_path, var, sol_time_step, dt = 0.01, Te = Te, ne = ne, Z = Z, Ar = Ar, x_arr= [100])
+SOL_KIT_PLOTTER(sol_path_1, var, sol_time_step, dt = 0.01, Te = Te, ne = ne, Z = Z, Ar = Ar, x_arr= [200], name = 'Regular Evolve')
+SOL_KIT_PLOTTER(sol_path_2, var, sol_time_step, dt = 0.01, Te = Te, ne = ne, Z = Z, Ar = Ar, x_arr= [200], line = '-.', name ='Maintain Evolve')
 # ELH_1_plotter(elh_1_path, var, elh_time_step, dt = 1e-15)
-plt.legend()
 plt.show() 
