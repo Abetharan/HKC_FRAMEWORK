@@ -60,14 +60,15 @@ def epperlein_short(nx, L, Z_ = 37.25, Ar_ = 157.25, ne_ = 1e27, Te_ = 100.):
     temperatureI = np.zeros(nx) + 0
 
     return(initial_coord, density, ne, ni, temperatureE, temperatureI, Z, Ar)
+
 def SmoothRamp(nx, L ):
-    x_up = np.linspace(0, 0.4*L, int(nx*0.3))
-    step = x_up[1] - x_up[0]
     lower_cutof = 0.38
-    upper_cutof = 0.45
-    x_ramp = np.linspace(lower_cutof*L + step/1000, upper_cutof*L, int(nx*0.4) + 1)
+    upper_cutof = 0.47
+    x_up = np.linspace(0, lower_cutof*L, int(nx*0.3))
+    step = x_up[1] - x_up[0]
+    x_ramp = np.linspace(lower_cutof*L + step/10, upper_cutof*L, int(nx*0.4) + 1)
     step = x_ramp[1] - x_ramp[0]
-    x_down = np.linspace(0.45*L+step/10000, L, int(0.3*nx))
+    x_down = np.linspace(upper_cutof*L+step/10, L, int(0.3*nx))
     x = np.concatenate((x_up, x_ramp, x_down))
     # x = np.linspace(0, L, nx + 1)
     #x = np.linspace(0, L, nx + 1)
@@ -93,8 +94,8 @@ def SmoothRamp(nx, L ):
 
     Te_Up = 2.5E3 * ev_converter
     Te_Down = 0.27E3 * ev_converter
-    lower_limit = x_centered[int(nx*0.4)]
-    upper_limit = x_centered[int(nx*0.7)]
+    lower_limit = lower_cutof*L#x_centered[int(nx*0.4)]
+    upper_limit = upper_cutof*L#x_centered[int(nx*0.7)]
     Te = smooth(x_centered, Te_Up, Te_Down, lower_limit, upper_limit)
 
     ne_Up = 4.65 * 1e26
@@ -131,6 +132,7 @@ def SmoothRamp(nx, L ):
     plt.legend()
     plt.show()
     return(x, density, Te, Ti, Z, Ar)
+
 def ExponentialRamp(nx, L):
     nx_Up = 0.4*nx 
     nx_Down = 0.5*nx
@@ -204,10 +206,10 @@ def ExponentialRamp(nx, L):
 
 
 
-nx = 150
+nx = 200
 x_l = 0
 #x_u = 1e-19
-x_u =  6E-3
+x_u =  10E-3
 L = x_u - x_l
 Ar = np.zeros(nx) + 157
 Z = np.zeros(nx) + 37.5
