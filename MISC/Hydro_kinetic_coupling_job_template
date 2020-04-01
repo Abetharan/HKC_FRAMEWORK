@@ -1,0 +1,17 @@
+#PBS -lselect=1:ncpus=$num_proc:mpiprocs=$num_proc:mem=$job_mem
+#PBS -lwalltime=$job_time_h:$job_time_m:00
+
+# Load modules for any applications
+
+module load gcc/8.2.0
+module load anaconda3/personal
+
+timeout $MINS python $HOME/KINETIC_HYDRO_COUPLING/Source_Code/Main.py -p $INPUT_PATH >/dev/null
+curr_cycle=$(<$RUN_PATH/CONTINUE_STEP.txt)
+max_cycle=$(<$RUN_PATH/NO_CYCLES.txt)
+
+if [ "$curr_cycle" -lt "$max_cycle" ]; then
+   qsub $JOB_NAME
+fi 
+
+
