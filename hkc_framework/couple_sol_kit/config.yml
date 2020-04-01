@@ -1,0 +1,45 @@
+Norms:
+  #NORMALISATION
+  TE: 2500
+  NE: 1.1E+27
+  Z: 36.5
+  AR: 157.5
+  BZ: 0
+Params:
+  #UNIVERSAL KINETIC PARAMETERS
+  K_NX: 200
+  K_NY: 1
+  K_NV: 120
+  K_NP: 12
+  K_DT: 0.001
+  #SOL_KIT PARAMETERS
+  K_DX: 0.5
+  K_DV: 0.0307
+  K_DV_MULTI: 1.015
+  K_NT: 5000
+  K_PRE_STEP_NT: 0
+  K_PRE_STEP_DT: 0.001
+  K_L_MAX: 1
+  K_OUTPUT_FREQ: 10
+  #SOL_KIT
+  #'periodic' : PERIODIC
+  #'noflow' : REFLECTIVe
+  #'fixed' : FIXED
+  K_BC: 'noflow'
+
+Switches:
+  COLL_EI_L: true
+  COLL_EE_0: true
+  COLL_EE_L: true
+  DIAG_EE_L: false
+  LOCAL_INIT: false
+  COLD_ION_FLUID: false
+  K_MAINTAIN: true
+
+Output:
+  Density: true
+  Temperature: true
+  Velocity: false
+  Heat_Flow: true
+  E_FIELD: true
+  SH_TEST: true

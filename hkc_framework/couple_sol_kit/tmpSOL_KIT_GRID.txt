@@ -1,0 +1,25 @@
+Time:
+                             TIMESTEP_NUM =  $nt                              Number of full length timesteps
+                          PRETIMESTEP_NUM =  $prestepnt                       Number of small pre-timesteps
+                                       dt =  $dt                              Timestep size
+                                   pre_dt =  $predt                           Pre-timestep size
+                                   T_SAVE =  $save_freq                       Save interval (save data every T_SAVE timesteps)
+
+ Harmonics:
+                                    L_MAX =  $lmax                            L-number of maximum resolved harmonic
+
+ Velocity:
+                                    NUM_V =  $nv                              Number of cells in velocity space
+                                       dv =  $dv                              Size of velocity cells
+                              V_GRID_MULT =  $v_multi                         Velocity cell width common ratio
+
+ Spatial grid:
+                                    NUM_C =  $nx                              Number of spatial cells
+                                       dx =  $dx                              Size of spatial cells
+                                 SMALL_dx =  $smalldx                         Size of divertor cell
+
+ Coupling timesteps:
+                                 fluid_dt =         0.2                         Coupling fluid timestep size
+                          c_kinetic_max_t =    20000                            Maximum kinetic number of timesteps before switching to fluid
+                            c_fluid_max_t =    20000                            Maximum fluid number of timesteps before switching to kinetic
+

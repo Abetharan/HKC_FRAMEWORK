@@ -1,0 +1,4 @@
+                                    ION_Z =   $Z                   Plasma Z
+                                 ATOMIC_A =   $Ar                   Atomic mass of main plasma particles
+                                TEMP_0_EV =   $Temp                    Temperature normalization in eV
+                                DENSITY_0 =   $Density               Density normalization

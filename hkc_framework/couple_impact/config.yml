@@ -1,0 +1,27 @@
+Norms:
+  TE: 2500
+  NE: 1.1E+27
+  Z: 36.5
+  AR: 157.5
+  BZ: 0
+Params:
+  K_NX: 200
+  K_NY: 1
+  K_NV: 120
+  K_NP: 12
+  K_DT: 0.001
+  K_T_MAX: 1.0
+  K_X_MAX: 50000
+  K_V_MAX: 30
+  #KINETIC BOUNDARIES 
+  #IMPACT:
+  #'0' : PERIODIC
+  #'1' : REFLECTIVe
+  #'2' : FIXED
+  K_BC: '1'
+Switches:
+  fo_Cee_on: true
+  f1_dt_on: true         
+  fo_dt_on: true          
+  ei_coll_fix_on: false 
+  displ_J_on: true
