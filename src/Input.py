@@ -3,65 +3,8 @@ import string
 import yaml
 class Input:
 
-    def __init__(self, path_):
-        self.CX1 = None
-        self.BASE_DIR = None
-        self.IMPACT_SRC_DIR = None
-        self.SOL_KIT_SRC_DIR = None
-        self.F_INIT_PATH = None
-        self.F_SRC_DIR = None
-        self.RUN_NAME = None
-        self.CYCLES = None
-        self.KINETIC_CODE = None
-        self.K_NX = None
-        self.K_NY = None
-        self.K_NV = None
-        self.K_NP = None
-        self.K_DT = None
-        self.K_T_MAX = None
-        self.K_X_MAX = None
-        self.K_V_MAX = None
-        self.K_DX = None
-        self.K_DV = None
-        self.K_DV_MULTI = None
-        self.K_NT = None
-        self.K_PRE_STEP_NT = None
-        self.K_PRE_STEP_DT = None
-        self.K_L_MAX = None
-        self.K_BC = None
-        self.K_MAINTAIN = None
-        self.K_OUTPUT_FREQ = None
-        self.TE = None
-        self.NE = None
-        self.Z  = None
-        self.AR = None
-        self.BZ = None
-        self.F_NX = None
-        self.F_CQ = None
-        self.F_GAMMA = None
-        self.F_CFL = None
-        self.F_LASER_WAVELENGTH = None
-        self.F_LASER_POWER = None
-        self.F_DUR_OF_LASER = None
-        self.F_LASER_LOC = None
-        self.F_STEPS = None
-        self.F_FLUID_T_MAX = None
-        self.F_INITIAL_DT = None
-        self.F_DT_GLOBAL_MAX = None
-        self.F_DT_GLOBAL_MIN = None
-        self.F_FEOS_PATH_1 = None
-        self.F_FEOS_PATH_2 = None
-        self.F_OUTPUT_FREQ = None
-        self.F_BOUNDARY_CONDITION = None
-        self.F_INITIALISE_START_FILE_RUN = None
-        self.CONTINUE = None
-        self.ZIP = True
-        self.COUPLEDIVQ = None
-        self.COUPLEMULTI = None
-        self.loadInParams(path_)
-    
-    def loadInParams(self, path_):
-        with open(path_, 'r') as stream:
+    def __init__(self, path):
+        with open(path, 'r') as stream:
             k = yaml.safe_load(stream)
 
         self.CX1 = k['CX1']
@@ -118,9 +61,3 @@ class Input:
         self.ZIP = k['ZIP']
         self.COUPLEDIVQ = k['COUPLEDIVQ']
         self.COUPLEMULTI = k['COUPLEMULTI']
-
-
-
-
-
-

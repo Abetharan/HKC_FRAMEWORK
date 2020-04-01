@@ -1,7 +1,7 @@
 """ 
-Self-consistently runs the Rad-Hydro code ELH-1 
+Self-consistently runs the Rad-Hydro code HyKiCT
 @author = Abetharan Antony
-Last Update Date = 25/11/19
+Last Update Date = 01/04/2020
 """
 import numpy as np 
 import os
@@ -9,9 +9,10 @@ import TmpFileCreator as tfc
 import subprocess
 import Templating as temple 
 import SetHydroInit as setinit
+import yaml
 from Fluid import Fluid
 
-class ELH1(Fluid):
+class HyKiCT(Fluid):
 
     def __init__(self, IO, nx_, laser_wave_length_, laser_power_, 
                 dur_of_laser_, steps_, fluid_t_max_, initial_dt_,
@@ -137,7 +138,7 @@ class ELH1(Fluid):
     def copyELH1(self):
         """ Purpose: Copy EHL1 exe. """
         import shutil
-        shutil.copy(self._fluid_src_dir + '/ELH1', self._run_path)
+        shutil.copy(self._fluid_src_dir + '/HyKiCT', self._run_path)
     
     def makeTmpFiles(self):
         """ Purpose: Create tmpfiles to be templated 

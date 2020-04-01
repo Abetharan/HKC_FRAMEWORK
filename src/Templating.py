@@ -1,5 +1,4 @@
 from string import Template
-from IO import IO
 
 class Templating:
 

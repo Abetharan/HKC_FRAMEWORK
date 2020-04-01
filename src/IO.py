@@ -1,5 +1,5 @@
 """
-Handles anything to do with input/output.
+Handles anything to do with input/output and paths.
 Creates folders and retains paths required to couple.
 @author = Abetharan Antony
 Last Update = 25/11/19

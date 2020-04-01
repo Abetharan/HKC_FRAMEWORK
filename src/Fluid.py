@@ -6,11 +6,10 @@ class Fluid():
 
     def Execute(self, cmd, path):
         """  
-        Purpose: Launches Impact and Sets the number of cores
+        Purpose: Launches Rad-Hydro code and Sets the number of cores
 
         Args:
-            runPath = Path where IMPACT looks for reference files
-            _KINETIC_np = Number of cores being used 
+            runPath = Path to exe looks for reference files
         """
        
         filename = path + '/f_test.log'
@@ -18,7 +17,6 @@ class Fluid():
             process = subprocess.Popen(cmd, stdout=writer)
             while process.poll() is None:
                 sys.stdout.write(reader.read().decode('utf-8'))
-                #time.sleep(0.5)
             # Read the remaining
             sys.stdout.write(reader.read().decode('utf-8'))
        

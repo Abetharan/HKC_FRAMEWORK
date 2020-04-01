@@ -1,0 +1,138 @@
+Misc:
+  ZIP : false
+  CONTINUE : false
+  CX1: false
+Paths:
+  RUN_NAME: HKC_MONITORING_CHECK
+  BASE_DIR: /media/abetharan/DATADRIVE2/Abetharan/
+  IMPACT_SRC_DIR: /home/abetharan/IMPACT/src/
+  SOL_KIT_SRC_DIR: /home/abetharan/SOL-KiT/
+  F_INIT_PATH: /home/abetharan/HYDRO_KINETIC_COUPLING/Non_Linear_Ramp_Investigation/Longer_Domain_SMOOTHED_PRE_HEAT_RAMP/
+  F_SRC_DIR: /home/abetharan/ELH1/Source_Code/release/
+Codes:
+  KINETIC_CODE: SOL_KIT
+  FLUID_CODE: HyKiCT
+Coupling_Params:
+  CYCLES: 2
+  COUPLEDIVQ : false
+  COUPLEMULTI : true
+Norms:
+  #NORMALISATION
+  TE: 2500
+  NE: 1.1E+27
+  Z: 36.5
+  AR: 157.5
+  BZ: 0
+Kinetic_Params:
+  #UNIVERSAL KINETIC PARAMETERS
+  K_NX: 200
+  K_NY: 1
+  K_NV: 120
+  K_NP: 12
+  K_DT: 0.001
+  #IMPACT PARAMETERS
+  K_T_MAX: 1.0
+  K_X_MAX: 50000
+  K_V_MAX: 30
+  #SOL_KIT PARAMETERS
+  K_DX: 0.5
+  K_DV: 0.0307
+  K_DV_MULTI: 1.015
+  K_NT: 5000
+  K_PRE_STEP_NT: 0
+  K_PRE_STEP_DT: 0.001
+  K_L_MAX: 1
+  K_OUTPUT_FREQ: 10
+  #KINETIC BOUNDARIES 
+  #IMPACT:
+  #'0' : PERIODIC
+  #'1' : REFLECTIVe
+  #'2' : FIXED
+  #SOL_KIT
+  #'periodic' : PERIODIC
+  #'noflow' : REFLECTIVe
+  #'fixed' : FIXED
+  K_BC: 'noflow'
+  K_MAINTAIN: true
+Fluid_Params:
+  Paths:
+        Init_Path: ""
+        Out_Path: ""
+        FEOS_Path_1: ""
+        FEOS_Path_2: ""
+  FixedParameters:
+        nx: 100
+        Rad_Flux_Temperature: 0
+        Laser_Wavelength: 100e-9
+        Laser_Power: 1e12
+        Laser_Dur: 0
+        Left_Fluid_Boundary: 0
+        Right_Fluid_Boundary: 0
+        Left_Rad_Boundary: 2
+        Right_Rad_Boundary: 2
+        Preheat_StartIndex: 0
+        Preheat_LastIndex: 0
+        Frontheat_StartIndex: 0
+        Frontheat_LastIndex: 0
+        Output_Frequency: 1
+        FixedOpacityValue: 0.04
+        FixedEnergyDensityValue: 1e10
+  TimeParameters:
+        dt: 0.1e-12
+        dt_max: 0.1e-15 
+        dt_min: 0.1e-9
+        t_max: 1e-9
+        steps: 0 #2
+        cfl: 0.85
+  Limiters:
+        heatflxlm: 1.0
+        radflxlm: 1.0
+        prrm: 1.0
+        radabm: 1.0
+        radbrm: 1.0
+        radcmm: 1.0
+        raddfm: 1.0
+        radesm: 1.0
+  Switches:
+        Viscosity: true #Artificial Viscosity Include
+        Velocity: true #Velocity
+        PdVWork: true #pDv Work included in energy update
+        HeatConduction: false #Thermal conduction included
+        Exchange: false #Exchange between ions and electrons.. basedon NRL 2018
+        InvBrem: true #Inverse bremstrahllung i.e. laser. 
+        RadiationTransport: false #Radiation Transport 
+        RadFreeFree: false #Free-Free Emission
+        RadPdVWork: false #Radiatoin PdVwork
+        RadDiffusion: false #Ficks diffusion of radation
+        IdealGas: true # EoS Ideal gas
+        MultiMaterial: false # Multi material
+        SingleTemperature: true # Te = Ti
+        CoupleDivQ: false # Coupling between kinetic and fluid using div.q
+        CoupleMulti: false # Coupling between kinetic and fluid using q/q_sh
+        AdapativeTimeStep: false #Adapative time step
+        ConstantCoulombLog: false #Coulomb log kept constant which is set above
+        FullyIonized: true #Fully ionized
+        AdiabaticMode: false # No heat flow
+        IsothermalMode: false #Temperature constant
+  Output:
+        CreateOutputFolder: true #Create output folder if not specified
+        Coordinates: false
+        Viscosity: false
+        Velocity: false
+        Pressure: false
+        MassDensity: false
+        NumberDensity: false
+        Temperature: false
+        Zbar: false
+        HeatFlow: false
+        ThermalConduction: false
+        InternalEnergy: false
+        Exchange: false
+        InverseBrem: true
+        RadFreeFree: false
+        RadDiffusion: false
+        RadTemperature: false
+        RadEnergyDensity: false
+        RadPressure: false
+        PlasmaParameters: false
+
