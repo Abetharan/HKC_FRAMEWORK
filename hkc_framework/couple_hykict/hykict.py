@@ -4,9 +4,10 @@ Self-consistently runs the Rad-Hydro code HyKiCT
 Last Update Date = 01/04/2020
 """
 import os
+import yaml
+import shutil
 import pathlib
 import subprocess
-import yaml
 import numpy as np 
 from hkc_framework.common.fluid import Fluid
 from hkc_framework.common.input import Input
@@ -17,7 +18,7 @@ class HyKiCT(Fluid):
         config_yml_file_path = os.path.join(
                                 pathlib.Path(__file__).parent.absolute(),
                                 'config.yml')
-        init = Input(config_yml_file_path)
+        self.init = Input(config_yml_file_path)
 
         self._fluid_src_dir = io._F_SRC_DIR
         self._cycle_path = io.cycle_dump_path
@@ -30,24 +31,32 @@ class HyKiCT(Fluid):
         self._pre_heat_last_index = 0
         self._front_heat_start_index = 0
         self._front_heat_last_index = 0 
-        
-        if start_from_kinetic:
-            self._nt = init.yaml_file['TimeParameters']['steps']
+        self._nt = 0 
+        self._tmax = 0  
+        if not start_from_kinetic:
+            self._nt = self.init.yaml_file['TimeParameters']['steps']
             if self._nt == 0:
-                self._tmax = init.yaml_file['TimeParameters']['t_max']
+                self._tmax = self.init.yaml_file['TimeParameters']['t_max']
         
-        self.copyELH1()            
-
-    def copyHyKi(self):
-        """ Purpose: Copy EHL1 exe. """
-        import shutil
-        shutil.copy(self._fluid_src_dir + '/HyKiCT', self._run_path)
+        self.copyHyKiCT()            
     
-    def ELH1Run(self):
-        """ Purpose: Run ELH1 with parameters set previously
-        """
+    def writeYaml(self):
+        """ Purpose: Write out config.yml for each cycle"""
+
+        yaml_dump_path = os.path.join(self._cycle_dump_path, 'config.yml')
+        yaml.dump(self.init.yaml_file, yaml_dump_path)
+        
+    def copyHyKiCT(self):
+        """ Purpose: Copy HyKiCT exe. """
+
+        if not os.path.exists(os.path.join(self._run_path, 'HyKiCT')):
+            shutil.copy(self._fluid_src_dir+ '/HyKiCT', self._run_path)
+    
+    def hykictRun(self):
+        """ Purpose: Run HyKiCT with parameters set previously"""
+
         os.chdir(self._run_path)
         cmd = ['./ELH1','-p',
-                self._cycle_dump_path+'/HydroParameterInit.txt']
+                self._cycle_dump_path+'/config.yml']
         super().Execute(cmd, self._cycle_path)
     

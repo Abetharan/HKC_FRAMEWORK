@@ -13,13 +13,13 @@ FixedParameters:
       Right_Fluid_Boundary: 0
       Left_Rad_Boundary: 2
       Right_Rad_Boundary: 2
-      Preheat_StartIndex: 0
-      Preheat_LastIndex: 0
-      Frontheat_StartIndex: 0
+      Preheat_StartIndex: 0 #handled internally
+      Preheat_LastIndex: 0 #handled internally
+      Frontheat_StartIndex: 0 #handled internally
       Frontheat_LastIndex: 0
       Output_Frequency: 1
-      FixedOpacityValue: 0.04
-      FixedEnergyDensityValue: 1e10
+      FixedOpacityValue: 0
+      FixedEnergyDensityValue: 0
 TimeParameters:
       dt: 0.1e-12
       dt_max: 0.1e-15 
