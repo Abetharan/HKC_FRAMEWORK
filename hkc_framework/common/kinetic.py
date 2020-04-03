@@ -74,7 +74,7 @@ class Kinetic():
 
                 file_counter = new_file_counter
 
-                if np.nanmax(convergance) < 1e-5 and np.nanmax(convergance) != 0:
+                if np.nanmax(convergance) < 1e-3 and np.nanmax(convergance) != 0:
                     proc.terminate()
                     break
             

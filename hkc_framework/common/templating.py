@@ -1,6 +1,6 @@
 from string import Template
 
-def templating(self, tmpfilePath, writePath, fileName, parameters):
+def templating(tmpfilePath, writePath, fileName, parameters):
     """
     Purpose: Handles the creation and templating of files.
 

@@ -6,21 +6,20 @@ Last Update = 25/11/19
 """
 import os
 import shutil
-import shutil
 from distutils.dir_util import copy_tree
 class IO:
 
     def __init__(self, run_name_, base_dir_, k_src_dir_, f_src_dir_, f_init_path_,  cycle_counter_, overwrite_,last_cycle_, initialise_all_folders_, *arg):
 
-        self._BASE_DIR = base_dir_
-        self._K_SRC_DIR = k_src_dir_
-        self._RUN_NAME = run_name_
-        self._F_SRC_DIR = f_src_dir_
-        self._F_SWITCH_PATH = None
-        self._F_INIT_PATH = f_init_path_
+        self._base_dir = base_dir_
+        self._k_src_dir = k_src_dir_
+        self._run_name = run_name_
+        self._f_src_dir = f_src_dir_
+        self._f_switch_path = None
+        self._f_init_path = f_init_path_
 
         self.last_cycle = last_cycle_        
-        self._RUN_PATH = os.path.join(self._BASE_DIR, self._RUN_NAME)
+        self._run_path = os.path.join(self._base_dir, self._run_name)
         self.cycle_counter = cycle_counter_
         self.cycle_dump_path = None
         self.fluid_input_path = None
@@ -29,7 +28,7 @@ class IO:
         self.kinetic_output_path = None
         self.next_fluid_input_path = None
 
-        self.__OVERWRITE_OK = overwrite_
+        self.__overwrite_ok = overwrite_
         self.preserved_cycle_path = []
         self.preserved_fluid_input_path = []
         self.preserved_fluid_output_path = []  
@@ -48,7 +47,7 @@ class IO:
     
     def zipAndDelete(self):
         """ Purpose: To zip cycle folders to reduce memory overhead and delete the folder"""
-        zip_location = os.path.join(self._RUN_PATH, 'CYCLE_' + str(self.cycle_counter))
+        zip_location = os.path.join(self._run_path, 'CYCLE_' + str(self.cycle_counter))
         shutil.make_archive(zip_location, 'zip', self.cycle_dump_path)
         shutil.rmtree(self.cycle_dump_path)
 
@@ -58,23 +57,12 @@ class IO:
         print("#"*100)
         print('\033[1m' + '#'*50 + ' SET PATHS ' + '#'*50 + '\033[0m')
         print('\n')
-        self.cycle_dump_path = os.path.join(self._RUN_PATH, ("CYCLE_" + str(self.cycle_counter)))
+        self.cycle_dump_path = os.path.join(self._run_path, ("CYCLE_" + str(self.cycle_counter)))
         self.fluid_input_path = os.path.join(self.cycle_dump_path + "/FLUID_INPUT/")
         self.fluid_output_path = os.path.join(self.cycle_dump_path + "/FLUID_OUTPUT/")
         self.kinetic_input_path = os.path.join(self.cycle_dump_path + "/KINETIC_INPUT/")
         self.kinetic_output_path = os.path.join(self.cycle_dump_path + "/KINETIC_OUTPUT/")
 
-    def copyFluidInit(self,f_init_path_):
-        """ 
-        OBSOLTE --- DELETE
-        Purpose: Copies fluid input folder
-        """
-        print("#"*100)
-        print('\033[1m' + '#'*50 + ' COPYING INIT FLUID ' + '#'*50 + '\033[0m')
-        print('\n')   
-        copy_tree(f_init_path_, self.fluid_input_path)
-        
-    
     def createDirectoryOfOperation(self, no_cycles_):
         """ Purpose: Creates all folders required immediately .. reduces overhead later one 
             Args: no_cycles = no of total cycles.
@@ -83,15 +71,15 @@ class IO:
         print('\033[1m' + '#'*50 + ' CREATING ALL FOLDERS ' + '#'*50 + '\033[0m')
         print('\n')
         path_exists = False
-        if os.path.exists(self._RUN_PATH):
+        if os.path.exists(self._run_path):
             path_exists = True
-            if self.__OVERWRITE_OK:
-                shutil.rmtree(self._RUN_PATH)
+            if self.__overwrite_ok:
+                shutil.rmtree(self._run_path)
         else:
             #create base folder
-            os.makedirs(self._RUN_PATH)
+            os.makedirs(self._run_path)
         for i in range(no_cycles_):
-            cycle_path = os.path.join(self._RUN_PATH, ("CYCLE_" + str(i)))
+            cycle_path = os.path.join(self._run_path, ("CYCLE_" + str(i)))
         
             fluid_input_path = os.path.join(cycle_path + "/FLUID_INPUT/")
             fluid_output_path = os.path.join(cycle_path + "/FLUID_OUTPUT/")
@@ -115,15 +103,15 @@ class IO:
             cycleStep = cycle number.
         """
 
-        self.cycle_dump_path = self._RUN_PATH + "/CYCLE_" + str(self.cycle_counter)
-        self._F_SWITCH_PATH = os.path.join(self.cycle_dump_path, "/HydroSwitches.txt")
+        self.cycle_dump_path = self._run_path + "/CYCLE_" + str(self.cycle_counter)
+        self._f_switch_path = os.path.join(self.cycle_dump_path, "/HydroSwitches.txt")
         self.fluid_input_path = os.path.join(self.cycle_dump_path + "/FLUID_INPUT/")
         self.fluid_output_path = os.path.join(self.cycle_dump_path + "/FLUID_OUTPUT/")
         self.kinetic_input_path = os.path.join(self.cycle_dump_path + "/KINETIC_INPUT/")
         self.kinetic_output_path = os.path.join(self.cycle_dump_path + "/KINETIC_OUTPUT/")
-        new_cycle_path = self._RUN_PATH + "/CYCLE_" + str(self.cycle_counter + 1)
+        new_cycle_path = self._run_path + "/CYCLE_" + str(self.cycle_counter + 1)
         self.next_fluid_input_path = os.path.join(new_cycle_path, "FLUID_INPUT/")
-        self._F_OUT_PATH = self.fluid_output_path
+        self._f_out_path = self.fluid_output_path
         if not os.path.exists(self.next_fluid_input_path) and not self.last_cycle:
             import sys
             print("NEXT FLUID PATH HAS NOT BEEN CREATED")
@@ -158,15 +146,4 @@ class IO:
         self.preserved_fluid_output_path.append(self.fluid_output_path)
         self.preserved_kinetic_input_path.append(self.kinetic_input_path)
         self.preserved_kinetic_output_path.append(self.kinetic_output_path)
-
-        if unit_test:
-            length_cycle_p = len(self.preserved_cycle_path)
-            length_f_i_p = len(self.preserved_fluid_input_path)
-            length_f_o_p = len(self.preserved_fluid_output_path)
-            length_k_i_p = len(self.preserved_kinetic_input_path)
-            length_k_o_p = len(self.preserved_kinetic_output_path)
-            length_arrays = [length_cycle_p, length_f_i_p, length_f_o_p, length_k_i_p, length_k_o_p]
-            if any(length_arrays != self.cycle_counter):
-                import sys
-                print("path does not match length of array")
-                sys.exit(1)
+    

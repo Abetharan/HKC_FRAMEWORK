@@ -18,6 +18,7 @@ from hkc_framework.common.input import Input
 from hkc_framework.couple_hykict.hykict import HyKiCT 
 from hkc_framework.couple_impact.impact import IMPACT
 from hkc_framework.couple_sol_kit.sol_kit import SOL_KIT
+from hkc_framework.common.heat_flow_coupling_tools import HeatFlowCouplingTools
 
 class Coupler:
     """
@@ -103,19 +104,18 @@ class Coupler:
                         init.yaml_file['Paths']['Init_path'],
                         start_cycle, overwrite, last_cycle, 
                         initialise_all_folders, cycles)
-        hykict_obj = HyKiCT(
+        hfct_obj = HeatFlowCouplingTools()
+        fluid_obj = HyKiCT(
                             io_obj,  
                             init.yaml_file['Coupling_Params']['Couple_divq'],
                             init.yaml_file['Coupling_Params']['Couple_multi'],
                             init.yaml_file['Coupling_Params']['Start_from_kinetic'])
                         
         if(init.yaml_file['Codes']['Kinetic_code'] == 'sol_kit'):
-            sol_kit_obj = SOL_KIT(io_obj, k_np, k_nv, k_nx, k_nt, k_pre_step_nt, k_dx, 
-                                    k_dv, k_v_multi, k_dt, k_pre_step_dt, k_l_max, k_save_freq, Z, Ar, ne, Te,
-                                    copy_sol_kit, _SWITCH_CX1, init.COUPLEDIVQ, init.COUPLEMULTI, init.K_MAINTAIN)
-        
-        else:
-            impact_obj = IMPACT()
+            kin_obj = SOL_KIT(io_obj,init.yaml_file['Misc']['Cx1'])
+        #Impact not ready
+        # else:
+            #kin_obj = IMPACT()
 
         #For restarting/continue
         if start_cycle == 0:
@@ -137,23 +137,74 @@ class Coupler:
             self.pretty_print(' RUNNING ' + init.yaml_file['Codes']['Fluid_Codes'], color = True)
             
             #Set Paths 
-            hykict_obj.init.yaml_file['Paths']['Init_Path'] = io_obj.fluid_input_path
-            hykict_obj.init.yaml_file['Paths']['Out_Path'] = io_obj.fluid_output_path
-            hykict_obj._cycle_dump_path = io_obj.cycle_dump_path
+            fluid_obj.init.yaml_file['Paths']['Init_Path'] = io_obj.fluid_input_path
+            fluid_obj.init.yaml_file['Paths']['Out_Path'] = io_obj.fluid_output_path
+            fluid_obj._cycle_dump_path = io_obj.cycle_dump_path
             ################
             #Any other parameter updates that needs to be set can be added here.
             #################
 
-            hykict_obj.writeYaml()
-            hykict_obj.hykictRun()
+            fluid_obj.setFiles()
+            fluid_obj.Run()
+            (fluid_x_grid, fluid_x_centered_grid, fluid_v, fluid_ne, fluid_Te,
+            fluid_Z, fluid_laser, fluid_mass) = fluid_obj.getLastStepQuants()
+
+            #Init heat_flow_tools here 
+            hfct_obj.electron_temperature = fluid_Te
+            hfct_obj.electron_number_density = fluid_ne
+            hfct_obj.zbar = fluid_Z
+            hfct_obj.cell_wall_coord = fluid_x_grid
+            hfct_obj.cell_centered_coord = fluid_x_centered_grid
+            hfct_obj.mass = fluid_mass
+
+            #Calculate spitzer harm from last step fluid quants
+            hfct_obj.coulomb_log()
+            hfct_obj.spitzer_harm_heat()
 
             #Breaks here ... Last cycle allowed to run hydro step
-            #kinetic would be useless as qe generated is not used. 
             if cycle_no == cycles - 1:
                 if init.yaml_file['Misc']['Zip']:
                     io_obj.zipAndDelete()        
-                break;
+                break;  
 
+            #Set any parameter ifles
+            #Init all load in files form hydro
+            #RUN
+            #Move files if neccessary
+            kin_obj.setFiles()
+            kin_obj.InitFromHydro(fluid_x_grid, fluid_x_centered_grid, 
+                                fluid_Te, fluid_ne, fluid_Z)
+            kin_obj.Run()
+            #Set hfct to contain the vfp heat flow to do the neccessary coupling calcs.
+            hfct_obj.vfp_heat= kin_obj.getLastHeatFlow()
+            kin_obj.moveFiles()
+
+            #Do Coupling Parameters here
+            if init.yaml_file['Coupling_params']['Couple_divq']:
+                #qe here is div.q_vfp 
+                qe = hfct_obj.divQHeatFlow()
+            
+            elif init.yaml_file['Coupling_params']['Couple_multi']:
+                #qe here is q_vfp/q_sh
+                (qe, pre_heat_start_index, pre_heat_last_index,
+                pre_heat_fit_params, front_heat_start_index, 
+                front_heat_last_index, front_heat_fit_params)  = hfct_obj.multiplier()
+
+            if init.yaml_file['Misc']['Zip']:
+                io_obj.zipAndDelete()        
+            np.savetxt(continue_step_path, np.array([cycle_no]), fmt = '%i')
+            
+            
+            #Finish by init next set of files 
+            fluid_obj.initHydroFromKinetic(io_obj.next_fluid_input_path, qe,)
+           
+           
+           
+           
+           
+           
+            #To be DELETE
+            #OBSOLETE
             #Kinetic Codes run here
             # if _SWITCH_KINETIC_CODE == "IMPACT":
             #     impact_obj = impact.IMPACT(io_obj, k_np, k_nv, k_nx, k_ny, k_dt, k_t_max, k_x_max, k_v_max, k_bc, 100, _SWITCH_CX1)
@@ -183,28 +234,6 @@ class Coupler:
                 #     impact_obj.moveIMPACTFile()
                 # else:
                 #     impact_obj.moveIMPACTFile()
-
-            if _SWITCH_KINETIC_CODE == "SOL_KIT":
-                
-                sol_kit_obj.setSOL_KITFiles(switch_boundary_condition_ = k_bc)
-                sol_kit_obj.InitSOL_KITFromHydro()
-                sol_kit_obj.SOL_KITRun()
-                if not last_cycle:
-                    sol_kit_obj.SOL_KITInitNextHydroFiles()
-                    sol_kit_obj.moveSOL_KITFiles()
-                else:    
-                    sol_kit_obj.moveSOL_KITFiles()
-                pre_heat_start_index = sol_kit_obj.pre_heat_start_index
-                pre_heat_last_index = sol_kit_obj.pre_heat_last_index
-                front_heat_start_index = sol_kit_obj.front_heat_start_index
-                front_heat_last_index = sol_kit_obj.front_heat_last_index
-
-            np.savetxt(continue_step_path, np.array([cycle_no]), fmt = '%i')
-            
-            if init.ZIP:
-                io_obj.zipAndDelete()        
-
-
 
 
 
