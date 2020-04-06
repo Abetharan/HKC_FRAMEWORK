@@ -2,23 +2,20 @@
 Hydro-Kinetic Coupling.
 Heat-Flow coupling between Hydro and Kibnetic codes. 
 @author = Abetharan Antony
-Last Update = 25/11/19
 """
-import os
-import shutil
-import math
-import numpy as np
+import argparse
 from colorama import Fore
 from colorama import Style
+from distutils.dir_util import copy_tree
+import math
+import numpy as np
 from PIL import Image, ImageFont, ImageDraw
-import hkc_framework.common.tmpfilecreator as tfc
-import hkc_framework.common.io_couple as io
-import hkc_framework.common.templating as temple
-from hkc_framework.common.input import Input 
-from hkc_framework.couple_hykict.hykict import HyKiCT 
-from hkc_framework.couple_impact.impact import IMPACT
-from hkc_framework.couple_sol_kit.sol_kit import SOL_KIT
-from hkc_framework.common.heat_flow_coupling_tools import HeatFlowCouplingTools
+import os
+import shutil
+import utils as util
+from couple_sol_kit.sol_kit import SOL_KIT
+from couple_hykict.hykict import HyKiCT
+
 
 class Coupler:
     """
@@ -59,22 +56,20 @@ class Coupler:
     
 
     def main(self):
-        init = Input(self.yml_init_file_path)
+        init = util.Input(self.yml_init_file_path)
         RUN_PATH = os.path.join(init.yaml_file['Paths']['Base_dir'],
                      init.yaml_file['Paths']['Run_name'])        
 
-        if not init.yaml_file['CX1']:
-            self.start_print(init.yaml_file["Codes"]["Fluid_Code"],
-                             init.yaml_file["Codes"]["Kinetic_Code"])
+        if not init.yaml_file['Misc']['Cx1']:
+            self.start_print(init.yaml_file["Codes"]["Fluid_code"],
+                             init.yaml_file["Codes"]["Kinetic_code"])
 
         overwrite = init.yaml_file['Misc']['Overwrite']
-        last_cycle = False
-        cycles = init.yaml_file['Coupling_Params']['CYCLES']
+        cycles = init.yaml_file['Coupling_params']['Cycles']
         continue_step_path = os.path.join(RUN_PATH, 'CONTINUE_STEP.txt') 
         initialise_all_folders = False
-        copy_sol_kit = False
     
-        if init.yaml_file['CONTINUE']:
+        if init.yaml_file['Misc']['Continue']:
             #Continue in this framework is designed such that
             #a run does not have to fail (for whatever reason) and then continue
             #it will keep going until its objective has been reached which is
@@ -87,39 +82,38 @@ class Coupler:
             else:
                 start_cycle = 0
                 initialise_all_folders = True
-                copy_sol_kit = True
                 overwrite = True
         else:
             initialise_all_folders = True
-            copy_sol_kit = True
             start_cycle = 0
             overwrite = True
 
         #Create Objects 
-        io_obj = io.IO(
+        io_obj = util.IO(
                         init.yaml_file['Paths']['Run_name'],
                         init.yaml_file['Paths']['Base_dir'], 
                         init.yaml_file['Paths']['K_src_dir'],
                         init.yaml_file['Paths']['F_src_dir'], 
                         init.yaml_file['Paths']['Init_path'],
-                        start_cycle, overwrite, last_cycle, 
-                        initialise_all_folders, cycles)
-        hfct_obj = HeatFlowCouplingTools()
-        fluid_obj = HyKiCT(
-                            io_obj,  
-                            init.yaml_file['Coupling_Params']['Couple_divq'],
-                            init.yaml_file['Coupling_Params']['Couple_multi'],
-                            init.yaml_file['Coupling_Params']['Start_from_kinetic'])
+                        start_cycle, overwrite, cycles, 
+                        initialise_all_folders)
+        hfct_obj = util.HeatFlowCouplingTools()
+        fluid_obj = HyKiCT(io_obj)
                         
         if(init.yaml_file['Codes']['Kinetic_code'] == 'sol_kit'):
             kin_obj = SOL_KIT(io_obj,init.yaml_file['Misc']['Cx1'])
         #Impact not ready
         # else:
             #kin_obj = IMPACT()
-
+        
+        #REVIEW Bit hacky remove opition for grid definition in derivative configs.
+        kin_obj.init.yaml_file['Params']['Nx'] = init.yaml_file['Coupling_params']['Nx']
+        fluid_obj.init.yaml_file['FixedParameters']['Nx'] = init.yaml_file['Coupling_params']['Nx']
         #For restarting/continue
+        #The copying could in principal be removed. 
+        #Output directory just self-consistent this way.
         if start_cycle == 0:
-            io_obj.copyFluidInit(init.yaml_file['Paths']['Init_path'])
+            copy_tree(init.yaml_file['Paths']['Init_path'], io_obj.fluid_input_path)
             np.savetxt(os.path.join(RUN_PATH, 'NO_CYCLES.txt'), np.array([cycles - 1]), fmt = '%i' )       
 
         for cycle_no in range(start_cycle, cycles, 1):
@@ -129,12 +123,9 @@ class Coupler:
                 io_obj.cycle_counter = cycle_no
                 io_obj.nextCyclePathManager()
 
-            if cycle_no == cycles - 1:
-                io_obj.last_cycle = True
-
             #Fluid Code runs here 
             #In this example running HyKiCT
-            self.pretty_print(' RUNNING ' + init.yaml_file['Codes']['Fluid_Codes'], color = True)
+            self.pretty_print(' RUNNING ' + init.yaml_file['Codes']['Fluid_code'], color = True)
             
             #Set Paths 
             fluid_obj.init.yaml_file['Paths']['Init_Path'] = io_obj.fluid_input_path
@@ -146,8 +137,11 @@ class Coupler:
 
             fluid_obj.setFiles()
             fluid_obj.Run()
-            (fluid_x_grid, fluid_x_centered_grid, fluid_v, fluid_ne, fluid_Te,
-            fluid_Z, fluid_laser, fluid_mass) = fluid_obj.getLastStepQuants()
+
+            #the _ are unused variables fluid_v and fluid_laser, for future
+            #use these may be required and thus, left in. 
+            (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
+            fluid_Z, _, fluid_mass) = fluid_obj.getLastStepQuants()
 
             #Init heat_flow_tools here 
             hfct_obj.electron_temperature = fluid_Te
@@ -158,20 +152,25 @@ class Coupler:
             hfct_obj.mass = fluid_mass
 
             #Calculate spitzer harm from last step fluid quants
-            hfct_obj.coulomb_log()
-            hfct_obj.spitzer_harm_heat()
+            hfct_obj.lambda_ei(hfct_obj.electron_temperature, 
+                                hfct_obj.electron_temperature,
+                                hfct_obj.zbar)
+            hfct_obj.spitzerHarmHeatFlow()
 
             #Breaks here ... Last cycle allowed to run hydro step
             if cycle_no == cycles - 1:
                 if init.yaml_file['Misc']['Zip']:
                     io_obj.zipAndDelete()        
-                break;  
+                break 
 
             #Set any parameter ifles
             #Init all load in files form hydro
             #RUN
             #Move files if neccessary
-            kin_obj.setFiles()
+            if cycle_no == 0:
+                #input and output unchanged 
+                kin_obj.setFiles()
+
             kin_obj.InitFromHydro(fluid_x_grid, fluid_x_centered_grid, 
                                 fluid_Te, fluid_ne, fluid_Z)
             kin_obj.Run()
@@ -192,18 +191,20 @@ class Coupler:
 
             if init.yaml_file['Misc']['Zip']:
                 io_obj.zipAndDelete()        
+            #update continue file
             np.savetxt(continue_step_path, np.array([cycle_no]), fmt = '%i')
             
             
             #Finish by init next set of files 
-            fluid_obj.initHydroFromKinetic(io_obj.next_fluid_input_path, qe,)
+            fluid_obj.initHydroFromKinetic(io_obj.next_fluid_input_path, qe,
+                                            pre_heat_fit_params, front_heat_fit_params)
+            #Modify yaml for future write
+            fluid_obj.init.yaml_file['FixedParameters']['Preheat_StartIndex'] = pre_heat_start_index
+            fluid_obj.init.yaml_file['FixedParameters']['Preheat_LastIndex'] = pre_heat_last_index
+            fluid_obj.init.yaml_file['FixedParameters']['Frontheat_StartIndex'] = front_heat_start_index
+            fluid_obj.init.yaml_file['FixedParameters']['Frontheat_LastIndex'] = front_heat_last_index
            
-           
-           
-           
-           
-           
-            #To be DELETE
+            #To be DELETED
             #OBSOLETE
             #Kinetic Codes run here
             # if _SWITCH_KINETIC_CODE == "IMPACT":
@@ -236,11 +237,12 @@ class Coupler:
                 #     impact_obj.moveIMPACTFile()
 
 
-
-
-
-
-
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description = 'Coupling of Hydrodynamic and Kinetic code. The two codes are specified in the input file.')
+    parser.add_argument('-p', '--path', required=True, help = 'Give path to Input yml file.')
+    args = vars(parser.parse_args())
+    couple = Coupler(args['path'])
+    couple.main()
 
 
 

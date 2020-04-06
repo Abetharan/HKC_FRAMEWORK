@@ -4,7 +4,7 @@ Paths:
       FEOS_Path_1: ""
       FEOS_Path_2: ""
 FixedParameters:
-      nx: 100
+      nx: 200
       Rad_Flux_Temperature: 0
       Laser_Wavelength: 100e-9
       Laser_Power: 1e12
@@ -24,7 +24,7 @@ TimeParameters:
       dt: 0.1e-12
       dt_max: 0.1e-15 
       dt_min: 0.1e-9
-      t_max: 1e-9
+      t_max: 0
       steps: 0 #2
       cfl: 0.85
 Limiters:
@@ -42,7 +42,7 @@ Switches:
       PdVWork: true #pDv Work included in energy update
       HeatConduction: false #Thermal conduction included
       Exchange: false #Exchange between ions and electrons.. basedon NRL 2018
-      InvBrem: true #Inverse bremstrahllung i.e. laser. 
+      InvBrem: false #Inverse bremstrahllung i.e. laser. 
       RadiationTransport: false #Radiation Transport 
       RadFreeFree: false #Free-Free Emission
       RadPdVWork: false #Radiatoin PdVwork
@@ -51,23 +51,23 @@ Switches:
       MultiMaterial: false # Multi material
       SingleTemperature: true # Te = Ti
       CoupleDivQ: false # Coupling between kinetic and fluid using div.q
-      CoupleMulti: false # Coupling between kinetic and fluid using q/q_sh
+      CoupleMulti: true # Coupling between kinetic and fluid using q/q_sh
       AdapativeTimeStep: false #Adapative time step
       ConstantCoulombLog: false #Coulomb log kept constant which is set above
       FullyIonized: true #Fully ionized
       AdiabaticMode: false # No heat flow
       IsothermalMode: false #Temperature constant
 Output:
-      CreateOutputFolder: true #Create output folder if not specified
-      Coordinates: false
+      CreateOutputFolder: false #Create output folder if not specified
+      Coordinates: true
       Viscosity: false
-      Velocity: false
+      Velocity: true
       Pressure: false
-      MassDensity: false
-      NumberDensity: false
-      Temperature: false
-      Zbar: false
-      HeatFlow: false
+      MassDensity: true
+      NumberDensity: true
+      Temperature: true
+      Zbar: true
+      HeatFlow: true
       ThermalConduction: false
       InternalEnergy: false
       Exchange: false

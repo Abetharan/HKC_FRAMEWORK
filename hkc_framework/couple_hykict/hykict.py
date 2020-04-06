@@ -1,7 +1,6 @@
 """ 
 Self-consistently runs the Rad-Hydro code HyKiCT
 @author = Abetharan Antony
-Last Update Date = 01/04/2020
 """
 import os
 import yaml
@@ -9,43 +8,34 @@ import shutil
 import pathlib
 import subprocess
 import numpy as np 
-from hkc_framework.common.find_last_file import findLargestIndex
-from hkc_framework.common.fluid import Fluid
-from hkc_framework.common.input import Input
+import yaml
+from utils import findLargestIndex
+from utils import Fluid
+from utils import Input
 
 class HyKiCT(Fluid):
 
-    def __init__(self, io, couple_divq, couple_multi, start_from_kinetic):
+    def __init__(self, io):
         config_yml_file_path = os.path.join(
                                 pathlib.Path(__file__).parent.absolute(),
                                 'config.yml')
         self.init = Input(config_yml_file_path)
 
-        self._fluid_src_dir = io._F_SRC_DIR
+        self._fluid_src_dir = io._f_src_dir
         self._cycle_path = io.cycle_dump_path
         self._init_file_path = io.fluid_input_path       
-        self._base_dir = io._BASE_DIR
-        self._run_path = io._RUN_PATH
+        self._base_dir = io._base_dir
+        self._run_path = io._run_path
         self._fluid_output_path = io.fluid_output_path
         self._cycle_dump_path = io.cycle_dump_path
-        self._pre_heat_start_index = 0
-        self._pre_heat_last_index = 0
-        self._front_heat_start_index = 0
-        self._front_heat_last_index = 0 
-        self._nt = 0 
-        self._tmax = 0  
-        if not start_from_kinetic:
-            self._nt = self.init.yaml_file['TimeParameters']['steps']
-            if self._nt == 0:
-                self._tmax = self.init.yaml_file['TimeParameters']['t_max']
-        
         self._copyHyKiCT()            
     
     def setFiles(self):
         """ Purpose: Write out config.yml for each cycle"""
 
         yaml_dump_path = os.path.join(self._cycle_dump_path, 'config.yml')
-        yaml.dump(self.init.yaml_file, yaml_dump_path)
+        with open(yaml_dump_path, 'w') as outfile: 
+            yaml.dump(self.init.yaml_file, outfile)
         
     def _copyHyKiCT(self):
         """ Purpose: Copy HyKiCT exe. """
@@ -57,7 +47,7 @@ class HyKiCT(Fluid):
         """ Purpose: Run HyKiCT with parameters set previously"""
 
         os.chdir(self._run_path)
-        cmd = ['./ELH1','-p',
+        cmd = ['./HyKiCT','-p',
                 self._cycle_dump_path+'/config.yml']
         super().Execute(cmd, self._cycle_path)
     
@@ -93,8 +83,11 @@ class HyKiCT(Fluid):
         largest_fluid_index = findLargestIndex(os.path.join(self._fluid_output_path, "ELECTRON_TEMPERATURE"))
         #Properitary names for HyKiCT. Looks for these files when run in coupled mode
         np.savetxt(os.path.join(next_fluid_input_path,"qe.txt"), qe)
-        np.savetxt(os.path.join(next_fluid_input_path,"pre_heat_fit_params.txt"), pre_params)
-        np.savetxt(os.path.join(next_fluid_input_path,"front_heat_fit_params.txt"), front_params)
+
+        if pre_params is not None:
+            np.savetxt(os.path.join(next_fluid_input_path,"pre_heat_fit_params.txt"), pre_params)
+            np.savetxt(os.path.join(next_fluid_input_path,"front_heat_fit_params.txt"), front_params)
+
         #Standard init files. 
         #These files should correspond to the last state of the fluid step. 
         #In the case of HyKiCT these files are sufficient to init everything else. 
@@ -111,7 +104,7 @@ class HyKiCT(Fluid):
                                         ,os.path.join(next_fluid_input_path,"electron_temperature.txt"))
         shutil.copyfile(os.path.join(self._fluid_output_path + "ION_TEMPERATURE/ION_TEMPERATURE_" + str(largest_fluid_index) +".txt")
                                         ,os.path.join(next_fluid_input_path,"ion_temperature.txt"))
-        shutil.copyfile(os.path.join(self._fluid_output_path + "MASS/MASS_" + str(largest_fluid_index) +  ".txt")
+        shutil.copyfile(os.path.join(self._init_file_path + "mass.txt")
                                         ,os.path.join(next_fluid_input_path,"mass.txt"))
         shutil.copyfile(os.path.join(self._init_file_path + "Z.txt")
                                         ,os.path.join(next_fluid_input_path, "Z.txt"))

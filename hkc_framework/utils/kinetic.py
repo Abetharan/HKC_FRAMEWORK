@@ -35,14 +35,13 @@ class Kinetic():
                 convergence_func : function that calculates convergance values i.e. q/q_sh
                 nx : number of cell-centrs.
             """
-                #Path to heat flow
+            #Path to heat flow
             convergance = 10
             file_counter = 0
             time.sleep(10)
             multipliers = np.zeros(nx + 1) 
 
             while True:
-
                 heat_flows = os.listdir(kinetic_heat_flow_output_folder_path)
                 new_file_counter = len(heat_flows)
                 #Last Heat 
@@ -82,11 +81,11 @@ class Kinetic():
         filename = log_path + '/k_test.log'
         with io.open(filename, 'wb') as writer, io.open(filename, 'rb', 1) as reader:
             #run command provided
-            process = subprocess.Popen(cmd, stdout=writer)
-
+            process = subprocess.Popen(cmd, stdout=writer, stderr = subprocess.PIPE)
+            _, err = process.communicate()
             ##Spawn a thread which runs convergencemonitoring function. 
             if monitor_on:
-                monitor = threading.Thread(target=ConvergenceMonitoring, args = (process, kinetic_heat_flow_output_folder_path, convergence_func, nx))
+                monitor = threading.Thread(target=ConvergenceMonitoring, args = (process, kinetic_heat_flow_output_folder_path, convergence_func, nx), daemon = True)
                 monitor.start()
 
             while process.poll() is None:
@@ -94,3 +93,7 @@ class Kinetic():
 
             # Read the remaining
             sys.stdout.write(reader.read().decode('utf-8'))
+
+            if err:
+                print("Kinetic code failed see log")
+                sys.exit(0)

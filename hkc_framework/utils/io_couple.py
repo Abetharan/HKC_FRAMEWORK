@@ -6,21 +6,23 @@ Last Update = 25/11/19
 """
 import os
 import shutil
+import string
+import sys
 from distutils.dir_util import copy_tree
 class IO:
 
-    def __init__(self, run_name_, base_dir_, k_src_dir_, f_src_dir_, f_init_path_,  cycle_counter_, overwrite_,last_cycle_, initialise_all_folders_, *arg):
+    def __init__(self, run_name, base_dir, k_src_dir, f_src_dir, f_init_path, cycle_counter, overwrite, max_cycle, initialise_all_folders):
 
-        self._base_dir = base_dir_
-        self._k_src_dir = k_src_dir_
-        self._run_name = run_name_
-        self._f_src_dir = f_src_dir_
+        self._base_dir = base_dir
+        self._k_src_dir = k_src_dir
+        self._run_name = run_name
+        self._f_src_dir = f_src_dir
         self._f_switch_path = None
-        self._f_init_path = f_init_path_
+        self._f_init_path = f_init_path
 
-        self.last_cycle = last_cycle_        
+        self.max_cycle = max_cycle        
         self._run_path = os.path.join(self._base_dir, self._run_name)
-        self.cycle_counter = cycle_counter_
+        self.cycle_counter = cycle_counter
         self.cycle_dump_path = None
         self.fluid_input_path = None
         self.fluid_output_path = None
@@ -28,20 +30,15 @@ class IO:
         self.kinetic_output_path = None
         self.next_fluid_input_path = None
 
-        self.__overwrite_ok = overwrite_
+        self.__overwrite_ok = overwrite
         self.preserved_cycle_path = []
         self.preserved_fluid_input_path = []
         self.preserved_fluid_output_path = []  
         self.preserved_kinetic_input_path = []
         self.preserved_kinetic_output_path = []
         #self.setPaths()
-        if initialise_all_folders_:
-            if len(arg) > 1:
-                print("Only one entry allowed which is Number of cycles. Try again")
-                import sys
-                sys.exit(1)
-
-            self.createDirectoryOfOperation(int(arg[0]))
+        if initialise_all_folders:
+            self.createDirectoryOfOperation(self.max_cycle)
     
         self.nextCyclePathManager()
     
@@ -103,17 +100,16 @@ class IO:
             cycleStep = cycle number.
         """
 
-        self.cycle_dump_path = self._run_path + "/CYCLE_" + str(self.cycle_counter)
-        self._f_switch_path = os.path.join(self.cycle_dump_path, "/HydroSwitches.txt")
+        self.cycle_dump_path = os.path.join(self._run_path, "".join(["CYCLE_", str(self.cycle_counter)]))
+        # self._f_switch_path = os.path.join(self.cycle_dump_path, "/HydroSwitches.txt")
         self.fluid_input_path = os.path.join(self.cycle_dump_path + "/FLUID_INPUT/")
         self.fluid_output_path = os.path.join(self.cycle_dump_path + "/FLUID_OUTPUT/")
         self.kinetic_input_path = os.path.join(self.cycle_dump_path + "/KINETIC_INPUT/")
         self.kinetic_output_path = os.path.join(self.cycle_dump_path + "/KINETIC_OUTPUT/")
-        new_cycle_path = self._run_path + "/CYCLE_" + str(self.cycle_counter + 1)
+        new_cycle_path = os.path.join(self._run_path, "".join(["CYCLE_", str(self.cycle_counter + 1)]))
         self.next_fluid_input_path = os.path.join(new_cycle_path, "FLUID_INPUT/")
-        self._f_out_path = self.fluid_output_path
-        if not os.path.exists(self.next_fluid_input_path) and not self.last_cycle:
-            import sys
+
+        if not os.path.exists(self.next_fluid_input_path) and not (self.max_cycle - 1  == self.cycle_counter): 
             print("NEXT FLUID PATH HAS NOT BEEN CREATED")
             print(self.preserved_fluid_input_path)
             sys.exit(1)

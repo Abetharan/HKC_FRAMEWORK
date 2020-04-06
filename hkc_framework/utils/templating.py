@@ -1,5 +1,5 @@
 from string import Template
-
+import os
 def templating(tmpfilePath, writePath, fileName, parameters):
     """
     Purpose: Handles the creation and templating of files.
@@ -14,7 +14,8 @@ def templating(tmpfilePath, writePath, fileName, parameters):
     filein = open(tmpfilePath, "r")
     src = Template(filein.read())
     subbedtemplate = src.substitute(parameters)
-    writeFile = open(writePath + "/" + fileName, "w")
+    write_path_with_name = os.path.join(writePath, fileName)
+    writeFile = open(write_path_with_name, "w")
     writeFile.write(subbedtemplate)
     writeFile.close()
 

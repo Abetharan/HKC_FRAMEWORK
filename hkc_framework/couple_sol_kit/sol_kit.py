@@ -2,28 +2,30 @@
 Self-consistent class for SOL-KiT
 This object will init Sol-KiT run and take and produce the necessary files to run from and to Fluid.  
 @author = Abetharan Antony
-Date = 25/11/19
 """
-import os
-import sys
-import math
-import pprint
-import string
-import shutil 
+# from __future__ import absolute_import
+
+from distutils.dir_util import copy_tree
 import fnmatch
-import pathlib
-import subprocess
+import math
 import numpy as np 
+import os
+import pathlib
+import pprint
 from scipy import constants
 from scipy.interpolate import interp1d
-from distutils.dir_util import copy_tree
-from hkc_framework.common.templating import templating
-from hkc_framework.common.input import Input
-from hkc_framework.common.kinetic import Kinetic
-from hkc_framework.common.find_last_file import findLargestIndex
-from hkc_framework.common.heat_flow_coupling_tools import HeatFlowCouplingTools
-import hkc_framework.common.tmpfilecreator as tfc
-import hkc_framework.couple_sol_kit.set_sol_kit_param as setparams 
+import shutil 
+import string
+import subprocess
+import sys
+from utils import templating
+from utils import Input
+from utils import Kinetic
+from utils import findLargestIndex
+from utils import HeatFlowCouplingTools
+import couple_sol_kit.set_sol_kit_param as setparams
+# from . import set_sol_kit_param as setparams
+#import set_sol_kit_param as setparams
 
 BOLTZMANN_CONSTANT = constants.value("Boltzmann constant")
 ELECTRON_MASS = constants.value("electron mass")
@@ -62,7 +64,6 @@ class SOL_KIT(Kinetic):
         self._fluid_output_path = io.fluid_output_path
         self._cycle_path = io.cycle_dump_path
         
-        self.boundary_condition = self.init.yaml_file['Params']['Bc'] 
         self.maintain_f0 = self.init.yaml_file['Switches']['f_0_maintain']
         self.normalised_values = None
         self.cx1 = cx1
@@ -79,7 +80,13 @@ class SOL_KIT(Kinetic):
 
         self.sh_heat_flow = 0
         self.mnultipliers = 0
-        
+
+        if(self.init.yaml_file['Boundary']['Periodic']):
+            self.boundary_condition = "periodic"
+        elif self.init.yaml_file['Boundary']['Fixed_up']:
+            self.boundary_condition = "fixed"
+        else:
+            self.boundary_condition = "noflow"
 
     def Run(self):
         """  
@@ -138,7 +145,11 @@ class SOL_KIT(Kinetic):
         gamma_ei_0 = self.init.yaml_file['Norms']['Z'] ** 2 * gamma_ee_0
 
         v_t = math.sqrt(2.0 * T_J / ELECTRON_MASS)                  # Velocity normalization
-        coulomb_log = self.heat_flow_tools.lambda_ei(T_norm = self._norm_Te, n_norm = self._norm_ne, Z_norm = self._norm_Z, return_arg = True)
+        coulomb_log = self.heat_flow_tools.lambda_ei(T_norm = [self._norm_Te],
+                                                    n_norm = [self._norm_ne],
+                                                    Z_norm = [self._norm_Z],
+                                                    return_arg = True)
+
         time_norm = v_t ** 3 / (gamma_ei_0 * (self._norm_ne/self._norm_Z) * coulomb_log)  # Time normalization
         x_0 = v_t * time_norm               # Space normalization
         e_0 = ELECTRON_MASS * v_t / (ELEMENTARY_CHARGE * time_norm) # Electric field normalization
@@ -218,7 +229,7 @@ class SOL_KIT(Kinetic):
                             nt = self.init.yaml_file['Params']['Nt'],
                             prestepnt = self.init.yaml_file['Params']['Pre_step_nt'],
                             dt = self.init.yaml_file['Params']['Dt'],
-                            predt = self.init.yaml_file['Params']['Pre_dt'],
+                            predt = self.init.yaml_file['Params']['Pre_step_dt'],
                             save_freq = self.init.yaml_file['Params']['Output_freq'],
                             lmax = self.init.yaml_file['Params']['L_max'],
                             nv = self.init.yaml_file['Params']['Nv'],
@@ -232,32 +243,33 @@ class SOL_KIT(Kinetic):
                                 Temp = self._norm_Te)
 
         switches = setparams.Switches(
-                                    EE_0 = self.init.yaml_file['Switches']['Coll_ee_0'] ,
-                                    EE_L = self.init.yaml_file['Switches']['Coll_ee_l'],
-                                    EI_L = self.init.yaml_file['Switches']['Coll_ei_l'],
-                                    DIAG_EE = self.init.yaml_file['Switches']['Diag_ee_l'],
-                                    PERIODIC = self.init.yaml_file['Boundary']['Periodic'],
-                                    FIXEDUP = self.init.yaml_file['Boundary']['Fixed_up'], 
-                                    FIXEDDOWN = self.init.yaml_file['Boundary']['Fixed_down'],
-                                    NOFLOWUP = self.init.yaml_file['Boundary']['No_flow_up'], 
-                                    NOFLOWDOWN = self.init.yaml_file['Boundary']['No_flow_down'],
-                                    IMPACTMODE = self.init.yaml_file['Switches']['Local_init'], 
-                                    COLDIONS = self.init.yaml_file['Switches']['Cold_ion_fluid'],
-                                    MAINTAIN = self.init.yaml_file['Switches']['f_0_maintain'],
-                                    OUTPUT_TEMPERATURE = self.init.yaml_file['Output']['Temperature'],
-                                    OUTPUT_DENSITY= self.init.yaml_file['Output']['Density'], 
-                                    OUTPUT_VELOCITY= self.init.yaml_file['Output']['Velocity'],
-                                    OUTPUT_E_FIELD= self.init.yaml_file['Output']['E_field'],
-                                    OUTPUT_SH_TEST= self.init.yaml_file['Output']['Sh_test'])
+                            EE_0 = self.init.yaml_file['Switches']['Coll_ee_0'] ,
+                            EE_L = self.init.yaml_file['Switches']['Coll_ee_l'],
+                            EI_L = self.init.yaml_file['Switches']['Coll_ei_l'],
+                            DIAG_EE = self.init.yaml_file['Switches']['Diag_ee_l'],
+                            PERIODIC = self.init.yaml_file['Boundary']['Periodic'],
+                            FIXEDUP = self.init.yaml_file['Boundary']['Fixed_up'], 
+                            FIXEDDOWN = self.init.yaml_file['Boundary']['Fixed_down'],
+                            NOFLOWUP = self.init.yaml_file['Boundary']['No_flow_up'], 
+                            NOFLOWDOWN = self.init.yaml_file['Boundary']['No_flow_down'],
+                            IMPACTMODE = self.init.yaml_file['Switches']['Local_init'], 
+                            COLDIONS = self.init.yaml_file['Switches']['Cold_ion_fluid'],
+                            MAINTAIN = self.init.yaml_file['Switches']['f_0_maintain'],
+                            OUTPUT_TEMPERATURE = self.init.yaml_file['Output']['Temperature'],
+                            OUTPUT_DENSITY= self.init.yaml_file['Output']['Density'], 
+                            OUTPUT_VELOCITY= self.init.yaml_file['Output']['Velocity'],
+                            OUTPUT_E_FIELD= self.init.yaml_file['Output']['E_field'],
+                            OUTPUT_SH_TEST= self.init.yaml_file['Output']['Sh_test'])
         
         #REVIEW Prob gunna be some path errors here 
-        templating(tmpfilePath= self._run_path + 'INPUT/tmpSOL_KIT_GRID.txt',
+        templating(tmpfilePath= os.path.join(self._run_path, 'INPUT/tmpSOL_KIT_GRID.txt'),
             writePath=input_path, fileName="GRID_INPUT.txt", parameters=grid)
-        templating(tmpfilePath= self._run_path + 'tmp_INPUT/tmpSOL_KIT_NORMS.txt',
+        templating(tmpfilePath= os.path.join(self._run_path, 'INPUT/tmpSOL_KIT_NORMS.txt'),
             writePath=input_path, fileName="NORMALIZATION_INPUT.txt", parameters=norms)
-        templating(tmpfilePath= self._run_path + 'tmp_INPUT/tmpSOL_KIT_SWITCHES.txt',
+        templating(tmpfilePath= os.path.join(self._run_path, 'INPUT/tmpSOL_KIT_SWITCHES.txt'),
             writePath=input_path, fileName="SWITCHES_INPUT.txt", parameters=switches)
         #remove tmp files
+        os.rename(os.path.join(input_path, 'tmpSOL_KIT_SOLVER_PARAMS.txt'), os.path.join(input_path, 'SOLVER_PARAMS_INPUT.txt'))
         os.remove(os.path.join(input_path, 'tmpSOL_KIT_GRID.txt'))
         os.remove(os.path.join(input_path, 'tmpSOL_KIT_NORMS.txt'))
         os.remove(os.path.join(input_path, 'tmpSOL_KIT_SWITCHES.txt'))
@@ -276,13 +288,12 @@ class SOL_KIT(Kinetic):
         #Copy INPUT files
         copy_tree(self._sol_kit_input_path, self._kinetic_input_path)
         # #move OUTPUT files
-        shutil.move(self._sol_kit_output_path, self._kinetic_output_path)
-        
+        # shutil.move(self._sol_kit_output_path, self._kinetic_output_path)
+        #REVIEW needs to be changed otherwise system works... OUTPUT CLEARED WITHOUT REMOVING INPUT 
         #create new output folder
         #quicker to move and create new than copy and clearing 
         output_path = os.path.join(self._run_path, "OUTPUT")
-        copy_tree(self.tmp_output_path, output_path)
-        
+        copy_tree(output_path, self._kinetic_output_path)
         
     def InitFromHydro(self, f_x_grid, f_x_centered_grid, f_te, f_ne, f_z, f_laser = 0, f_rad = 0):
         """ Purpose: Initilise all SOL-KiT load in files from HYDRO
@@ -294,6 +305,7 @@ class SOL_KIT(Kinetic):
         Lagrangian Practice i.e. quantities are not defined at all points. 
         """
 
+        # for line in proc.stdout:
         # NOrmalise SI to Impact norms
         sol_kit_x_grid = f_x_grid / self.normalised_values["lambda_mfp"]
         sol_kit_x_centered_grid = f_x_centered_grid / self.normalised_values["lambda_mfp"]
@@ -342,7 +354,6 @@ class SOL_KIT(Kinetic):
         # np.savetxt(os.path.join(self._SOL_KIT_INPUT_PATH, "ION_VEL_INPUT.txt"), SOL_KIT_grid)
         # np.savetxt(os.path.join(self._SOL_KIT_INPUT_PATH, "NEUT_HEAT_INPUT.txt"), SOL_KIT_heating)
     
-    @property
     def getLastHeatFlow(self):
         """ Purpose: Gets the last heat flow from SOL-KiT after run finishes.
             Returns: Last heat flow with assumed format of cell-wall only definition of heat flow
@@ -350,7 +361,7 @@ class SOL_KIT(Kinetic):
 
         qe_path =  os.path.join(self._run_path, "OUTPUT/HEAT_FLOW_X")
         max_index = findLargestIndex(qe_path)
-        kinetic_heat_profile  = np.loadtxt(os.path.join(qe_path, "/HEAT_FLOW_X_" + str(max_index).zfill(5) + '.txt'))
+        kinetic_heat_profile  = np.loadtxt(os.path.join(qe_path, "HEAT_FLOW_X_" + str(max_index).zfill(5) + '.txt'))
 
         #Include first and celll wall for no flow set to 0 per no thermal influx BC = 0 
         if self.boundary_condition =='noflow':

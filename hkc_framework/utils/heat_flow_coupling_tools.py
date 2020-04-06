@@ -1,18 +1,8 @@
 import math
 import numpy as np 
-from scipy import constants
-from functools import singledispatch
-kb = constants.value("Boltzmann constant")
-me = constants.value("electron mass")
-mp = constants.value("proton mass")
-e = constants.value("elementary charge")
-epsilon_0 = 8.854188E-12    # Vacuum dielectric constant
-planck_h = constants.value("Planck constant")
-bohr_radi = constants.value("Bohr radius")
-
 class HeatFlowCouplingTools:
     """
-    A set of tools that is common to be used in the calculation of 
+    A set of utility tools that is to be used in the calculation of 
     coupling parameters.
     Tools:
         Spitzer-Harm calculation
@@ -29,25 +19,26 @@ class HeatFlowCouplingTools:
         self.electron_number_density = np.array([])
         self.zbar = np.array([])
         self.mass = np.array([])
-        self.coulomb_log = np.array([])  
+        self.coulomb_log = None 
         self.spitzer_harm_heat = np.array([])
         self.vfp_heat = np.array([])
         self.q_vfp_q_sh_multipliers = np.array([])
         self.search_tolerance = 1e-9
 
     def lambda_ei(self, T_norm , n_norm, Z_norm, return_arg = False):
-        self.coulomb_log = np.zeros(len(self.electron_number_density))
-        for i in range(0, len(T_norm)):
-            if T_norm < 10.00 * Z_norm ** 2:
-                result = 23.00 - math.log(math.sqrt(n_norm * 1.00E-6) * Z_norm * (T_norm) ** (-3.00/2.00))
+        coulomb_logs = []
+        for T,n,Z in zip(T_norm, n_norm, Z_norm):
+            if T < 10.00 * Z ** 2:
+                result = 23.00 - math.log(math.sqrt(n * 1.00E-6) * Z * (T) ** (-3.00/2.00))
             else:
-                result = 24.00 - math.log(math.sqrt(n_norm * 1.00E-6) / (T_norm))   
+                result = 24.00 - math.log(math.sqrt(n * 1.00E-6) / (T))   
 
             if return_arg:
                 return result
             else:
+                coulomb_logs.append(result)
 
-                self.coulomb_log[i] = result
+        self.coulomb_log = np.array(coulomb_logs)
 
     def spitzerHarmHeatFlow(self):
         """
@@ -147,10 +138,13 @@ class HeatFlowCouplingTools:
         return(HeatConductionE)
     
     def _detectAnamalousHeat(self):
-        
+        if all(self.spitzer_harm_heat == 0):
+            return None, None
+
         start_of_spitzer_harm_heat_flow_index = np.where(self.spitzer_harm_heat > 0)[0][0]
         last_of_spitzer_harm_heat_flow_index = np.where(self.spitzer_harm_heat > 0)[0][-1]
-
+        front = None 
+        pre = None
         if(any(np.isnan(self.q_vfp_q_sh_multipliers[1:-2])) #boundaries are always nan as we have 0 inflow conditions. 
             or any(np.isinf(self.q_vfp_q_sh_multipliers))):
             if any(abs(self.vfp_heat[:start_of_spitzer_harm_heat_flow_index]) > self.search_tolerance):
@@ -168,10 +162,13 @@ class HeatFlowCouplingTools:
                 vfp_qe : Kinetic heat flow to be transfered to fluid code.
             Returns: Multipliers
         """
-        
-        ##Calculate spitzer-harm if not calculated by a backgroudn process.
-        if self.spitzer_harm_heat == 0:
-            self.spitzerHarmHeatFlow()
+                
+        front_heat_start_index = 0 
+        front_heat_last_index = 0
+        pre_heat_start_index = 0
+        pre_heat_last_index = 0
+        front_heat_fit_params = None
+        pre_heat_fit_params = None
         ##Test for pre-heat via looking at NaN outputs expected from q/q_sh
         #if nans
         self.q_vfp_q_sh_multipliers = np.array(self.vfp_heat/self.spitzer_harm_heat)
