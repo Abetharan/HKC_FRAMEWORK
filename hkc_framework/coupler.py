@@ -60,7 +60,7 @@ class Coupler:
         RUN_PATH = os.path.join(init.yaml_file['Paths']['Base_dir'],
                      init.yaml_file['Paths']['Run_name'])        
 
-        if not init.yaml_file['Misc']['Cx1']:
+        if not init.yaml_file['Misc']['HPC']:
             self.start_print(init.yaml_file["Codes"]["Fluid_code"],
                              init.yaml_file["Codes"]["Kinetic_code"])
 
@@ -98,15 +98,16 @@ class Coupler:
                         start_cycle, overwrite, cycles, 
                         initialise_all_folders)
         hfct_obj = util.HeatFlowCouplingTools()
-        fluid_obj = HyKiCT(io_obj)
-                        
+        fluid_obj = HyKiCT(io_obj, init.yaml_file['Paths']['F_config_path'])
+                         
         if(init.yaml_file['Codes']['Kinetic_code'] == 'sol_kit'):
-            kin_obj = SOL_KIT(io_obj,init.yaml_file['Misc']['Cx1'])
+            kin_obj = SOL_KIT(io_obj,
+                        init.yaml_file['Paths']['K_config_path'],
+                        init.yaml_file['Misc']['HPC'])
         #Impact not ready
         # else:
             #kin_obj = IMPACT()
         
-        #REVIEW Bit hacky remove opition for grid definition in derivative configs.
         kin_obj.init.yaml_file['Params']['Nx'] = init.yaml_file['Coupling_params']['Nx']
         fluid_obj.init.yaml_file['FixedParameters']['Nx'] = init.yaml_file['Coupling_params']['Nx']
         #For restarting/continue
@@ -115,6 +116,13 @@ class Coupler:
         if start_cycle == 0:
             copy_tree(init.yaml_file['Paths']['Init_path'], io_obj.fluid_input_path)
             np.savetxt(os.path.join(RUN_PATH, 'NO_CYCLES.txt'), np.array([cycles - 1]), fmt = '%i' )       
+        
+        #Specific to HyKiCT
+        f_nt = fluid_obj.init.yaml_file['TimeParameters']['steps'] 
+        f_tmax = fluid_obj.init.yaml_file['TimeParameters']['t_max']
+        if init.yaml_file['Coupling_params']['Start_from_kinetic']:
+            fluid_obj.init.yaml_file['TimeParameters']['steps'] = 0
+            fluid_obj.init.yaml_file['TimeParameters']['t_max'] = 0
 
         for cycle_no in range(start_cycle, cycles, 1):
             self.pretty_print(' RUNNING CYCLE ' + str(cycle_no)) 
@@ -122,6 +130,9 @@ class Coupler:
             if cycle_no >= 1:
                 io_obj.cycle_counter = cycle_no
                 io_obj.nextCyclePathManager()
+                if init.yaml_file['Coupling_params']['Start_from_kinetic']:
+                    fluid_obj.init.yaml_file['TimeParameters']['steps'] = f_nt
+                    fluid_obj.init.yaml_file['TimeParameters']['t_max'] = f_tmax
 
             #Fluid Code runs here 
             #In this example running HyKiCT
@@ -167,6 +178,8 @@ class Coupler:
             #Init all load in files form hydro
             #RUN
             #Move files if neccessary
+
+            self.pretty_print(' RUNNING ' + init.yaml_file['Codes']['Kinetic_code'], color = True)
             if cycle_no == 0:
                 #input and output unchanged 
                 kin_obj.setFiles()

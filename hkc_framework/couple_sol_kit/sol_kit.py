@@ -37,11 +37,11 @@ BOHR_RADIUS = constants.value("Bohr radius")
 
 class SOL_KIT(Kinetic):
     
-    def __init__(self,io,cx1 = False):
+    def __init__(self,io, k_config_yml_file_path, cx1 = False):
         
-        config_yml_file_path = os.path.join(
-                                pathlib.Path(__file__).parent.absolute(),
-                                'config.yml')
+        # config_yml_file_path = os.path.join(
+        #                         pathlib.Path(__file__).parent.absolute(),
+                                # 'config.yml')
         self.tmp_input_path = os.path.join(
                                 pathlib.Path(__file__).parent.absolute(),
                                 'tmp_INPUT')
@@ -51,7 +51,7 @@ class SOL_KIT(Kinetic):
 
         #objects
         self.heat_flow_tools = HeatFlowCouplingTools() 
-        self.init = Input(config_yml_file_path)
+        self.init = Input(k_config_yml_file_path)
         #paths
         self._run_name = io._run_name
         self._run_path = io._run_path
@@ -349,10 +349,10 @@ class SOL_KIT(Kinetic):
         #SOL_KIT_inter_Te = spliner_Te(SOL_KIT_grid)
         #SOL_KIT_inter_Z = spliner_Z(SOL_KIT_grid)
 
-        np.savetxt(os.path.join(self._sol_kit_input_path, "DENS_INPUT.txt"), sol_kit_inter_ne, fmt = '%d')    
-        np.savetxt(os.path.join(self._sol_kit_input_path, "TEMPERATURE_INPUT.txt"), sol_kit_inter_te, fmt = '%d')    
-        np.savetxt(os.path.join(self._sol_kit_input_path, "Z_PROFILE_INPUT.txt"), sol_kit_inter_z, fmt = '%d')    
-        np.savetxt(os.path.join(self._sol_kit_input_path, "X_GRID_INPUT.txt"), sol_kit_grid, fmt = '%d')
+        np.savetxt(os.path.join(self._sol_kit_input_path, "DENS_INPUT.txt"), sol_kit_inter_ne)    
+        np.savetxt(os.path.join(self._sol_kit_input_path, "TEMPERATURE_INPUT.txt"), sol_kit_inter_te)    
+        np.savetxt(os.path.join(self._sol_kit_input_path, "Z_PROFILE_INPUT.txt"), sol_kit_inter_z)    
+        np.savetxt(os.path.join(self._sol_kit_input_path, "X_GRID_INPUT.txt"), sol_kit_grid)
         # np.savetxt(os.path.join(self._SOL_KIT_INPUT_PATH, "ION_VEL_INPUT.txt"), SOL_KIT_grid)
         # np.savetxt(os.path.join(self._SOL_KIT_INPUT_PATH, "NEUT_HEAT_INPUT.txt"), SOL_KIT_heating)
     

@@ -90,11 +90,12 @@ class Kinetic():
                 monitor = threading.Thread(target=ConvergenceMonitoring, args = (process, kinetic_heat_flow_output_folder_path, convergence_func, nx), daemon = True)
                 monitor.start()
 
-            while process.poll() is None:
-                sys.stdout.write(reader.read().decode('utf-8'))
+            #prints stdout to terminal
+            # while process.poll() is None:
+            #     sys.stdout.write(reader.read().decode('utf-8'))
 
-            # Read the remaining
-            sys.stdout.write(reader.read().decode('utf-8'))
+            # # Read the remaining
+            # sys.stdout.write(reader.read().decode('utf-8'))
 
             if err:
                 print("Kinetic code failed see log")
