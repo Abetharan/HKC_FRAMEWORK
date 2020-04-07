@@ -54,17 +54,21 @@ class HyKiCT(Fluid):
     def getLastStepQuants(self): 
 
         last_index = findLargestIndex(os.path.join(self._fluid_output_path, "ELECTRON_TEMPERATURE"))
-        f_x_grid = np.loadtxt(self._fluid_output_path + "CELL_WALL_X/CELL_WALL_X_" + str(last_index) + ".txt")
-        f_x_centered_grid = np.loadtxt(self._fluid_output_path + "CELL_CENTRE_X/CELL_CENTRE_X_" + str(last_index) + ".txt")
-        f_v = np.loadtxt(self._fluid_output_path + "VELOCITY/VELOCITY_" + str(last_index) + ".txt")
-        f_ne = np.loadtxt(
-                self._fluid_output_path + "ELECTRON_NUMBER_DENSITY/ELECTRON_NUMBER_DENSITY_" + str(last_index) + ".txt")
-        f_Te = np.loadtxt(
-             self._fluid_output_path + "ELECTRON_TEMPERATURE/ELECTRON_TEMPERATURE_" + str(last_index) + ".txt")
-        f_laser = np.loadtxt(
-            self._fluid_output_path + "INVERSE_BREM/INVERSE_BREM_" + str(last_index) + ".txt")
+        f_x_grid = np.loadtxt(os.path.join(self._fluid_output_path, 
+                            "".join(["CELL_WALL_X/CELL_WALL_X_", str(last_index), ".txt"])), dtype = np.float64)
+        f_x_centered_grid = np.loadtxt(os.path.join(self._fluid_output_path,
+                            "".join(["CELL_CENTRE_X/CELL_CENTRE_X_", str(last_index), ".txt"])), dtype = np.float64)
+        f_v = np.loadtxt(os.path.join(self._fluid_output_path,
+                "".join(["VELOCITY/VELOCITY_", str(last_index), ".txt"])), dtype = np.float64)
+        f_ne = np.loadtxt(os.path.join(self._fluid_output_path,
+                "".join(["ELECTRON_NUMBER_DENSITY/ELECTRON_NUMBER_DENSITY_", str(last_index), ".txt"])), dtype = np.float64)
+        f_Te = np.loadtxt(os.path.join(self._fluid_output_path,
+                "".join(["ELECTRON_TEMPERATURE/ELECTRON_TEMPERATURE_", str(last_index), ".txt"])),dtype = np.float64)
+        f_laser = np.loadtxt(os.path.join(self._fluid_output_path,
+                    "".join(["INVERSE_BREM/INVERSE_BREM_", str(last_index), ".txt"])),dtype = np.float64)
 #legacy        # f_brem = np.loadtxt(self._fluid_output_path + "BREM/BREM_" + str(last_index) + ".txt")
-        f_Z = np.loadtxt(self._fluid_output_path + "ZBAR/ZBAR_" + str(last_index) + ".txt")
+        f_Z = np.loadtxt(os.path.join(self._fluid_output_path,
+               "".join(["ZBAR/ZBAR_", str(last_index), ".txt"])), dtype = np.float64)
         mass = np.loadtxt(self._init_file_path + "/mass.txt")        
         
         return(f_x_grid, f_x_centered_grid, f_v, f_ne, f_Te, f_Z, f_laser, mass)

@@ -50,7 +50,9 @@ class Kinetic():
                 else:
                     latest_heat_flow_path = os.path.join(kinetic_heat_flow_output_folder_path, heat_flows[-1])
                 
-                if os.path.exists(latest_heat_flow_path)  and new_file_counter != file_counter:
+                if(os.path.exists(latest_heat_flow_path) 
+                    and not heat_flows[-1].startswith('.')  
+                    and new_file_counter != file_counter):
                     
                     if os.access(latest_heat_flow_path, os.R_OK):
                         #routine

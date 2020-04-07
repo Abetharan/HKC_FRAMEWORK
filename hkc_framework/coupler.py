@@ -171,6 +171,9 @@ class Coupler:
                 #input and output unchanged 
                 kin_obj.setFiles()
 
+            kin_obj._kinetic_input_path = io_obj.kinetic_input_path
+            kin_obj._kinetic_output_path = io_obj.kinetic_output_path
+            
             kin_obj.InitFromHydro(fluid_x_grid, fluid_x_centered_grid, 
                                 fluid_Te, fluid_ne, fluid_Z)
             kin_obj.Run()

@@ -69,10 +69,10 @@ class SOL_KIT(Kinetic):
         self.cx1 = cx1
         self._np = self.init.yaml_file['Params']['Np'] 
 
-        self._norm_Te = self.init.yaml_file['Norms']['Te']
-        self._norm_Z = self.init.yaml_file['Norms']['Z']
-        self._norm_Ar = self.init.yaml_file['Norms']['Ar']
-        self._norm_ne = self.init.yaml_file['Norms']['Ne']
+        self._norm_Te = float(self.init.yaml_file['Norms']['Te'])
+        self._norm_Z = float(self.init.yaml_file['Norms']['Z'])
+        self._norm_Ar = float(self.init.yaml_file['Norms']['Ar'])
+        self._norm_ne = float(self.init.yaml_file['Norms']['Ne'])
 
         self.copyAndCreateSOL_KiT()
         self.setFiles()
@@ -220,10 +220,8 @@ class SOL_KIT(Kinetic):
                 switch_COLD_IONS = include cold ion motion
             Returns : Nothing ... files are set in INPUT fodler path.            
         """
-        input_path = os.path.join(self._run_path, "INPUT")
-        output_path = os.path.join(self._run_path, "OUTPUT")
-        copy_tree(self.tmp_input_path, input_path)
-        copy_tree(self.tmp_output_path, output_path)
+        copy_tree(self.tmp_input_path, self._sol_kit_input_path)
+        copy_tree(self.tmp_output_path, self._sol_kit_output_path)
 
         grid = setparams.GRID(
                             nt = self.init.yaml_file['Params']['Nt'],
@@ -261,18 +259,17 @@ class SOL_KIT(Kinetic):
                             OUTPUT_E_FIELD= self.init.yaml_file['Output']['E_field'],
                             OUTPUT_SH_TEST= self.init.yaml_file['Output']['Sh_test'])
         
-        #REVIEW Prob gunna be some path errors here 
         templating(tmpfilePath= os.path.join(self._run_path, 'INPUT/tmpSOL_KIT_GRID.txt'),
-            writePath=input_path, fileName="GRID_INPUT.txt", parameters=grid)
+            writePath=self._sol_kit_input_path, fileName="GRID_INPUT.txt", parameters=grid)
         templating(tmpfilePath= os.path.join(self._run_path, 'INPUT/tmpSOL_KIT_NORMS.txt'),
-            writePath=input_path, fileName="NORMALIZATION_INPUT.txt", parameters=norms)
+            writePath=self._sol_kit_input_path, fileName="NORMALIZATION_INPUT.txt", parameters=norms)
         templating(tmpfilePath= os.path.join(self._run_path, 'INPUT/tmpSOL_KIT_SWITCHES.txt'),
-            writePath=input_path, fileName="SWITCHES_INPUT.txt", parameters=switches)
+            writePath=self._sol_kit_input_path, fileName="SWITCHES_INPUT.txt", parameters=switches)
         #remove tmp files
-        os.rename(os.path.join(input_path, 'tmpSOL_KIT_SOLVER_PARAMS.txt'), os.path.join(input_path, 'SOLVER_PARAMS_INPUT.txt'))
-        os.remove(os.path.join(input_path, 'tmpSOL_KIT_GRID.txt'))
-        os.remove(os.path.join(input_path, 'tmpSOL_KIT_NORMS.txt'))
-        os.remove(os.path.join(input_path, 'tmpSOL_KIT_SWITCHES.txt'))
+        os.rename(os.path.join(self._sol_kit_input_path, 'tmpSOL_KIT_SOLVER_PARAMS.txt'), os.path.join(self._sol_kit_input_path, 'SOLVER_PARAMS_INPUT.txt'))
+        os.remove(os.path.join(self._sol_kit_input_path, 'tmpSOL_KIT_GRID.txt'))
+        os.remove(os.path.join(self._sol_kit_input_path, 'tmpSOL_KIT_NORMS.txt'))
+        os.remove(os.path.join(self._sol_kit_input_path, 'tmpSOL_KIT_SWITCHES.txt'))
 
 
     def _SOL_KITNormsToSI(self, var, var_name):
@@ -289,11 +286,16 @@ class SOL_KIT(Kinetic):
         copy_tree(self._sol_kit_input_path, self._kinetic_input_path)
         # #move OUTPUT files
         # shutil.move(self._sol_kit_output_path, self._kinetic_output_path)
-        #REVIEW needs to be changed otherwise system works... OUTPUT CLEARED WITHOUT REMOVING INPUT 
+
         #create new output folder
         #quicker to move and create new than copy and clearing 
-        output_path = os.path.join(self._run_path, "OUTPUT")
-        copy_tree(output_path, self._kinetic_output_path)
+        copy_tree(self._sol_kit_output_path, self._kinetic_output_path)
+        with os.scandir(self._sol_kit_output_path) as output_folder:
+            for var_folder in output_folder:
+                if not var_folder.name.startswith('.') and var_folder.is_dir():
+                    for var_txt in os.scandir(var_folder):
+                        if not var_txt.name.startswith('.') and var_txt.is_file():
+                            os.unlink(var_txt.path)
         
     def InitFromHydro(self, f_x_grid, f_x_centered_grid, f_te, f_ne, f_z, f_laser = 0, f_rad = 0):
         """ Purpose: Initilise all SOL-KiT load in files from HYDRO
@@ -347,10 +349,10 @@ class SOL_KIT(Kinetic):
         #SOL_KIT_inter_Te = spliner_Te(SOL_KIT_grid)
         #SOL_KIT_inter_Z = spliner_Z(SOL_KIT_grid)
 
-        np.savetxt(os.path.join(self._sol_kit_input_path, "DENS_INPUT.txt"), sol_kit_inter_ne, fmt = '%.19f')    
-        np.savetxt(os.path.join(self._sol_kit_input_path, "TEMPERATURE_INPUT.txt"), sol_kit_inter_te, fmt = '%.19f')    
-        np.savetxt(os.path.join(self._sol_kit_input_path, "Z_PROFILE_INPUT.txt"), sol_kit_inter_z, fmt = '%.19f')    
-        np.savetxt(os.path.join(self._sol_kit_input_path, "X_GRID_INPUT.txt"), sol_kit_grid, fmt = '%.18f')
+        np.savetxt(os.path.join(self._sol_kit_input_path, "DENS_INPUT.txt"), sol_kit_inter_ne, fmt = '%d')    
+        np.savetxt(os.path.join(self._sol_kit_input_path, "TEMPERATURE_INPUT.txt"), sol_kit_inter_te, fmt = '%d')    
+        np.savetxt(os.path.join(self._sol_kit_input_path, "Z_PROFILE_INPUT.txt"), sol_kit_inter_z, fmt = '%d')    
+        np.savetxt(os.path.join(self._sol_kit_input_path, "X_GRID_INPUT.txt"), sol_kit_grid, fmt = '%d')
         # np.savetxt(os.path.join(self._SOL_KIT_INPUT_PATH, "ION_VEL_INPUT.txt"), SOL_KIT_grid)
         # np.savetxt(os.path.join(self._SOL_KIT_INPUT_PATH, "NEUT_HEAT_INPUT.txt"), SOL_KIT_heating)
     
