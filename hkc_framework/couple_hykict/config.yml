@@ -25,7 +25,7 @@ TimeParameters:
       dt_max: 0.1e-15 
       dt_min: 0.1e-9
       t_max: 0
-      steps: 0 #2
+      steps: 200 #2
       cfl: 0.85
 Limiters:
       heatflxlm: 1.0

@@ -215,10 +215,10 @@ class Coupler:
             fluid_obj.initHydroFromKinetic(io_obj.next_fluid_input_path, qe,
                                             pre_heat_fit_params, front_heat_fit_params)
             #Modify yaml for future write
-            fluid_obj.init.yaml_file['FixedParameters']['Preheat_StartIndex'] = pre_heat_start_index
-            fluid_obj.init.yaml_file['FixedParameters']['Preheat_LastIndex'] = pre_heat_last_index
-            fluid_obj.init.yaml_file['FixedParameters']['Frontheat_StartIndex'] = front_heat_start_index
-            fluid_obj.init.yaml_file['FixedParameters']['Frontheat_LastIndex'] = front_heat_last_index
+            fluid_obj.init.yaml_file['FixedParameters']['Preheat_StartIndex'] = pre_heat_start_index.item()
+            fluid_obj.init.yaml_file['FixedParameters']['Preheat_LastIndex'] = pre_heat_last_index.item()
+            fluid_obj.init.yaml_file['FixedParameters']['Frontheat_StartIndex'] = front_heat_start_index.item()
+            fluid_obj.init.yaml_file['FixedParameters']['Frontheat_LastIndex'] = front_heat_last_index.item()
            
             #To be DELETED
             #OBSOLETE

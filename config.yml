@@ -11,10 +11,10 @@ Codes:
   Fluid_code: hykict
 Coupling_params:
   Nx: 200
-  Cycles: 10
+  Cycles: 2
   Couple_divq : false
   Couple_multi : true
-  Start_from_kinetic: false
+  Start_from_kinetic: true
 Misc:
   Zip : false
   Continue : false
