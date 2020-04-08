@@ -163,10 +163,10 @@ class HeatFlowCouplingTools:
             Returns: Multipliers
         """
                 
-        front_heat_start_index = 0 
-        front_heat_last_index = 0
-        pre_heat_start_index = 0
-        pre_heat_last_index = 0
+        front_heat_start_index = np.int64(0) 
+        front_heat_last_index = np.int64(0)
+        pre_heat_start_index = np.int64(0)
+        pre_heat_last_index = np.int64(0)
         front_heat_fit_params = None
         pre_heat_fit_params = None
         ##Test for pre-heat via looking at NaN outputs expected from q/q_sh

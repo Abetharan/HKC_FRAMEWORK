@@ -89,8 +89,8 @@ class HyKiCT(Fluid):
         np.savetxt(os.path.join(next_fluid_input_path,"qe.txt"), qe)
 
         if pre_params is not None:
-            np.savetxt(os.path.join(next_fluid_input_path,"pre_heat_fit_params.txt"), pre_params)
-            np.savetxt(os.path.join(next_fluid_input_path,"front_heat_fit_params.txt"), front_params)
+            np.savetxt(os.path.join(next_fluid_input_path,"pre_heat_fit_param.txt"), pre_params)
+            np.savetxt(os.path.join(next_fluid_input_path,"front_heat_fit_param.txt"), front_params)
 
         #Standard init files. 
         #These files should correspond to the last state of the fluid step. 

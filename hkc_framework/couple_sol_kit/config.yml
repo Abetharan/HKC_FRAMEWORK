@@ -8,13 +8,13 @@ Norms:
 Params:
   Nx: 200
   Ny: 1
-  Nv: 60
+  Nv: 331
   Np: 1
   Dt: 0.001
   Dx: 0.5
   Dv: 0.0307
-  Dv_multi: 1.015
-  Nt: 10
+  Dv_multi: 1.0
+  Nt: 0
   Pre_step_nt: 0
   Pre_step_dt: 0.001
   L_max: 1
