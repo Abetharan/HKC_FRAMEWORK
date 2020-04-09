@@ -130,6 +130,8 @@ class Coupler:
             if cycle_no >= 1:
                 io_obj.cycle_counter = cycle_no
                 io_obj.nextCyclePathManager()
+                kin_obj._cycle_path = io_obj.cycle_dump_path
+                fluid_obj._cycle_path = io_obj.cycle_dump_path
                 if init.yaml_file['Coupling_params']['Start_from_kinetic']:
                     fluid_obj.init.yaml_file['TimeParameters']['steps'] = f_nt
                     fluid_obj.init.yaml_file['TimeParameters']['t_max'] = f_tmax
