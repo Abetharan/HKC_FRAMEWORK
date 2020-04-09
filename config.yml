@@ -1,0 +1,22 @@
+Paths:
+  Run_name: test
+  Base_dir: /Users/shiki/Documents/Imperial_College_London/Ph.D./coupling_test/
+  K_src_dir: /Users/shiki/Documents/Imperial_College_London/Ph.D./SOL-KiT/
+  F_src_dir: /Users/shiki/Documents/Imperial_College_London/Ph.D./HyKiCT/build/apps/
+  Init_path: /Users/shiki/Documents/Imperial_College_London/Ph.D./CX1_stuff/Longer_Domain_SMOOTHED_PRE_HEAT_RAMP 
+  F_config_path: /Users/shiki/Documents/Imperial_College_London/Ph.D./HKC_FRAMEWORK/hkc_framework/couple_hykict/config.yml 
+  K_config_path: /Users/shiki/Documents/Imperial_College_London/Ph.D./HKC_FRAMEWORK/hkc_framework/couple_sol_kit/config.yml
+Codes:
+  Kinetic_code: sol_kit
+  Fluid_code: hykict
+Coupling_params:
+  Nx: 200
+  Cycles: 2
+  Couple_divq : false
+  Couple_multi : true
+  Start_from_kinetic: false
+Misc:
+  Zip : false
+  Continue : false
+  HPC : false
+  Overwrite: false

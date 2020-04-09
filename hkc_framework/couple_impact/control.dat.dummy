@@ -1,0 +1,5 @@
+$user_control
+stop_end_of_dt = .false.
+stop_immediate = .false.
+stop_at_time   = 0.0d0
+$end 
