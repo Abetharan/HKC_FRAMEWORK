@@ -123,6 +123,8 @@ class Coupler:
         if init.yaml_file['Coupling_params']['Start_from_kinetic']:
             fluid_obj.init.yaml_file['TimeParameters']['steps'] = 0
             fluid_obj.init.yaml_file['TimeParameters']['t_max'] = 0
+            fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = False
+            fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = False
 
         for cycle_no in range(start_cycle, cycles, 1):
             self.pretty_print(' RUNNING CYCLE ' + str(cycle_no)) 
@@ -135,6 +137,8 @@ class Coupler:
                 if init.yaml_file['Coupling_params']['Start_from_kinetic']:
                     fluid_obj.init.yaml_file['TimeParameters']['steps'] = f_nt
                     fluid_obj.init.yaml_file['TimeParameters']['t_max'] = f_tmax
+                    fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = init.yaml_file['Coupling_params']['Couple_divq']
+                    fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = init.yaml_file['Coupling_params']['Couple_multi']
 
             #Fluid Code runs here 
             #In this example running HyKiCT
