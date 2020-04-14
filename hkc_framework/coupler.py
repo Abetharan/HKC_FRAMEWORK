@@ -4,8 +4,6 @@ Heat-Flow coupling between Hydro and Kibnetic codes.
 @author = Abetharan Antony
 """
 import argparse
-from colorama import Fore
-from colorama import Style
 from distutils.dir_util import copy_tree
 import math
 import numpy as np
