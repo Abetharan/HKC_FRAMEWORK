@@ -40,7 +40,7 @@ Switches:
       Viscosity: true #Artificial Viscosity Include
       Velocity: true #Velocity
       PdVWork: true #pDv Work included in energy update
-      HeatConduction: false #Thermal conduction included
+      HeatConduction: true #Thermal conduction included
       Exchange: false #Exchange between ions and electrons.. basedon NRL 2018
       InvBrem: false #Inverse bremstrahllung i.e. laser. 
       RadiationTransport: false #Radiation Transport 
