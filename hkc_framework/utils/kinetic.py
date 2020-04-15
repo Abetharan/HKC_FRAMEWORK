@@ -5,9 +5,8 @@ import os
 import threading
 import time
 import numpy as np 
+
 class Kinetic():
-    
-        
     def Execute(self, cmd, log_path, monitor_on,  kinetic_heat_flow_output_folder_path, convergence_func, nx):
         """  
         Purpose: Launch the command relevant to kinetic code specified, if maintain 
@@ -48,7 +47,8 @@ class Kinetic():
                 if new_file_counter == 0:
                     latest_heat_flow_path = ''
                 else:
-                    latest_heat_flow_path = os.path.join(kinetic_heat_flow_output_folder_path, heat_flows[-1])
+                    latest_heat_flow_path = os.path.join(kinetic_heat_flow_output_folder_path,
+                                                         heat_flows[-1])
                 
                 if(os.path.exists(latest_heat_flow_path) 
                     and not heat_flows[-1].startswith('.')  
@@ -57,37 +57,38 @@ class Kinetic():
                     if os.access(latest_heat_flow_path, os.R_OK):
                         #routine
                         curr_multipliers = convergence_func(latest_heat_flow_path)                    
+                        multipliers = np.vstack((multipliers, curr_multipliers))
                     else:
-                        time.sleep(.2)
-                        curr_multipliers = convergence_func(latest_heat_flow_path)                    
-                        #routine
-                    
-                    multipliers = np.vstack((multipliers, curr_multipliers))
+                        continue
 
                 if len(np.shape(multipliers)) >= 2:
                     if np.shape(multipliers)[0] >= 3:
                         multipliers = np.delete(multipliers, 0, 0)
                     if np.shape(multipliers)[0] >= 2:
-                        convergance = abs(np.array(multipliers[0, :]) - np.array(multipliers[1, : ]))
-
-                    convergance[np.isnan(convergance)] = 0
-                    convergance[np.isinf(convergance)] = 0
-
-                file_counter = new_file_counter
+                        convergance = abs(np.array(multipliers[0, :]) -
+                                         np.array(multipliers[1, : ]))
+                        convergance[np.isnan(convergance)] = 0
+                        convergance[np.isinf(convergance)] = 0
 
                 if np.nanmax(convergance) < 1e-3 and np.nanmax(convergance) != 0:
                     proc.terminate()
                     break
+
+                #Update file counter
+                file_counter = new_file_counter
+
             
         ##Relevant stuff to create logs 
         filename = log_path + '/k_test.log'
-        with io.open(filename, 'wb') as writer, io.open(filename, 'rb', 1) as reader:
+        with io.open(filename, 'wb') as writer:
             #run command provided
             process = subprocess.Popen(cmd, stdout=writer, stderr = subprocess.PIPE)
             _, err = process.communicate()
             ##Spawn a thread which runs convergencemonitoring function. 
             if monitor_on:
-                monitor = threading.Thread(target=ConvergenceMonitoring, args = (process, kinetic_heat_flow_output_folder_path, convergence_func, nx), daemon = True)
+                monitor = threading.Thread(target=ConvergenceMonitoring, args = (process,
+                            kinetic_heat_flow_output_folder_path, convergence_func, nx),
+                            daemon = True)
                 monitor.start()
 
             #prints stdout to terminal

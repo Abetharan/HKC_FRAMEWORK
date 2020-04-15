@@ -1,6 +1,6 @@
 """ 
 Hydro-Kinetic Coupling.
-Heat-Flow coupling between Hydro and Kibnetic codes. 
+Heat-Flow coupling between Hydro and Kinetic codes. 
 @author = Abetharan Antony
 """
 import argparse
@@ -107,7 +107,8 @@ class Coupler:
             #kin_obj = IMPACT()
         
         kin_obj.init.yaml_file['Params']['Nx'] = init.yaml_file['Coupling_params']['Nx']
-        fluid_obj.init.yaml_file['FixedParameters']['Nx'] = init.yaml_file['Coupling_params']['Nx']
+        fluid_obj.init.yaml_file['FixedParameters']['nx'] = init.yaml_file['Coupling_params']['Nx']
+
         #For restarting/continue
         #The copying could in principal be removed. 
         #Output directory just self-consistent this way.
@@ -118,11 +119,11 @@ class Coupler:
         #Specific to HyKiCT
         f_nt = fluid_obj.init.yaml_file['TimeParameters']['steps'] 
         f_tmax = fluid_obj.init.yaml_file['TimeParameters']['t_max']
+        fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = False
+        fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = False
         if init.yaml_file['Coupling_params']['Start_from_kinetic']:
             fluid_obj.init.yaml_file['TimeParameters']['steps'] = 0
             fluid_obj.init.yaml_file['TimeParameters']['t_max'] = 0
-            fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = False
-            fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = False
 
         for cycle_no in range(start_cycle, cycles, 1):
             self.pretty_print(' RUNNING CYCLE ' + str(cycle_no)) 
@@ -132,24 +133,26 @@ class Coupler:
                 io_obj.nextCyclePathManager()
                 kin_obj._cycle_path = io_obj.cycle_dump_path
                 fluid_obj._cycle_path = io_obj.cycle_dump_path
+                fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = init.yaml_file['Coupling_params']['Couple_divq']
+                fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = init.yaml_file['Coupling_params']['Couple_multi']
                 if init.yaml_file['Coupling_params']['Start_from_kinetic']:
                     fluid_obj.init.yaml_file['TimeParameters']['steps'] = f_nt
                     fluid_obj.init.yaml_file['TimeParameters']['t_max'] = f_tmax
-                    fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = init.yaml_file['Coupling_params']['Couple_divq']
-                    fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = init.yaml_file['Coupling_params']['Couple_multi']
-
-            #Fluid Code runs here 
+            
+            ###########
+            #Fluid Step
+            ###########
             #In this example running HyKiCT
             self.pretty_print(' RUNNING ' + init.yaml_file['Codes']['Fluid_code'], color = True)
             
-            #Set Paths 
+            #Set Paths that change
             fluid_obj.init.yaml_file['Paths']['Init_Path'] = io_obj.fluid_input_path
             fluid_obj.init.yaml_file['Paths']['Out_Path'] = io_obj.fluid_output_path
             fluid_obj._cycle_dump_path = io_obj.cycle_dump_path
+            fluid_obj._fluid_output_path = io_obj.fluid_output_path
             ################
             #Any other parameter updates that needs to be set can be added here.
             #################
-
             fluid_obj.setFiles()
             fluid_obj.Run()
 
@@ -177,7 +180,10 @@ class Coupler:
                 if init.yaml_file['Misc']['Zip']:
                     io_obj.zipAndDelete()        
                 break 
-
+            
+            #############
+            #Kinetic Step
+            #############
             #Set any parameter ifles
             #Init all load in files form hydro
             #RUN
@@ -197,8 +203,10 @@ class Coupler:
             #Set hfct to contain the vfp heat flow to do the neccessary coupling calcs.
             hfct_obj.vfp_heat= kin_obj.getLastHeatFlow()
             kin_obj.moveFiles()
-
-            #Do Coupling Parameters here
+            
+            ##############
+            #Coupling Step
+            ##############
             if init.yaml_file['Coupling_params']['Couple_divq']:
                 #qe here is div.q_vfp 
                 qe = hfct_obj.divQHeatFlow()

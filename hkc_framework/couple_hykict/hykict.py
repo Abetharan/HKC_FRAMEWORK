@@ -22,12 +22,11 @@ class HyKiCT(Fluid):
         self.init = Input(f_config_yml_file_path)
 
         self._fluid_src_dir = io._f_src_dir
-        self._cycle_path = io.cycle_dump_path
         self._init_file_path = io.fluid_input_path       
         self._base_dir = io._base_dir
         self._run_path = io._run_path
-        self._fluid_output_path = io.fluid_output_path
-        self._cycle_dump_path = io.cycle_dump_path
+        self._fluid_output_path = "" 
+        self._cycle_dump_path = ""
         self._copyHyKiCT()            
     
     def setFiles(self):
@@ -49,7 +48,7 @@ class HyKiCT(Fluid):
         os.chdir(self._run_path)
         cmd = ['./HyKiCT','-p',
                 self._cycle_dump_path+'/config.yml']
-        super().Execute(cmd, self._cycle_path)
+        super().Execute(cmd, self._cycle_dump_path)
     
     def getLastStepQuants(self): 
 

@@ -13,7 +13,7 @@ class Fluid():
         """
        
         filename = path + '/f_test.log'
-        with io.open(filename, 'wb') as writer, io.open(filename, 'rb', 1) as reader:
+        with io.open(filename, 'wb') as writer:
             process = subprocess.Popen(cmd, stdout=writer, stderr = subprocess.PIPE)
             _,err = process.communicate()
 
