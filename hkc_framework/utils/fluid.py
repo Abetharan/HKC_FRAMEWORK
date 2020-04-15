@@ -25,5 +25,5 @@ class Fluid():
             
             if err:
                 print("fluid code failed see log")
-                sys.exit(0)
+                sys.exit(1)
        

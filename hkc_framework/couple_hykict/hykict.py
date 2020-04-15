@@ -15,16 +15,13 @@ from utils import Input
 
 class HyKiCT(Fluid):
 
-    def __init__(self, io, f_config_yml_file_path):
-        # config_yml_file_path = os.path.join(
-        #                         pathlib.Path(__file__).parent.absolute(),
-                                # 'config.yml')
-        self.init = Input(f_config_yml_file_path)
+    def __init__(self,  f_src_dir, run_path = None, f_input_path = None,
+                 f_config_yml_file_path = None):
 
-        self._fluid_src_dir = io._f_src_dir
-        self._init_file_path = io.fluid_input_path       
-        self._base_dir = io._base_dir
-        self._run_path = io._run_path
+        self.init = Input(f_config_yml_file_path)
+        self._fluid_src_dir = f_src_dir
+        self._init_file_path = f_input_path       
+        self._run_path = run_path
         self._fluid_output_path = "" 
         self._cycle_dump_path = ""
         self._copyHyKiCT()            

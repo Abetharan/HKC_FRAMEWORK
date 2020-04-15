@@ -87,6 +87,7 @@ class Coupler:
             overwrite = True
 
         #Create Objects 
+        hfct_obj = util.HeatFlowCouplingTools()
         io_obj = util.IO(
                         init.yaml_file['Paths']['Run_name'],
                         init.yaml_file['Paths']['Base_dir'], 
@@ -95,13 +96,22 @@ class Coupler:
                         init.yaml_file['Paths']['Init_path'],
                         start_cycle, overwrite, cycles, 
                         initialise_all_folders)
-        hfct_obj = util.HeatFlowCouplingTools()
-        fluid_obj = HyKiCT(io_obj, init.yaml_file['Paths']['F_config_path'])
+
+        fluid_obj = HyKiCT(
+                            io_obj._run_path, 
+                            io_obj._f_src_dir, 
+                            io_obj._f_init_path,
+                            init.yaml_file['Paths']['F_config_path'])
                          
         if(init.yaml_file['Codes']['Kinetic_code'] == 'sol_kit'):
-            kin_obj = SOL_KIT(io_obj,
-                        init.yaml_file['Paths']['K_config_path'],
-                        init.yaml_file['Misc']['HPC'])
+            kin_obj = SOL_KIT(
+                            io_obj._run_path,
+                            io_obj.kinetic_input_path,
+                            io_obj.kinetic_output_path,
+                            io_obj._k_src_dir,
+                            io_obj.cycle_dump_path,
+                            init.yaml_file['Paths']['K_config_path'],
+                            init.yaml_file['Misc']['HPC'])
         #Impact not ready
         # else:
             #kin_obj = IMPACT()
@@ -119,6 +129,7 @@ class Coupler:
         #Specific to HyKiCT
         f_nt = fluid_obj.init.yaml_file['TimeParameters']['steps'] 
         f_tmax = fluid_obj.init.yaml_file['TimeParameters']['t_max']
+        #Initially fluid should always be run in no couple mode.
         fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = False
         fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = False
         if init.yaml_file['Coupling_params']['Start_from_kinetic']:
@@ -129,12 +140,15 @@ class Coupler:
             self.pretty_print(' RUNNING CYCLE ' + str(cycle_no)) 
 
             if cycle_no >= 1:
+                #Update paths
                 io_obj.cycle_counter = cycle_no
                 io_obj.nextCyclePathManager()
                 kin_obj._cycle_path = io_obj.cycle_dump_path
                 fluid_obj._cycle_path = io_obj.cycle_dump_path
+                #Engage coupling 
                 fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = init.yaml_file['Coupling_params']['Couple_divq']
                 fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = init.yaml_file['Coupling_params']['Couple_multi']
+                #Reset fluid config with its actual values.
                 if init.yaml_file['Coupling_params']['Start_from_kinetic']:
                     fluid_obj.init.yaml_file['TimeParameters']['steps'] = f_nt
                     fluid_obj.init.yaml_file['TimeParameters']['t_max'] = f_tmax
@@ -144,7 +158,6 @@ class Coupler:
             ###########
             #In this example running HyKiCT
             self.pretty_print(' RUNNING ' + init.yaml_file['Codes']['Fluid_code'], color = True)
-            
             #Set Paths that change
             fluid_obj.init.yaml_file['Paths']['Init_Path'] = io_obj.fluid_input_path
             fluid_obj.init.yaml_file['Paths']['Out_Path'] = io_obj.fluid_output_path
@@ -156,6 +169,38 @@ class Coupler:
             fluid_obj.setFiles()
             fluid_obj.Run()
 
+            #Breaks here ... Last cycle allowed to run hydro step
+            if cycle_no == cycles - 1:
+                if init.yaml_file['Misc']['Zip']:
+                    io_obj.zipAndDelete()        
+                break 
+
+            #############
+            #Kinetic Step
+            #############
+            #Set any parameter ifles
+            #Init all load in files form hydro
+            #RUN
+            #Move files if neccessary
+            self.pretty_print(' RUNNING ' + init.yaml_file['Codes']['Kinetic_code'], color = True)
+            if cycle_no == 0:
+                #input and output unchanged 
+                kin_obj.setFiles()
+
+            kin_obj._kinetic_input_path = io_obj.kinetic_input_path
+            kin_obj._kinetic_output_path = io_obj.kinetic_output_path
+            
+            kin_obj.InitFromHydro(fluid_x_grid, fluid_x_centered_grid, 
+                                fluid_Te, fluid_ne, fluid_Z)
+            kin_obj.Run()
+            
+            #Set hfct to contain the vfp heat flow to do the neccessary coupling calcs.
+            hfct_obj.vfp_heat= kin_obj.getLastHeatFlow()
+            kin_obj.moveFiles()
+            
+            ##############
+            #Coupling Step
+            ##############
             #the _ are unused variables fluid_v and fluid_laser, for future
             #use these may be required and thus, left in. 
             (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
@@ -174,39 +219,7 @@ class Coupler:
                                 hfct_obj.electron_temperature,
                                 hfct_obj.zbar)
             hfct_obj.spitzerHarmHeatFlow()
-
-            #Breaks here ... Last cycle allowed to run hydro step
-            if cycle_no == cycles - 1:
-                if init.yaml_file['Misc']['Zip']:
-                    io_obj.zipAndDelete()        
-                break 
             
-            #############
-            #Kinetic Step
-            #############
-            #Set any parameter ifles
-            #Init all load in files form hydro
-            #RUN
-            #Move files if neccessary
-
-            self.pretty_print(' RUNNING ' + init.yaml_file['Codes']['Kinetic_code'], color = True)
-            if cycle_no == 0:
-                #input and output unchanged 
-                kin_obj.setFiles()
-
-            kin_obj._kinetic_input_path = io_obj.kinetic_input_path
-            kin_obj._kinetic_output_path = io_obj.kinetic_output_path
-            
-            kin_obj.InitFromHydro(fluid_x_grid, fluid_x_centered_grid, 
-                                fluid_Te, fluid_ne, fluid_Z)
-            kin_obj.Run()
-            #Set hfct to contain the vfp heat flow to do the neccessary coupling calcs.
-            hfct_obj.vfp_heat= kin_obj.getLastHeatFlow()
-            kin_obj.moveFiles()
-            
-            ##############
-            #Coupling Step
-            ##############
             if init.yaml_file['Coupling_params']['Couple_divq']:
                 #qe here is div.q_vfp 
                 qe = hfct_obj.divQHeatFlow()
@@ -219,8 +232,6 @@ class Coupler:
 
             if init.yaml_file['Misc']['Zip']:
                 io_obj.zipAndDelete()        
-            #update continue file
-            np.savetxt(continue_step_path, np.array([cycle_no]), fmt = '%i')
             
             
             #Finish by init next set of files 
@@ -232,38 +243,9 @@ class Coupler:
             fluid_obj.init.yaml_file['FixedParameters']['Frontheat_StartIndex'] = front_heat_start_index.item()
             fluid_obj.init.yaml_file['FixedParameters']['Frontheat_LastIndex'] = front_heat_last_index.item()
            
-            #To be DELETED
-            #OBSOLETE
-            #Kinetic Codes run here
-            # if _SWITCH_KINETIC_CODE == "IMPACT":
-            #     impact_obj = impact.IMPACT(io_obj, k_np, k_nv, k_nx, k_ny, k_dt, k_t_max, k_x_max, k_v_max, k_bc, 100, _SWITCH_CX1)
-            #     norms = impact_obj.normalisation(calc = True, ne = ne, Te = Te, Z = Z, Ar = Ar,  Bz = 0)
-            #     if cycle_no < 1:
-            #         #Find normalisation and prepare IMAPCT for compiling and compile.
-            #         self.pretty_print(' COMPILING' + _SWITCH_KINETIC_CODE)
-            #         impact_obj.setEnvVar()
-            #         impact_obj.setIMPACTParam()
-            #         impact_obj.setCustomFuncs()
-            #         impact_obj.IMPACTCompile()            
-            #     else:
-                #     norms = impact_obj.normalisation(calc = False)
-
-                # self.pretty_print(' CONVERT ' + _SWITCH_HYDRO_CODE + 'TO ' + _SWITCH_KINETIC_CODE + 'COMPATIBLE ')
-                # #Convert ELH1 output to IMPACT Fortmat
-                # impact_obj.InitIMPACTFromHydro()        
-
-                # #RUN IMPACT
-                # self.pretty_print(' RUN ' + _SWITCH_KINETIC_CODE, color =True )
-                # impact_obj.IMPACTRun()
-                
-                # self.pretty_print(' CONVERT ' + _SWITCH_KINETIC_CODE + 'TO ' + _SWITCH_HYDRO_CODE + 'COMPATIBLE ')
-                #Convert IMPACT FILES To ELH1 readable files
-                # if not last_cycle:
-                #     impact_obj.IMPACTInitHydroNextFiles()
-                #     impact_obj.moveIMPACTFile()
-                # else:
-                #     impact_obj.moveIMPACTFile()
-
+            
+            #update continue file
+            np.savetxt(continue_step_path, np.array([cycle_no]), fmt = '%i')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'Coupling of Hydrodynamic and Kinetic code. The two codes are specified in the input file.')

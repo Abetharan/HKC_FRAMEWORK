@@ -75,7 +75,13 @@ class HeatFlowCouplingTools:
             preheat_end = end index of preheat
         """
         preheat_start = np.where(self.q_vfp_q_sh_multipliers[~np.isinf(self.q_vfp_q_sh_multipliers)] != 0)[0][-1]
-        preheat_end = np.where(abs(self.vfp_heat[preheat_start:]) < self.search_tolerance)[0][0] + preheat_start
+        preheat_end = np.where(abs(self.vfp_heat[preheat_start:]) < self.search_tolerance)
+        #if search fails i.e. valid heat flow in all domain
+        if(len(preheat_end[0]) == 0):
+            preheat_end = len(self.q_vfp_q_sh_multipliers)
+        else:
+            preheat_end[0][0] + preheat_start
+
         L = self.cell_wall_coord[preheat_end] -self.cell_wall_coord[preheat_start] 
         B = []
 
@@ -99,7 +105,13 @@ class HeatFlowCouplingTools:
         """
 
         frontheat_start = np.where(self.q_vfp_q_sh_multipliers[~np.isinf(self.q_vfp_q_sh_multipliers)] != 0)[0][0]
-        frontheat_end = np.where(abs(self.vfp_heat[:frontheat_start]) < self.search_tolerance)[0][0]
+        frontheat_end = np.where(abs(self.vfp_heat[:frontheat_start]) < self.search_tolerance)
+        #if search fails i.e. valid heat flow in all domain
+        if(len(frontheat_end[0]) == 0):
+            frontheat_end = 0
+        else:
+            frontheat_end[0][0]
+
         L = abs(self.cell_wall_coord[frontheat_end] - self.cell_wall_coord[frontheat_start])
         B = []
 
@@ -154,7 +166,7 @@ class HeatFlowCouplingTools:
 
             self.q_vfp_q_sh_multipliers[np.isnan(self.q_vfp_q_sh_multipliers)] = 0
             self.q_vfp_q_sh_multipliers[np.isinf(self.q_vfp_q_sh_multipliers)] = 0
-            return front, pre
+        return front, pre
 
     def multiplier(self):
         """ Purpose: Find multipliers and exponentially extrapolate for pre-heat

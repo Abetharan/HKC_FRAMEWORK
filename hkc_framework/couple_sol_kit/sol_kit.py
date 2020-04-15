@@ -37,7 +37,8 @@ BOHR_RADIUS = constants.value("Bohr radius")
 
 class SOL_KIT(Kinetic):
     
-    def __init__(self,io, k_config_yml_file_path, cx1 = False):
+    def __init__(self,run_path, kinetic_input_path, kinetic_output_path,
+                 k_src_dir, cycle_dump_path, k_config_yml_file_path, cx1 = False):
         
         # config_yml_file_path = os.path.join(
         #                         pathlib.Path(__file__).parent.absolute(),
@@ -53,16 +54,14 @@ class SOL_KIT(Kinetic):
         self.heat_flow_tools = HeatFlowCouplingTools() 
         self.init = Input(k_config_yml_file_path)
         #paths
-        self._run_name = io._run_name
-        self._run_path = io._run_path
+        self._run_path = run_path
+        self._kinetic_output_path = kinetic_output_path
+        self._kinetic_input_path = kinetic_input_path
+        self._kinetic_src_dir = k_src_dir
+        self._cycle_dump_path = cycle_dump_path
+        
         self._sol_kit_input_path = os.path.join(self._run_path, 'INPUT')
         self._sol_kit_output_path = os.path.join(self._run_path, 'OUTPUT')
-        self._kinetic_output_path = io.kinetic_output_path
-        self._kinetic_input_path = io.kinetic_input_path
-        self._base_dir = io._base_dir
-        self._kinetic_src_dir = io._k_src_dir
-        self._fluid_output_path = io.fluid_output_path
-        self._cycle_path = io.cycle_dump_path
         
         self.maintain_f0 = self.init.yaml_file['Switches']['f_0_maintain']
         self.normalised_values = None
@@ -125,7 +124,7 @@ class SOL_KIT(Kinetic):
             cmd = ["mpirun", "-np", str(self._np), "./SOL-KiT"]
 
         heat_flow_path = os.path.join(self._run_path, 'OUTPUT/HEAT_FLOW_X/')
-        super().Execute(cmd, self._cycle_path, self.maintain_f0, heat_flow_path, convergance_test, self.init.yaml_file['Params']['Nx'])
+        super().Execute(cmd, self._cycle_dump_path, self.maintain_f0, heat_flow_path, convergance_test, self.init.yaml_file['Params']['Nx'])
     
 
     def normalisation(self):
