@@ -4,7 +4,7 @@ Paths:
       FEOS_Path_1: ""
       FEOS_Path_2: ""
 FixedParameters:
-      nx: 200
+      nx: 0 #handled internally
       Rad_Flux_Temperature: 0
       Laser_Wavelength: 100e-9
       Laser_Power: 1e12
@@ -25,7 +25,7 @@ TimeParameters:
       dt_max: 0.1e-15 
       dt_min: 0.1e-9
       t_max: 0
-      steps: 2 #2
+      steps: 60 #2
       cfl: 0.85
 Limiters:
       heatflxlm: 1.0

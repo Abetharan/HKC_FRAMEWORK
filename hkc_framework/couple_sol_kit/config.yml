@@ -6,8 +6,7 @@ Norms:
   Ar: 157.5
 
 Params:
-  Nx: 200
-  Ny: 1
+  Nx: 0 #handled internally
   Nv: 331
   Np: 1
   Dt: 0.001

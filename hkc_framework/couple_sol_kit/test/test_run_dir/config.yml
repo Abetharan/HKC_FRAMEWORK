@@ -1,0 +1,44 @@
+Norms:
+  #NORMALISATION
+  Te: 2500
+  Ne: 1.1E+27
+  Z: 36.5
+  Ar: 157.5
+
+Params:
+  Nx: 200
+  Ny: 1
+  Nv: 331
+  Np: 1
+  Dt: 0.001
+  Dx: 0.5
+  Dv: 0.0307
+  Dv_multi: 1.0
+  Nt: 0
+  Pre_step_nt: 0
+  Pre_step_dt: 0.001
+  L_max: 1
+  Output_freq: 10
+
+Boundary:
+  Periodic: false
+  Fixed_up: false
+  Fixed_down: false
+  No_flow_up: true
+  No_flow_down: true
+
+Switches:
+  Coll_ei_l: true
+  Coll_ee_0: true
+  Coll_ee_l: true
+  Diag_ee_l: false
+  Local_init: false
+  Cold_ion_fluid: false
+  f_0_maintain: true
+
+Output:
+  Density: true
+  Temperature: true
+  Velocity: false
+  E_field: false
+  Sh_test: false

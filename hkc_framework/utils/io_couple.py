@@ -11,7 +11,8 @@ import sys
 from distutils.dir_util import copy_tree
 class IO:
 
-    def __init__(self, run_name, base_dir, k_src_dir, f_src_dir, f_init_path, cycle_counter, overwrite, max_cycle, initialise_all_folders):
+    def __init__(self, run_name, base_dir, k_src_dir, f_src_dir, f_init_path,
+                    cycle_counter, max_cycle, overwrite):
 
         self._base_dir = base_dir
         self._k_src_dir = k_src_dir
@@ -36,11 +37,10 @@ class IO:
         self.preserved_fluid_output_path = []  
         self.preserved_kinetic_input_path = []
         self.preserved_kinetic_output_path = []
-        #self.setPaths()
-        if initialise_all_folders:
-            self.createDirectoryOfOperation(self.max_cycle)
+        
+        #self.createDirectoryOfOperation(self.max_cycle)
     
-        self.nextCyclePathManager()
+        #self.nextCyclePathManager()
     
     def zipAndDelete(self):
         """ Purpose: To zip cycle folders to reduce memory overhead and delete the folder"""
@@ -54,13 +54,14 @@ class IO:
         print("#"*100)
         print('\033[1m' + '#'*50 + ' SET PATHS ' + '#'*50 + '\033[0m')
         print('\n')
-        self.cycle_dump_path = os.path.join(self._run_path, ("CYCLE_" + str(self.cycle_counter)))
+        self.cycle_dump_path = os.path.join(self._run_path,
+                                "".join(["CYCLE_", str(self.cycle_counter)]))
         self.fluid_input_path = os.path.join(self.cycle_dump_path + "/FLUID_INPUT/")
         self.fluid_output_path = os.path.join(self.cycle_dump_path + "/FLUID_OUTPUT/")
         self.kinetic_input_path = os.path.join(self.cycle_dump_path + "/KINETIC_INPUT/")
         self.kinetic_output_path = os.path.join(self.cycle_dump_path + "/KINETIC_OUTPUT/")
 
-    def createDirectoryOfOperation(self, no_cycles_):
+    def createDirectoryOfOperation(self,):
         """ Purpose: Creates all folders required immediately .. reduces overhead later one 
             Args: no_cycles = no of total cycles.
         """
@@ -75,7 +76,7 @@ class IO:
         else:
             #create base folder
             os.makedirs(self._run_path)
-        for i in range(no_cycles_):
+        for i in range(self.max_cycle):
             cycle_path = os.path.join(self._run_path, ("CYCLE_" + str(i)))
         
             fluid_input_path = os.path.join(cycle_path + "/FLUID_INPUT/")
@@ -83,7 +84,10 @@ class IO:
             kinetic_input_path = os.path.join(cycle_path + "/KINETIC_INPUT/")
             kinetic_output_path = os.path.join(cycle_path + "/KINETIC_OUTPUT/")
             if path_exists:
-                if os.path.exists(fluid_input_path) and os.path.exists(fluid_output_path) and os.path.exists(kinetic_output_path) and os.path.exists(kinetic_output_path):
+                if (os.path.exists(fluid_input_path) and
+                    os.path.exists(fluid_output_path) and
+                    os.path.exists(kinetic_output_path) and
+                    os.path.exists(kinetic_output_path)):
                     continue
             
             os.makedirs(cycle_path)
@@ -100,12 +104,7 @@ class IO:
             cycleStep = cycle number.
         """
 
-        self.cycle_dump_path = os.path.join(self._run_path, "".join(["CYCLE_", str(self.cycle_counter)]))
-        # self._f_switch_path = os.path.join(self.cycle_dump_path, "/HydroSwitches.txt")
-        self.fluid_input_path = os.path.join(self.cycle_dump_path + "/FLUID_INPUT/")
-        self.fluid_output_path = os.path.join(self.cycle_dump_path + "/FLUID_OUTPUT/")
-        self.kinetic_input_path = os.path.join(self.cycle_dump_path + "/KINETIC_INPUT/")
-        self.kinetic_output_path = os.path.join(self.cycle_dump_path + "/KINETIC_OUTPUT/")
+        self.setPaths()
         new_cycle_path = os.path.join(self._run_path, "".join(["CYCLE_", str(self.cycle_counter + 1)]))
         self.next_fluid_input_path = os.path.join(new_cycle_path, "FLUID_INPUT/")
 
@@ -116,25 +115,11 @@ class IO:
         
         self.preservePaths()
 
-    #     if self.cycle_counter > 0:
-    #         self.previous_cycle_dump_path = self._RUN_PATH + \
-    #         "cycle_" + str(self.cycle_counter - 1) + "/"
-    #         self.previous_fluid_input_path = os.path.join(self.previous_cycle_dump_path + "/fluid_input/")
-    #         self.previous_fluid_output_path = os.path.join(self.previous_cycle_dump_path + "/fluid_output/")
-    #         self.previous_kinetic_output_path = os.path.join(self.previous_cycle_dump_path + "/kinetic_output/")
-    #         self.previous_kinetic_input_path = os.path.join(self.previous_cycle_dump_path + "/kinetic_input/")
-    #         self.moveIMPACTFile()
-
     def returnCurrentPaths(self):
         return(self.cycle_dump_path, self.fluid_input_path, 
         self.fluid_output_path, self.kinetic_input_path,
          self.kinetic_output_path)
     
-    # def returnPreviousPaths(self):
-    #     return(self.previous_cycle_dump_path, self.previous_fluid_input_path, 
-    #     self.previous_fluid_output_path, self.previous_kinetic_input_path,
-    #     self.previous_kinetic_output_path)
-
     def preservePaths(self, unit_test = False):
 
         self.preserved_cycle_path.append(self.cycle_dump_path)

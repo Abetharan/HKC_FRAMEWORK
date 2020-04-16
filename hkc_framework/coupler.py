@@ -66,7 +66,10 @@ class Coupler:
         cycles = init.yaml_file['Coupling_params']['Cycles']
         continue_step_path = os.path.join(RUN_PATH, 'CONTINUE_STEP.txt') 
         initialise_all_folders = False
-    
+        #init to none 
+        pre_heat_fit_params = None
+        front_heat_fit_params = None
+
         if init.yaml_file['Misc']['Continue']:
             #Continue in this framework is designed such that
             #a run does not have to fail (for whatever reason) and then continue
@@ -94,8 +97,7 @@ class Coupler:
                         init.yaml_file['Paths']['K_src_dir'],
                         init.yaml_file['Paths']['F_src_dir'], 
                         init.yaml_file['Paths']['Init_path'],
-                        start_cycle, overwrite, cycles, 
-                        initialise_all_folders)
+                        start_cycle, cycles, overwrite)
 
         fluid_obj = HyKiCT(
                             io_obj._run_path, 
@@ -111,11 +113,17 @@ class Coupler:
                             io_obj._k_src_dir,
                             io_obj.cycle_dump_path,
                             init.yaml_file['Paths']['K_config_path'],
+                            init.yaml_file['Misc']['Convergence_monitoring'],
                             init.yaml_file['Misc']['HPC'])
         #Impact not ready
         # else:
             #kin_obj = IMPACT()
         
+        #Create Folders and set paths for first cycle
+        io_obj.createDirectoryOfOperation()
+        io_obj.nextCyclePathManager()
+
+        #Enforce equal size ... Constrain at the moment
         kin_obj.init.yaml_file['Params']['Nx'] = init.yaml_file['Coupling_params']['Nx']
         fluid_obj.init.yaml_file['FixedParameters']['nx'] = init.yaml_file['Coupling_params']['Nx']
 
@@ -146,8 +154,15 @@ class Coupler:
                 kin_obj._cycle_path = io_obj.cycle_dump_path
                 fluid_obj._cycle_path = io_obj.cycle_dump_path
                 #Engage coupling 
-                fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = init.yaml_file['Coupling_params']['Couple_divq']
-                fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = init.yaml_file['Coupling_params']['Couple_multi']
+                if(init.yaml_file['Coupling_params']['Couple_adapative']):
+                    if(pre_heat_start_index > 0 and front_heat_start_index >0):
+                        fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = True #init.yaml_file['Coupling_params']['Couple_divq']
+                        fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = False #init.yaml_file['Coupling_params']['Couple_multi']
+                        fluid_obj.init.yaml_file['TimeParameters']['steps'] = f_nt
+                        fluid_obj.init.yaml_file['TimeParameters']['t_max'] = f_tmax
+                    else:
+                        fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = init.yaml_file['Coupling_params']['Couple_divq']
+                        fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = init.yaml_file['Coupling_params']['Couple_multi']
                 #Reset fluid config with its actual values.
                 if init.yaml_file['Coupling_params']['Start_from_kinetic']:
                     fluid_obj.init.yaml_file['TimeParameters']['steps'] = f_nt
@@ -163,6 +178,7 @@ class Coupler:
             fluid_obj.init.yaml_file['Paths']['Out_Path'] = io_obj.fluid_output_path
             fluid_obj._cycle_dump_path = io_obj.cycle_dump_path
             fluid_obj._fluid_output_path = io_obj.fluid_output_path
+            fluid_obj._init_file_path = io_obj.fluid_input_path
             ################
             #Any other parameter updates that needs to be set can be added here.
             #################
@@ -175,6 +191,8 @@ class Coupler:
                     io_obj.zipAndDelete()        
                 break 
 
+            (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
+            fluid_Z, _, fluid_mass) = fluid_obj.getLastStepQuants()
             #############
             #Kinetic Step
             #############
@@ -189,6 +207,7 @@ class Coupler:
 
             kin_obj._kinetic_input_path = io_obj.kinetic_input_path
             kin_obj._kinetic_output_path = io_obj.kinetic_output_path
+            kin_obj._cycle_dump_path = io_obj.cycle_dump_path
             
             kin_obj.InitFromHydro(fluid_x_grid, fluid_x_centered_grid, 
                                 fluid_Te, fluid_ne, fluid_Z)
@@ -197,14 +216,11 @@ class Coupler:
             #Set hfct to contain the vfp heat flow to do the neccessary coupling calcs.
             hfct_obj.vfp_heat= kin_obj.getLastHeatFlow()
             kin_obj.moveFiles()
-            
             ##############
             #Coupling Step
             ##############
             #the _ are unused variables fluid_v and fluid_laser, for future
             #use these may be required and thus, left in. 
-            (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
-            fluid_Z, _, fluid_mass) = fluid_obj.getLastStepQuants()
 
             #Init heat_flow_tools here 
             hfct_obj.electron_temperature = fluid_Te
@@ -219,7 +235,7 @@ class Coupler:
                                 hfct_obj.electron_temperature,
                                 hfct_obj.zbar)
             hfct_obj.spitzerHarmHeatFlow()
-            
+
             if init.yaml_file['Coupling_params']['Couple_divq']:
                 #qe here is div.q_vfp 
                 qe = hfct_obj.divQHeatFlow()
@@ -229,20 +245,18 @@ class Coupler:
                 (qe, pre_heat_start_index, pre_heat_last_index,
                 pre_heat_fit_params, front_heat_start_index, 
                 front_heat_last_index, front_heat_fit_params)  = hfct_obj.multiplier()
+                #Modify yaml for future write
+                fluid_obj.init.yaml_file['FixedParameters']['Preheat_StartIndex'] = pre_heat_start_index.item()
+                fluid_obj.init.yaml_file['FixedParameters']['Preheat_LastIndex'] = pre_heat_last_index.item()
+                fluid_obj.init.yaml_file['FixedParameters']['Frontheat_StartIndex'] = front_heat_start_index.item()
+                fluid_obj.init.yaml_file['FixedParameters']['Frontheat_LastIndex'] = front_heat_last_index.item()
 
             if init.yaml_file['Misc']['Zip']:
                 io_obj.zipAndDelete()        
             
-            
             #Finish by init next set of files 
             fluid_obj.initHydroFromKinetic(io_obj.next_fluid_input_path, qe,
                                             pre_heat_fit_params, front_heat_fit_params)
-            #Modify yaml for future write
-            fluid_obj.init.yaml_file['FixedParameters']['Preheat_StartIndex'] = pre_heat_start_index.item()
-            fluid_obj.init.yaml_file['FixedParameters']['Preheat_LastIndex'] = pre_heat_last_index.item()
-            fluid_obj.init.yaml_file['FixedParameters']['Frontheat_StartIndex'] = front_heat_start_index.item()
-            fluid_obj.init.yaml_file['FixedParameters']['Frontheat_LastIndex'] = front_heat_last_index.item()
-           
             
             #update continue file
             np.savetxt(continue_step_path, np.array([cycle_no]), fmt = '%i')

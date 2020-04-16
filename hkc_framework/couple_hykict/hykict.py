@@ -46,7 +46,9 @@ class HyKiCT(Fluid):
         cmd = ['./HyKiCT','-p',
                 self._cycle_dump_path+'/config.yml']
         super().Execute(cmd, self._cycle_dump_path)
-    
+    def getPhysicalRuneTime(self):
+        if self.init.yaml_file['TimeParams'][]
+        #REVIEW 
     def getLastStepQuants(self): 
 
         last_index = findLargestIndex(os.path.join(self._fluid_output_path, "ELECTRON_TEMPERATURE"))
