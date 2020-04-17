@@ -80,7 +80,7 @@ class HeatFlowCouplingTools:
         if(len(preheat_end[0]) == 0):
             preheat_end = len(self.q_vfp_q_sh_multipliers)
         else:
-            preheat_end[0][0] + preheat_start
+            preheat_end = preheat_end[0][0] + preheat_start
 
         L = self.cell_wall_coord[preheat_end] -self.cell_wall_coord[preheat_start] 
         B = []
@@ -110,7 +110,7 @@ class HeatFlowCouplingTools:
         if(len(frontheat_end[0]) == 0):
             frontheat_end = 0
         else:
-            frontheat_end[0][0]
+            frontheat_end = frontheat_end[0][0]
 
         L = abs(self.cell_wall_coord[frontheat_end] - self.cell_wall_coord[frontheat_start])
         B = []

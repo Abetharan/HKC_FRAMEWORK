@@ -254,7 +254,8 @@ class Coupler:
                 pre_heat_fit_params, front_heat_start_index, 
                 front_heat_last_index, front_heat_fit_params)  = hfct_obj.multiplier()
                 #If pre heat or front heat is present, in adapativbe coupling
-                #We utilise div.q coupling to get rid of these fronts. 
+                #We utilise div.q coupling to get rid of these fronts.
+                #Otherwise, apply the exponential models. 
                 if(self.init.yaml_file['Coupling_params']['Coupling_adapative']):
                     if(pre_heat_start_index > 0 or front_heat_start_index > 0):
                         qe = hfct_obj.divQHeatFlow()
