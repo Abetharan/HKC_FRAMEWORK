@@ -154,7 +154,7 @@ class Coupler:
                 #Update paths
                 #Engage coupling 
                 if(self.init.yaml_file['Coupling_params']['Couple_adapative']):
-                    if(pre_heat_start_index > 0 and front_heat_start_index > 0):
+                    if(pre_heat_start_index > 0 or front_heat_start_index > 0):
                         k_physical_time = kin_obj.getPhysicalRunTime()
                         f_run_time = k_physical_time / 10 #10 phemenlogically determined 
                         if(f_run_time < fluid_obj.init.yaml_file['TimeParameters']['Dt']):
@@ -247,17 +247,26 @@ class Coupler:
                 #qe here is div.q_vfp 
                 qe = hfct_obj.divQHeatFlow()
             
-            elif self.init.yaml_file['Coupling_params']['Couple_multi']:
+            elif (self.init.yaml_file['Coupling_params']['Couple_multi'] or 
+                    self.init.yaml_file['Coupling_params']['Couple_adapative']):
                 #qe here is q_vfp/q_sh
                 (qe, pre_heat_start_index, pre_heat_last_index,
                 pre_heat_fit_params, front_heat_start_index, 
                 front_heat_last_index, front_heat_fit_params)  = hfct_obj.multiplier()
-                #Modify yaml for future write
-                fluid_obj.init.yaml_file['FixedParameters']['Preheat_StartIndex'] = pre_heat_start_index.item()
-                fluid_obj.init.yaml_file['FixedParameters']['Preheat_LastIndex'] = pre_heat_last_index.item()
-                fluid_obj.init.yaml_file['FixedParameters']['Frontheat_StartIndex'] = front_heat_start_index.item()
-                fluid_obj.init.yaml_file['FixedParameters']['Frontheat_LastIndex'] = front_heat_last_index.item()
-
+                #If pre heat or front heat is present, in adapativbe coupling
+                #We utilise div.q coupling to get rid of these fronts. 
+                if(self.init.yaml_file['Coupling_params']['Coupling_adapative']):
+                    if(pre_heat_start_index > 0 or front_heat_start_index > 0):
+                        qe = hfct_obj.divQHeatFlow()
+                        pre_heat_fit_params = None
+                        front_heat_fit_params = None
+                else:
+                    #Modify yaml for future write
+                    fluid_obj.init.yaml_file['FixedParameters']['Preheat_StartIndex'] = pre_heat_start_index.item()
+                    fluid_obj.init.yaml_file['FixedParameters']['Preheat_LastIndex'] = pre_heat_last_index.item()
+                    fluid_obj.init.yaml_file['FixedParameters']['Frontheat_StartIndex'] = front_heat_start_index.item()
+                    fluid_obj.init.yaml_file['FixedParameters']['Frontheat_LastIndex'] = front_heat_last_index.item()
+            
             if self.init.yaml_file['Misc']['Zip']:
                 io_obj.zipAndDelete()        
             
