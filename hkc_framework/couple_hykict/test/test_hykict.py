@@ -11,7 +11,7 @@ class TestHyKiCT():
     def test_run(self, tmpdir):
         src_dir = os.environ["F_SRC_DIR"]
         p = tmpdir.mkdir('cycle')
-        f_obj = HyKiCT(f_src_dir = src_dir, run_path=p, f_config_yml_file_path= myPath + "/test_run_dir/config.yml")
+        f_obj = HyKiCT(run_path=p,f_src_dir = src_dir, f_config_yml_file_path= myPath + "/test_run_dir/config.yml")
         f_obj._cycle_dump_path = p
         with pytest.raises(SystemExit):
             f_obj.Run()
@@ -19,7 +19,7 @@ class TestHyKiCT():
     def test_last_step(self, tmpdir):
         src_dir = os.environ["F_SRC_DIR"]
         p = tmpdir.mkdir('cycle')
-        f_obj = HyKiCT(f_src_dir = src_dir, run_path=p, f_config_yml_file_path= myPath + "/test_run_dir/config.yml")
+        f_obj = HyKiCT(run_path=p,f_src_dir = src_dir, f_config_yml_file_path= myPath + "/test_run_dir/config.yml")
         f_obj._cycle_dump_path = p
         output_path = myPath + "/test_last_step/OUTPUT/"
         input_path = myPath + "/test_last_step/INPUT/"
@@ -41,7 +41,7 @@ class TestHyKiCT():
     def test_nextInit(self, tmpdir):
         src_dir = os.environ["F_SRC_DIR"]
         p = tmpdir.mkdir('cycle')
-        f_obj = HyKiCT(f_src_dir = src_dir, run_path=p, f_config_yml_file_path= myPath + "/test_run_dir/config.yml")
+        f_obj = HyKiCT(run_path=p,f_src_dir = src_dir, f_config_yml_file_path= myPath + "/test_run_dir/config.yml")
         f_obj._cycle_dump_path = p
 
         qe = np.random.rand(40)

@@ -15,7 +15,7 @@ from utils import Input
 
 class HyKiCT(Fluid):
 
-    def __init__(self,  f_src_dir, run_path = None, f_input_path = None,
+    def __init__(self, run_path = None, f_src_dir = None, f_input_path = None,
                  f_config_yml_file_path = None):
 
         self.init = Input(f_config_yml_file_path)
@@ -23,13 +23,13 @@ class HyKiCT(Fluid):
         self._init_file_path = f_input_path       
         self._run_path = run_path
         self._fluid_output_path = "" 
-        self._cycle_dump_path = ""
+        self.cycle_dump_path = ""
         self._copyHyKiCT()            
     
     def setFiles(self):
         """ Purpose: Write out config.yml for each cycle"""
 
-        yaml_dump_path = os.path.join(self._cycle_dump_path, 'config.yml')
+        yaml_dump_path = os.path.join(self.cycle_dump_path, 'config.yml')
         with open(yaml_dump_path, 'w') as outfile: 
             yaml.dump(self.init.yaml_file, outfile)
         
@@ -44,11 +44,13 @@ class HyKiCT(Fluid):
 
         os.chdir(self._run_path)
         cmd = ['./HyKiCT','-p',
-                self._cycle_dump_path+'/config.yml']
-        super().Execute(cmd, self._cycle_dump_path)
-    def getPhysicalRuneTime(self):
-        if self.init.yaml_file['TimeParams'][]
-        #REVIEW 
+                self.cycle_dump_path+'/config.yml']
+        super().Execute(cmd, self.cycle_dump_path)
+
+    def getPhysicalRunTime(self):
+        last_index = findLargestIndex(os.path.join(self._fluid_output_path, "TIME"))
+        return(np.loadtxt(os.path.join(self._fluid_output_path,
+                 "".join(['TIME/TIME', str(last_index), ".txt"]))))
     def getLastStepQuants(self): 
 
         last_index = findLargestIndex(os.path.join(self._fluid_output_path, "ELECTRON_TEMPERATURE"))

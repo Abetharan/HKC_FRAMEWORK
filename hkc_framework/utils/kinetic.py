@@ -56,7 +56,10 @@ class Kinetic():
                     
                     if os.access(latest_heat_flow_path, os.R_OK):
                         #routine
-                        curr_multipliers = convergence_func(latest_heat_flow_path)                    
+                        curr_multipliers = convergence_func(latest_heat_flow_path)
+                        #Possible occurence where files is read safe but nothing has been written to it.
+                        if(len(curr_multipliers) > 0):
+                            continue                   
                         multipliers = np.vstack((multipliers, curr_multipliers))
                     else:
                         continue
@@ -85,6 +88,8 @@ class Kinetic():
             process = subprocess.Popen(cmd, stdout=writer, stderr = subprocess.PIPE)
             _, err = process.communicate()
             ##Spawn a thread which runs convergencemonitoring function. 
+            #Specifeid to be a daemon such that if the program sys exits due to one of the code
+            #throws an error the daemon is automatically killed.
             if monitor_on:
                 monitor = threading.Thread(target=ConvergenceMonitoring, args = (process,
                             kinetic_heat_flow_output_folder_path, convergence_func, nx),

@@ -19,10 +19,10 @@ class Coupler:
     """
     main class i.e. where all objects are passed into and the coupling is run.
     """
-    def __init__(self, init_file_path_):
-        self.yml_init_file_path = init_file_path_
+    def __init__(self, init_file_path):
+        self.yml_init_file_path = init_file_path
         
-    def start_print(self, fluid_code, kinetic_code):
+    def startprint(self, fluid_code, kinetic_code):
 
         ShowText = ('COUPLING ' + fluid_code + '-' 
                     + kinetic_code)
@@ -40,7 +40,7 @@ class Coupler:
                 else: line.append('#'),
             print(''.join(line))
 
-    def pretty_print(self, text, color = None):
+    def prettyPrint(self, text, color = None):
         length_to_print = 100 + len(text)
         if color is None:
             print("#"*length_to_print)
@@ -52,25 +52,26 @@ class Coupler:
         
         print('\n')   
     
-
     def main(self):
-        init = util.Input(self.yml_init_file_path)
-        RUN_PATH = os.path.join(init.yaml_file['Paths']['Base_dir'],
-                     init.yaml_file['Paths']['Run_name'])        
+        self.init = util.Input(self.yml_init_file_path)
+        RUN_PATH = os.path.join(self.init.yaml_file['Paths']['Base_dir'],
+                     self.init.yaml_file['Paths']['Run_name'])        
 
-        if not init.yaml_file['Misc']['HPC']:
-            self.start_print(init.yaml_file["Codes"]["Fluid_code"],
-                             init.yaml_file["Codes"]["Kinetic_code"])
+        if not self.init.yaml_file['Misc']['HPC']:
+            self.startprint(self.init.yaml_file["Codes"]["Fluid_code"],
+                             self.init.yaml_file["Codes"]["Kinetic_code"])
 
-        overwrite = init.yaml_file['Misc']['Overwrite']
-        cycles = init.yaml_file['Coupling_params']['Cycles']
+        #Max Cycles
+        cycles = self.init.yaml_file['Coupling_params']['Cycles']
+        
+        #Admin
         continue_step_path = os.path.join(RUN_PATH, 'CONTINUE_STEP.txt') 
-        initialise_all_folders = False
-        #init to none 
+        overwrite = self.init.yaml_file['Misc']['Overwrite']
         pre_heat_fit_params = None
         front_heat_fit_params = None
+        start_cycle = 0
 
-        if init.yaml_file['Misc']['Continue']:
+        if self.init.yaml_file['Misc']['Continue']:
             #Continue in this framework is designed such that
             #a run does not have to fail (for whatever reason) and then continue
             #it will keep going until its objective has been reached which is
@@ -80,105 +81,111 @@ class Coupler:
             #HPC facility failures should just make it continue. 
             if os.path.exists(continue_step_path):
                 start_cycle = np.loadtxt(continue_step_path, dtype=np.int) + 1
-            else:
-                start_cycle = 0
-                initialise_all_folders = True
-                overwrite = True
-        else:
-            initialise_all_folders = True
-            start_cycle = 0
-            overwrite = True
+                overwrite = False
 
         #Create Objects 
         hfct_obj = util.HeatFlowCouplingTools()
         io_obj = util.IO(
-                        init.yaml_file['Paths']['Run_name'],
-                        init.yaml_file['Paths']['Base_dir'], 
-                        init.yaml_file['Paths']['K_src_dir'],
-                        init.yaml_file['Paths']['F_src_dir'], 
-                        init.yaml_file['Paths']['Init_path'],
+                        self.init.yaml_file['Paths']['Run_name'],
+                        self.init.yaml_file['Paths']['Base_dir'], 
+                        self.init.yaml_file['Paths']['K_src_dir'],
+                        self.init.yaml_file['Paths']['F_src_dir'], 
+                        self.init.yaml_file['Paths']['Init_path'],
                         start_cycle, cycles, overwrite)
-
         fluid_obj = HyKiCT(
                             io_obj._run_path, 
                             io_obj._f_src_dir, 
                             io_obj._f_init_path,
-                            init.yaml_file['Paths']['F_config_path'])
+                            self.init.yaml_file['Paths']['F_config_path'])
                          
-        if(init.yaml_file['Codes']['Kinetic_code'] == 'sol_kit'):
+        if(self.init.yaml_file['Codes']['Kinetic_code'] == 'sol_kit'):
             kin_obj = SOL_KIT(
                             io_obj._run_path,
+                            io_obj._k_src_dir,
                             io_obj.kinetic_input_path,
                             io_obj.kinetic_output_path,
-                            io_obj._k_src_dir,
-                            io_obj.cycle_dump_path,
-                            init.yaml_file['Paths']['K_config_path'],
-                            init.yaml_file['Misc']['Convergence_monitoring'],
-                            init.yaml_file['Misc']['HPC'])
+                            self.init.yaml_file['Paths']['K_config_path'],
+                            self.init.yaml_file['Misc']['Convergence_monitoring'],
+                            self.init.yaml_file['Misc']['HPC'])
         #Impact not ready
         # else:
             #kin_obj = IMPACT()
         
-        #Create Folders and set paths for first cycle
+        #Create Folders
+        #Has implicit checks on whether to create folder again or not
+        #REVIEW if overwrite is removes exes 
         io_obj.createDirectoryOfOperation()
-        io_obj.nextCyclePathManager()
-
         #Enforce equal size ... Constrain at the moment
-        kin_obj.init.yaml_file['Params']['Nx'] = init.yaml_file['Coupling_params']['Nx']
-        fluid_obj.init.yaml_file['FixedParameters']['nx'] = init.yaml_file['Coupling_params']['Nx']
+        kin_obj.init.yaml_file['Params']['Nx'] = self.init.yaml_file['Coupling_params']['Nx']
+        fluid_obj.init.yaml_file['FixedParameters']['nx'] = self.init.yaml_file['Coupling_params']['Nx']
 
-        #For restarting/continue
-        #The copying could in principal be removed. 
-        #Output directory just self-consistent this way.
-        if start_cycle == 0:
-            copy_tree(init.yaml_file['Paths']['Init_path'], io_obj.fluid_input_path)
-            np.savetxt(os.path.join(RUN_PATH, 'NO_CYCLES.txt'), np.array([cycles - 1]), fmt = '%i' )       
+        #Store original fluid yaml
+        self.original_f_init = fluid_obj.init.yaml_file
+        #modify original to represent run mode
+        self.original_f_init['Switches']['CoupleDivQ'] = self.init.yaml_file['Coupling_params']['Couple_divq']
+        self.original_f_init['Switches']['CoupleMulti'] = self.init.yaml_file['Coupling_params']['Couple_multi']
+
+        #initially fluid should always be run in no couple mode.
+        #Has checks if continue mode is engaged
+        if(start_cycle == 0):
+            fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = False
+            fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = False
+            if self.init.yaml_file['Coupling_params']['Start_from_kinetic']:
+                fluid_obj.init.yaml_file['TimeParameters']['steps'] = 0
+                fluid_obj.init.yaml_file['TimeParameters']['t_max'] = 0
         
-        #Specific to HyKiCT
-        f_nt = fluid_obj.init.yaml_file['TimeParameters']['steps'] 
-        f_tmax = fluid_obj.init.yaml_file['TimeParameters']['t_max']
-        #Initially fluid should always be run in no couple mode.
-        fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = False
-        fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = False
-        if init.yaml_file['Coupling_params']['Start_from_kinetic']:
-            fluid_obj.init.yaml_file['TimeParameters']['steps'] = 0
-            fluid_obj.init.yaml_file['TimeParameters']['t_max'] = 0
-
+        #Coupling loop
         for cycle_no in range(start_cycle, cycles, 1):
-            self.pretty_print(' RUNNING CYCLE ' + str(cycle_no)) 
+            self.prettyPrint(' RUNNING CYCLE ' + str(cycle_no)) 
+            #Update Paths
+            io_obj.cycle_counter = cycle_no
+            io_obj.nextCyclePathManager()
+            kin_obj.cycle_dump_path = io_obj.cycle_dump_path
+            fluid_obj.cycle_dump_path = io_obj.cycle_dump_path
 
+            #For restarting/continue
+            #The copying could in principal be removed. 
+            #Output directory just self-consistent this way.
+            if cycle_no == 0:
+                copy_tree(self.init.yaml_file['Paths']['Init_path'], io_obj.fluid_input_path)
+                np.savetxt(os.path.join(RUN_PATH, 'NO_CYCLES.txt'), np.array([cycles - 1]), fmt = '%i' )       
+        
             if cycle_no >= 1:
                 #Update paths
-                io_obj.cycle_counter = cycle_no
-                io_obj.nextCyclePathManager()
-                kin_obj._cycle_path = io_obj.cycle_dump_path
-                fluid_obj._cycle_path = io_obj.cycle_dump_path
                 #Engage coupling 
-                if(init.yaml_file['Coupling_params']['Couple_adapative']):
-                    if(pre_heat_start_index > 0 and front_heat_start_index >0):
-                        fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = True #init.yaml_file['Coupling_params']['Couple_divq']
-                        fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = False #init.yaml_file['Coupling_params']['Couple_multi']
-                        fluid_obj.init.yaml_file['TimeParameters']['steps'] = f_nt
-                        fluid_obj.init.yaml_file['TimeParameters']['t_max'] = f_tmax
+                if(self.init.yaml_file['Coupling_params']['Couple_adapative']):
+                    if(pre_heat_start_index > 0 and front_heat_start_index > 0):
+                        k_physical_time = kin_obj.getPhysicalRunTime()
+                        f_run_time = k_physical_time / 10 #10 phemenlogically determined 
+                        if(f_run_time < fluid_obj.init.yaml_file['TimeParameters']['Dt']):
+                            f_dt = fluid_obj.init.yaml_file['TimeParameters']['Dt'] / 100 #100 here an arbitary choice
+                        else:
+                            f_dt = fluid_obj.init.yaml_file['TimeParameters']['Dt']
+                        
+                        fluid_obj.init.yaml_file['TimeParameters']['steps'] = 0
+                        fluid_obj.init.yaml_file['TimeParameters']['t_max'] = f_run_time
+                        fluid_obj.init.yaml_file['TimeParameters']['Dt'] = f_dt
+                        fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = True 
+                        fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = False 
                     else:
-                        fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = init.yaml_file['Coupling_params']['Couple_divq']
-                        fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = init.yaml_file['Coupling_params']['Couple_multi']
-                #Reset fluid config with its actual values.
-                if init.yaml_file['Coupling_params']['Start_from_kinetic']:
-                    fluid_obj.init.yaml_file['TimeParameters']['steps'] = f_nt
-                    fluid_obj.init.yaml_file['TimeParameters']['t_max'] = f_tmax
-            
+                        fluid_obj.init.yaml_file = self.original_f_init
+
+                if self.init.yaml_file['Coupling_params']['Start_from_kinetic']:
+                    if(self.init.yaml_file['Coupling_params']['Coupling_adapative']):
+                        pass
+                    else:
+                        fluid_obj.init.yaml_file = self.original_f_init
             ###########
             #Fluid Step
             ###########
             #In this example running HyKiCT
-            self.pretty_print(' RUNNING ' + init.yaml_file['Codes']['Fluid_code'], color = True)
+            self.prettyPrint(' RUNNING ' + self.init.yaml_file['Codes']['Fluid_code'], color = True)
             #Set Paths that change
             fluid_obj.init.yaml_file['Paths']['Init_Path'] = io_obj.fluid_input_path
             fluid_obj.init.yaml_file['Paths']['Out_Path'] = io_obj.fluid_output_path
             fluid_obj._cycle_dump_path = io_obj.cycle_dump_path
             fluid_obj._fluid_output_path = io_obj.fluid_output_path
-            fluid_obj._init_file_path = io_obj.fluid_input_path
+            fluid_obj.init_file_path = io_obj.fluid_input_path
             ################
             #Any other parameter updates that needs to be set can be added here.
             #################
@@ -187,7 +194,7 @@ class Coupler:
 
             #Breaks here ... Last cycle allowed to run hydro step
             if cycle_no == cycles - 1:
-                if init.yaml_file['Misc']['Zip']:
+                if self.init.yaml_file['Misc']['Zip']:
                     io_obj.zipAndDelete()        
                 break 
 
@@ -197,10 +204,10 @@ class Coupler:
             #Kinetic Step
             #############
             #Set any parameter ifles
-            #Init all load in files form hydro
+            #self.init all load in files form hydro
             #RUN
             #Move files if neccessary
-            self.pretty_print(' RUNNING ' + init.yaml_file['Codes']['Kinetic_code'], color = True)
+            self.prettyPrint(' RUNNING ' + self.init.yaml_file['Codes']['Kinetic_code'], color = True)
             if cycle_no == 0:
                 #input and output unchanged 
                 kin_obj.setFiles()
@@ -209,7 +216,7 @@ class Coupler:
             kin_obj._kinetic_output_path = io_obj.kinetic_output_path
             kin_obj._cycle_dump_path = io_obj.cycle_dump_path
             
-            kin_obj.InitFromHydro(fluid_x_grid, fluid_x_centered_grid, 
+            kin_obj.initFromHydro(fluid_x_grid, fluid_x_centered_grid, 
                                 fluid_Te, fluid_ne, fluid_Z)
             kin_obj.Run()
             
@@ -222,7 +229,7 @@ class Coupler:
             #the _ are unused variables fluid_v and fluid_laser, for future
             #use these may be required and thus, left in. 
 
-            #Init heat_flow_tools here 
+            #self.init heat_flow_tools here 
             hfct_obj.electron_temperature = fluid_Te
             hfct_obj.electron_number_density = fluid_ne
             hfct_obj.zbar = fluid_Z
@@ -236,11 +243,11 @@ class Coupler:
                                 hfct_obj.zbar)
             hfct_obj.spitzerHarmHeatFlow()
 
-            if init.yaml_file['Coupling_params']['Couple_divq']:
+            if self.init.yaml_file['Coupling_params']['Couple_divq']:
                 #qe here is div.q_vfp 
                 qe = hfct_obj.divQHeatFlow()
             
-            elif init.yaml_file['Coupling_params']['Couple_multi']:
+            elif self.init.yaml_file['Coupling_params']['Couple_multi']:
                 #qe here is q_vfp/q_sh
                 (qe, pre_heat_start_index, pre_heat_last_index,
                 pre_heat_fit_params, front_heat_start_index, 
@@ -251,10 +258,10 @@ class Coupler:
                 fluid_obj.init.yaml_file['FixedParameters']['Frontheat_StartIndex'] = front_heat_start_index.item()
                 fluid_obj.init.yaml_file['FixedParameters']['Frontheat_LastIndex'] = front_heat_last_index.item()
 
-            if init.yaml_file['Misc']['Zip']:
+            if self.init.yaml_file['Misc']['Zip']:
                 io_obj.zipAndDelete()        
             
-            #Finish by init next set of files 
+            #Finish by fluid init next set of files 
             fluid_obj.initHydroFromKinetic(io_obj.next_fluid_input_path, qe,
                                             pre_heat_fit_params, front_heat_fit_params)
             

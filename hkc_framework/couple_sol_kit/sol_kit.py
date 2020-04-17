@@ -37,8 +37,8 @@ BOHR_RADIUS = constants.value("Bohr radius")
 
 class SOL_KIT(Kinetic):
     
-    def __init__(self,run_path, kinetic_input_path, kinetic_output_path,
-                 k_src_dir, cycle_dump_path, k_config_yml_file_path, convergence_monitoring, cx1 = False):
+    def __init__(self,run_path, k_src_dir, kinetic_input_path, kinetic_output_path,
+                k_config_yml_file_path, convergence_monitoring = False, cx1 = False):
         
         # config_yml_file_path = os.path.join(
         #                         pathlib.Path(__file__).parent.absolute(),
@@ -58,7 +58,7 @@ class SOL_KIT(Kinetic):
         self._kinetic_output_path = kinetic_output_path
         self._kinetic_input_path = kinetic_input_path
         self._kinetic_src_dir = k_src_dir
-        self._cycle_dump_path = cycle_dump_path
+        self.cycle_dump_path = ""
         
         self._sol_kit_input_path = os.path.join(self._run_path, 'INPUT')
         self._sol_kit_output_path = os.path.join(self._run_path, 'OUTPUT')
@@ -125,9 +125,13 @@ class SOL_KIT(Kinetic):
             cmd = ["mpirun", "-np", str(self._np), "./SOL-KiT"]
 
         heat_flow_path = os.path.join(self._run_path, 'OUTPUT/HEAT_FLOW_X/')
-        super().Execute(cmd, self._cycle_dump_path, self.convergence_monitoring,
+        super().Execute(cmd, self.cycle_dump_path, self.convergence_monitoring,
                         heat_flow_path, convergance_test, self.init.yaml_file['Params']['Nx'])
     
+    def getPhysicalRunTime(self):
+        step = self.init.yaml_file['Params']['Nt'] 
+        dt = self.init.yaml_file['Params']['Dt']
+        return(dt * step * self.normalised_values['tau_ei']) 
 
     def normalisation(self):
         """ Purpose: Calculates SOL-KiT Normalisation
@@ -179,37 +183,6 @@ class SOL_KIT(Kinetic):
             LOGIC: TO copy sol-kit or not.
         """
         shutil.copy(self._kinetic_src_dir + '/SOL-KiT', self._run_path)
-        
-        # OUTPUT_path = os.path.join(self._run_path, "OUTPUT")
-        # if not os.path.exists(OUTPUT_path):
-        #     os.mkdir(OUTPUT_path)
-        #     os.mkdir(os.path.join(OUTPUT_path, 'ATOMIC_EN_TEST'))
-        #     os.mkdir(os.path.join(OUTPUT_path, 'CURRENT_TEST'))
-        #     os.mkdir(os.path.join(OUTPUT_path, 'DEEX_E_RATE'))
-        #     os.mkdir(os.path.join(OUTPUT_path, 'DENSITY'))
-        #     os.mkdir(os.path.join(OUTPUT_path, 'DIST_F'))
-        #     os.mkdir(os.path.join(OUTPUT_path, 'E_FIELD_X'))
-        #     os.mkdir(os.path.join(OUTPUT_path, 'EX_E_RATE'))
-        #     os.mkdir(os.path.join(OUTPUT_path, 'FLOW_VEL_X'))
-        #     os.mkdir(os.path.join(OUTPUT_path, 'GRIDS'))
-        #     os.mkdir(os.path.join(OUTPUT_path, 'HEAT_FLOW_X'))
-        #     os.mkdir(os.path.join(OUTPUT_path, 'HEAT_FLOW_X_TOT'))
-        #     os.mkdir(os.path.join(OUTPUT_path, 'ION_DENS'))
-        #     os.mkdir(os.path.join(OUTPUT_path, 'ION_VEL'))
-        #     os.mkdir(os.path.join(OUTPUT_path, 'NEUTRAL_DENS'))
-        #     os.mkdir(os.path.join(OUTPUT_path, 'NUM_DV_HEATING'))
-        #     os.mkdir(os.path.join(OUTPUT_path, 'QN_TEST'))
-        #     os.mkdir(os.path.join(OUTPUT_path, 'RAD_DEEX_E_RATE'))
-        #     os.mkdir(os.path.join(OUTPUT_path, 'RAD_REC_E_RATE'))
-        #     os.mkdir(os.path.join(OUTPUT_path, 'REC_3B_E_RATE'))
-        #     os.mkdir(os.path.join(OUTPUT_path, 'S_ION_M'))
-        #     os.mkdir(os.path.join(OUTPUT_path, 'SH_q_ratio'))
-        #     os.mkdir(os.path.join(OUTPUT_path, 'SHEAT_DATA'))
-        #     os.mkdir(os.path.join(OUTPUT_path, 'TEMPERATURE'))
-        #     os.mkdir(os.path.join(OUTPUT_path, 'TIMESTEP_DATA'))
-        #     os.mkdir(os.path.join(OUTPUT_path, 'TOT_DENS_DATA'))
-        #     #copy_tree(self._src_dir + '/OUTPUT/', OUTPUT_path)
-
 
     def setFiles(self):
         """ Purpose: Set all neccessary SOL-KiT Files: Switches, norms, tolerances, grid_input
@@ -298,7 +271,7 @@ class SOL_KIT(Kinetic):
                         if not var_txt.name.startswith('.') and var_txt.is_file():
                             os.unlink(var_txt.path)
         
-    def InitFromHydro(self, f_x_grid, f_x_centered_grid, f_te, f_ne, f_z, f_laser = 0, f_rad = 0):
+    def initFromHydro(self, f_x_grid, f_x_centered_grid, f_te, f_ne, f_z, f_laser = 0, f_rad = 0):
         """ Purpose: Initilise all SOL-KiT load in files from HYDRO
         Here the SOL-KiT specifics are done, SOL-KiT requires quantities to be defined at all 
         points on the grid. Whereas, the fluid quantities passed are not. 

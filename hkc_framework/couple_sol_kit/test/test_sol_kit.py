@@ -14,14 +14,15 @@ class TestSOLKiT():
     def test_run(self, tmpdir):
         src_dir = os.environ["K_SRC_DIR"]
         p = tmpdir.mkdir('cycle')
-        k_obj = SOL_KIT(p, p, p, src_dir, p, k_config_yml_file_path= myPath + '/test_run_dir/config.yml')
+        k_obj = SOL_KIT(p,src_dir, p, p,  k_config_yml_file_path= myPath + '/test_run_dir/config.yml')
+        k_obj.cycle_dump_path = tmpdir
         with pytest.raises(SystemExit):
             k_obj.Run()
 
     def test_set(self, tmpdir): 
         src_dir = os.environ["K_SRC_DIR"]
         p = tmpdir.mkdir('cycle')
-        k_obj = SOL_KIT(p, p, p, src_dir, p, k_config_yml_file_path= myPath + '/test_run_dir/config.yml')
+        k_obj = SOL_KIT(p,src_dir, p, p,  k_config_yml_file_path= myPath + '/test_run_dir/config.yml')
         k_obj.setFiles()
         assert os.path.exists(os.path.join(p, 'INPUT/GRID_INPUT.txt'))
         assert os.path.exists(os.path.join(p, 'INPUT/NORMALIZATION_INPUT.txt'))
@@ -33,7 +34,7 @@ class TestSOLKiT():
     def test_init(self, tmpdir):
         src_dir = os.environ["K_SRC_DIR"]
         p = tmpdir.mkdir('cycle')
-        k_obj = SOL_KIT(p, p, p, src_dir, p, k_config_yml_file_path= myPath + '/test_run_dir/config.yml')
+        k_obj = SOL_KIT(p,src_dir, p, p,  k_config_yml_file_path= myPath + '/test_run_dir/config.yml')
         k_obj.setFiles()
         f_x_grid = np.linspace(0, 100, 101)
         f_x_centered_grid = np.array([(f_x_grid[i + 1] + f_x_grid[i]) / 2 for i in range(len(f_x_grid) - 1)])
@@ -42,7 +43,7 @@ class TestSOLKiT():
         f_z = np.linspace(0, 100, 100)
         f_laser = 0
         f_rad = 0
-        k_obj.InitFromHydro(f_x_grid, f_x_centered_grid, f_te, f_ne, f_z, f_laser, f_rad)
+        k_obj.initFromHydro(f_x_grid, f_x_centered_grid, f_te, f_ne, f_z, f_laser, f_rad)
         init_density = np.loadtxt(os.path.join(p, 'INPUT/DENS_INPUT.txt')) * k_obj.normalised_values['ne']
         init_Te = np.loadtxt(os.path.join(p, 'INPUT/TEMPERATURE_INPUT.txt'))* k_obj.normalised_values['Te'] * (ELEMENTARY_CHARGE/BOLTZMANN_CONSTANT)
         init_Z = np.loadtxt(os.path.join(p, 'INPUT/Z_PROFILE_INPUT.txt'))
@@ -58,8 +59,8 @@ class TestSOLKiT():
         cycle_dump_path = tmpdir.mkdir('kinetic/')
         kinetic_output = cycle_dump_path.mkdir("OUTPUT")
         kinetic_input = cycle_dump_path.mkdir("INPUT")
-        k_obj = SOL_KIT(run_path, str(kinetic_input), str(kinetic_output), src_dir,
-                         cycle_dump_path, k_config_yml_file_path= myPath + '/test_run_dir/config.yml')
+        k_obj = SOL_KIT(run_path, src_dir, str(kinetic_input), str(kinetic_output),
+                          k_config_yml_file_path= myPath + '/test_run_dir/config.yml')
         k_obj.setFiles()
         k_obj.moveFiles()
         assert os.path.exists(os.path.join(cycle_dump_path, 'INPUT'))
@@ -75,8 +76,8 @@ class TestSOLKiT():
         cycle_dump_path = tmpdir.mkdir('kinetic/')
         kinetic_output = cycle_dump_path.mkdir("OUTPUT")
         kinetic_input = cycle_dump_path.mkdir("INPUT")
-        k_obj = SOL_KIT(run_path, str(kinetic_input), str(kinetic_output), src_dir,
-                         cycle_dump_path, k_config_yml_file_path= myPath + '/test_run_dir/config.yml')
+        k_obj = SOL_KIT(run_path, src_dir, str(kinetic_input), str(kinetic_output), 
+                         k_config_yml_file_path= myPath + '/test_run_dir/config.yml')
         k_obj.setFiles()
         true_qe = np.random.rand(198)
         np.savetxt(os.path.join(k_obj._sol_kit_output_path, 'HEAT_FLOW_X/HEAT_FLOW_X_01000.txt'), true_qe)
