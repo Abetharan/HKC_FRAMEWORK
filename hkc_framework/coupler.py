@@ -157,14 +157,14 @@ class Coupler:
                     if(pre_heat_start_index > 0 or front_heat_start_index > 0):
                         k_physical_time = kin_obj.getPhysicalRunTime()
                         f_run_time = k_physical_time / 10 #10 phemenlogically determined 
-                        if(f_run_time < fluid_obj.init.yaml_file['TimeParameters']['Dt']):
-                            f_dt = fluid_obj.init.yaml_file['TimeParameters']['Dt'] / 100 #100 here an arbitary choice
+                        if(f_run_time < fluid_obj.init.yaml_file['TimeParameters']['dt']):
+                            f_dt = fluid_obj.init.yaml_file['TimeParameters']['dt'] / 100 #100 here an arbitary choice
                         else:
-                            f_dt = fluid_obj.init.yaml_file['TimeParameters']['Dt']
+                            f_dt = fluid_obj.init.yaml_file['TimeParameters']['dt']
                         
                         fluid_obj.init.yaml_file['TimeParameters']['steps'] = 0
                         fluid_obj.init.yaml_file['TimeParameters']['t_max'] = f_run_time
-                        fluid_obj.init.yaml_file['TimeParameters']['Dt'] = f_dt
+                        fluid_obj.init.yaml_file['TimeParameters']['dt'] = f_dt
                         fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = True 
                         fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = False 
                     else:

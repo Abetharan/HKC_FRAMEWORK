@@ -137,16 +137,10 @@ class HeatFlowCouplingTools:
             Returns: Div.Q
             NOTE: ONLY WORKS FOR SAME GRIDS
         """
-        nx = len(self.vfp_heat)
-        HeatConductionE = np.zeros(len(self.mass))
-        #Heat flow from SOL-KiT includes celll walla and cell centre.
-        #Thus, step in 2s for 1 to 1 grid. Change if higher resolution grid of SOL-KiT is used.
-        # |.|.|.| 
-        step = 2
-        j = 0
-        for i in range(0, nx, step):   
-            HeatConductionE[j] = (-(self.vfp_heat[i + step] - self.vfp_heat[i]) / self.mass[j])
-            j += 1
+        nx = len(self.vfp_heat) 
+        HeatConductionE = np.zeros(nx - 1)
+        for i, m in enumerate(self.mass):
+            HeatConductionE[i] = (-(self.vfp_heat[i + 1] - self.vfp_heat[i])) / m
         return(HeatConductionE)
     
     def _detectAnamalousHeat(self):

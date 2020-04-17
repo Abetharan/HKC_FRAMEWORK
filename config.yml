@@ -13,8 +13,8 @@ Coupling_params:
   Nx: 60
   Cycles: 4
   Couple_divq : false
-  Couple_multi : false
-  Couple_adapative : true
+  Couple_multi : true
+  Couple_adapative : false
   Start_from_kinetic: false 
 Misc:
   Convergence_monitoring : false
