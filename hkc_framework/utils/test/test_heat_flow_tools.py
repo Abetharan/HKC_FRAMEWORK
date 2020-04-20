@@ -49,6 +49,7 @@ class TestHFCT():
                             hfct_obj.electron_temperature,
                             hfct_obj.zbar)
         hfct_obj.spitzerHarmHeatFlow()
+        hfct_obj.vfp_heat = hfct_obj.spitzer_harm_heat
         calc_div_q_heat = hfct_obj.divQHeatFlow()
         true_div_q = np.loadtxt(os.path.join(myPath, 'test_spitzer_harm/ELECTRON_HEAT_CONDUCTION/ELECTRON_HEAT_CONDUCTION_1.txt'))
 

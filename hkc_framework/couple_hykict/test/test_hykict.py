@@ -12,7 +12,7 @@ class TestHyKiCT():
         src_dir = os.environ["F_SRC_DIR"]
         p = tmpdir.mkdir('cycle')
         f_obj = HyKiCT(run_path=p,f_src_dir = src_dir, f_config_yml_file_path= myPath + "/test_run_dir/config.yml")
-        f_obj._cycle_dump_path = p
+        f_obj.cycle_dump_path = p
         with pytest.raises(SystemExit):
             f_obj.Run()
 

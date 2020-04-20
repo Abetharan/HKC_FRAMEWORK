@@ -92,6 +92,10 @@ class Coupler:
                         self.init.yaml_file['Paths']['F_src_dir'], 
                         self.init.yaml_file['Paths']['Init_path'],
                         start_cycle, cycles, overwrite)
+        #Create Folders
+        #Has implicit checks on whether to create folder again or not
+        io_obj.createDirectoryOfOperation()
+        
         fluid_obj = HyKiCT(
                             io_obj._run_path, 
                             io_obj._f_src_dir, 
@@ -111,10 +115,6 @@ class Coupler:
         # else:
             #kin_obj = IMPACT()
         
-        #Create Folders
-        #Has implicit checks on whether to create folder again or not
-        #REVIEW if overwrite is removes exes 
-        io_obj.createDirectoryOfOperation()
         #Enforce equal size ... Constrain at the moment
         kin_obj.init.yaml_file['Params']['Nx'] = self.init.yaml_file['Coupling_params']['Nx']
         fluid_obj.init.yaml_file['FixedParameters']['nx'] = self.init.yaml_file['Coupling_params']['Nx']
