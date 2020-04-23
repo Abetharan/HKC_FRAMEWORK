@@ -1,12 +1,94 @@
+import io
+import logging
+import os
 import subprocess
 import sys
-import io
-import os
 import threading
 import time
 import numpy as np 
 
 class Kinetic():
+
+    def convergenceMonitoring(self, log_path, kinetic_heat_flow_output_folder_path, convergence_func, nx, stop_event):
+        """  
+        Purpose: Function which the daemon i.e. thread is constantly doing.. checking for conergence
+        Args:
+            proc : subprocess that needs to be terminated once convergence has been achieved. 
+            log_path : path to output log file 
+            monitor_on : if maintaining f_0 only available with SOL-KiT a daemon is spawned to
+                        monitor if q/q_sh is converged and kill SOL-KiT prior to its natural end time.
+            kinetic_heat_flow_output_folder_path_path : Path to where heat flow is output by SOL-KiT
+            convergence_func : function that calculates convergance values i.e. q/q_sh
+            nx : number of cell-centrs.
+        """
+        logging.basicConfig(filename=os.path.join(log_path, "Monitoring_debug.log"),
+                            filemode='a',level=logging.DEBUG,
+                            format='(%(threadName)-10s) %(message)s',
+                            )
+        logging.debug('Starting')
+        #Path to heat flow
+        convergance = 10
+        file_counter = 0
+        time.sleep(10)
+        multipliers = np.zeros(nx + 1)
+        #stop_event can be set internally once convergenced has been reached 
+        # or externally to kill the daemon if the alloted time in the 
+        # subprocess has been reached. 
+        while not stop_event.set():
+            heat_flows = os.listdir(kinetic_heat_flow_output_folder_path)
+            new_file_counter = len(heat_flows)
+            #Last Heat 
+            if new_file_counter == 0:
+                latest_heat_flow_path = ''
+            else:
+                latest_heat_flow_path = os.path.join(kinetic_heat_flow_output_folder_path,
+                                                    heat_flows[-1])
+                logging.info(latest_heat_flow_path)
+            if(os.path.exists(latest_heat_flow_path) and not heat_flows[-1].startswith('.')  
+                and new_file_counter != file_counter):
+                
+                if os.access(latest_heat_flow_path, os.R_OK):
+                    #routine
+                    logging.info("read safe")
+                    logging.info("survived?")
+                    curr_multipliers = convergence_func(latest_heat_flow_path)
+                    #Possible occurence where files is read safe but nothing has been written to it.
+                    if(len(curr_multipliers) > 0):
+                        continue                   
+                    multipliers = np.vstack((multipliers, curr_multipliers))
+                    logging.info("New multipliers")
+                    logging.info(multipliers)
+                else:
+                    continue
+
+            if len(np.shape(multipliers)) >= 2:
+                if np.shape(multipliers)[0] >= 3:
+                    multipliers = np.delete(multipliers, 0, 0)
+                if np.shape(multipliers)[0] >= 2:
+                    convergance = abs(np.array(multipliers[0, :]) -
+                                    np.array(multipliers[1, : ]))
+                    convergance[np.isnan(convergance)] = 0
+                    convergance[np.isinf(convergance)] = 0
+            logging.info("Convergence: ")
+            logging.info(multipliers)
+            if np.nanmax(convergance) < 1e-3 and np.nanmax(convergance) != 0:
+                self.__process.terminate()
+                logging.info("Converged ....Exiting")
+                stop_event.set()
+
+            #Update file counter
+            file_counter = new_file_counter
+            logging.info(file_counter)
+        
+        logging.info("Killing thread")
+
+    def launchKinetic(self, cmd, log_path):
+        filename = log_path + '/k_test.log'
+        with io.open(filename, 'wb') as writer:
+            #run command provided
+            self.__process = subprocess.Popen(cmd, stdout=writer, stderr = subprocess.PIPE)
+            _, self.__err = self.__process.communicate()
+
     def Execute(self, cmd, log_path, monitor_on,  kinetic_heat_flow_output_folder_path, convergence_func, nx):
         """  
         Purpose: Launch the command relevant to kinetic code specified, if maintain 
@@ -22,87 +104,42 @@ class Kinetic():
             nx : number of cell-centrs.
         """
        
-        def ConvergenceMonitoring(proc, kinetic_heat_flow_output_folder_path, convergence_func, nx):
-            """  
-            Purpose: Function which the daemon i.e. thread is constantly doing.. checking for conergence
-            Args:
-                proc : subprocess that needs to be terminated once convergence has been achieved. 
-                log_path : path to output log file 
-                monitor_on : if maintaining f_0 only available with SOL-KiT a daemon is spawned to
-                            monitor if q/q_sh is converged and kill SOL-KiT prior to its natural end time.
-                kinetic_heat_flow_output_folder_path_path : Path to where heat flow is output by SOL-KiT
-                convergence_func : function that calculates convergance values i.e. q/q_sh
-                nx : number of cell-centrs.
-            """
-            #Path to heat flow
-            convergance = 10
-            file_counter = 0
-            time.sleep(10)
-            multipliers = np.zeros(nx + 1) 
-
-            while True:
-                heat_flows = os.listdir(kinetic_heat_flow_output_folder_path)
-                new_file_counter = len(heat_flows)
-                #Last Heat 
-                if new_file_counter == 0:
-                    latest_heat_flow_path = ''
-                else:
-                    latest_heat_flow_path = os.path.join(kinetic_heat_flow_output_folder_path,
-                                                         heat_flows[-1])
-                
-                if(os.path.exists(latest_heat_flow_path) 
-                    and not heat_flows[-1].startswith('.')  
-                    and new_file_counter != file_counter):
-                    
-                    if os.access(latest_heat_flow_path, os.R_OK):
-                        #routine
-                        curr_multipliers = convergence_func(latest_heat_flow_path)
-                        #Possible occurence where files is read safe but nothing has been written to it.
-                        if(len(curr_multipliers) > 0):
-                            continue                   
-                        multipliers = np.vstack((multipliers, curr_multipliers))
-                    else:
-                        continue
-
-                if len(np.shape(multipliers)) >= 2:
-                    if np.shape(multipliers)[0] >= 3:
-                        multipliers = np.delete(multipliers, 0, 0)
-                    if np.shape(multipliers)[0] >= 2:
-                        convergance = abs(np.array(multipliers[0, :]) -
-                                         np.array(multipliers[1, : ]))
-                        convergance[np.isnan(convergance)] = 0
-                        convergance[np.isinf(convergance)] = 0
-
-                if np.nanmax(convergance) < 1e-3 and np.nanmax(convergance) != 0:
-                    proc.terminate()
-                    break
-
-                #Update file counter
-                file_counter = new_file_counter
-
             
         ##Relevant stuff to create logs 
+        ##Spawn a thread which runs convergencemonitoring function. 
+        #Specifeid to be a daemon such that if the program sys exits due to one of the code
+        #throws an error the daemon is automatically killed.
+        # kinetic_thread = threading.Thread(name = "kinetic", target=self.launchKinetic,
+        #                                 args = (cmd, log_path))
+                    
         filename = log_path + '/k_test.log'
         with io.open(filename, 'wb') as writer:
             #run command provided
-            process = subprocess.Popen(cmd, stdout=writer, stderr = subprocess.PIPE)
-            _, err = process.communicate()
-            ##Spawn a thread which runs convergencemonitoring function. 
-            #Specifeid to be a daemon such that if the program sys exits due to one of the code
-            #throws an error the daemon is automatically killed.
-            if monitor_on:
-                monitor = threading.Thread(target=ConvergenceMonitoring, args = (process,
-                            kinetic_heat_flow_output_folder_path, convergence_func, nx),
-                            daemon = True)
-                monitor.start()
+            self.__process = subprocess.Popen(cmd, stdout=writer, stderr = subprocess.PIPE)
+            _, self.__err = self.__process.communicate()
+        if monitor_on:
+            stop_event = threading.Event()
+            monitor = threading.Thread(name = "Convergence_Monitoring", 
+                        target=self.convergenceMonitoring, args = 
+                        (log_path, kinetic_heat_flow_output_folder_path, convergence_func, nx, stop_event),
+                        daemon = True)
+            monitor.start()
 
-            #prints stdout to terminal
-            # while process.poll() is None:
-            #     sys.stdout.write(reader.read().decode('utf-8'))
+        #Kill the daemon thread if process is finished    
+        # poll = self.__process.poll()
+        # print("kill thread")
+        # print(poll)
+        # if poll is not None:
+        #     print("kill thread")
+        #     stop_event.set()
+            # print("kill thread")
+        #prints stdout to terminal
+        # while process.poll() is None:
+        #     sys.stdout.write(reader.read().decode('utf-8'))
 
-            # # Read the remaining
-            # sys.stdout.write(reader.read().decode('utf-8'))
+        # # Read the remaining
+        # sys.stdout.write(reader.read().decode('utf-8'))
 
-            if err:
-                print("Kinetic code failed see log")
-                sys.exit(0)
+        if self.__err:
+            print("Kinetic code failed see log")
+            sys.exit(0)

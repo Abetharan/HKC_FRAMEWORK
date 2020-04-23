@@ -17,8 +17,8 @@ Coupling_params:
   Couple_adapative: false
   Start_from_kinetic: false 
 Misc:
-  Convergence_monitoring: false
+  Convergence_monitoring: true
   Zip: false
   Continue: false
   HPC: false
-  Overwrite: false
+  Overwrite: true
