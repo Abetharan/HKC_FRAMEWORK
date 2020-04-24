@@ -20,6 +20,7 @@ class Kinetic():
         self.monitor_convergence = convergence_monitoring
         self.nx = 0
         self.cmd = cmd
+        self.converged = False
 
     def convergenceMonitoring(self, kinetic_heat_flow_output_folder_path,  stop_event):
         """  
@@ -83,8 +84,9 @@ class Kinetic():
                     logging.info("Convergence: ")
                     logging.info(convergance)
 
-                if np.nanmax(convergance) < 1e-3 and np.nanmax(convergance) != 0:
+                if np.nanmax(convergance) < 5e-3 and np.nanmax(convergance) != 0:
                     self.clean_up()
+                    self.converged = True
                     logging.info("Converged ....Exiting")
                     stop_event.set()
                 #Update file counter
@@ -140,6 +142,6 @@ class Kinetic():
         if self.__process.poll() is not None and self.monitor_convergence:
             stop_event.set()
 
-        if err:
+        if err and not self.converged:
             print("Kinetic code failed see log")
             sys.exit(0)
