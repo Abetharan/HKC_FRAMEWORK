@@ -11,9 +11,11 @@ Params:
   Np: 1
   Dt: 0.001
   Dx: 0.5
+  Dv: 0.0307
+  Dv_multi: 1.015
+  Nt: 10000
   Dv: 0.05
   Dv_multi: 1.01
-  Nt: 100
   Pre_step_nt: 0
   Pre_step_dt: 0.001
   L_max: 1
