@@ -155,7 +155,7 @@ class Coupler:
             if cycle_no >= 1:
                 #Update paths
                 #Engage coupling 
-                if(self.init.yaml_file['Coupling_params']['Couple_adapative']):
+                if(self.init.yaml_file['Coupling_params']['Couple_adaptive']):
                     if(pre_heat_start_index > 0 or front_heat_start_index > 0):
                         k_physical_time = kin_obj.getPhysicalRunTime()
                         f_run_time = k_physical_time / 10 #10 phemenlogically determined 
@@ -173,7 +173,7 @@ class Coupler:
                         fluid_obj.init.yaml_file = self.original_f_init
 
                 if self.init.yaml_file['Coupling_params']['Start_from_kinetic']:
-                    if(self.init.yaml_file['Coupling_params']['Coupling_adapative']):
+                    if(self.init.yaml_file['Coupling_params']['Couple_adaptive']):
                         pass
                     else:
                         fluid_obj.init.yaml_file = self.original_f_init
@@ -254,7 +254,7 @@ class Coupler:
                 qe = hfct_obj.divQHeatFlow()
             
             elif (self.init.yaml_file['Coupling_params']['Couple_multi'] or 
-                    self.init.yaml_file['Coupling_params']['Couple_adapative']):
+                    self.init.yaml_file['Coupling_params']['Couple_adaptive']):
                 #qe here is q_vfp/q_sh
                 (qe, pre_heat_start_index, pre_heat_last_index,
                 pre_heat_fit_params, front_heat_start_index, 
@@ -262,7 +262,7 @@ class Coupler:
                 #If pre heat or front heat is present, in adapativbe coupling
                 #We utilise div.q coupling to get rid of these fronts.
                 #Otherwise, apply the exponential models. 
-                if(self.init.yaml_file['Coupling_params']['Couple_adapative']):
+                if(self.init.yaml_file['Coupling_params']['Couple_adaptive']):
                     if(pre_heat_start_index > 0 or front_heat_start_index > 0):
                         qe = hfct_obj.divQHeatFlow()
                         pre_heat_fit_params = None

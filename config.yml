@@ -14,7 +14,7 @@ Coupling_params:
   Cycles: 4
   Couple_divq: false
   Couple_multi: true
-  Couple_adapative: false
+  Couple_adaptive: false
   Start_from_kinetic: false 
 Misc:
   Convergence_monitoring: true
