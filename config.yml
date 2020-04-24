@@ -12,10 +12,10 @@ Codes:
 Coupling_params:
   Nx: 63
   Cycles: 2
-  Couple_divq : false
-  Couple_multi : false
-  Couple_adapative : true
-  Start_from_kinetic: true 
+  Couple_divq: false
+  Couple_multi: true
+  Couple_adaptive: false
+  Start_from_kinetic: false 
 Misc:
   Convergence_monitoring: true
   Zip: false
