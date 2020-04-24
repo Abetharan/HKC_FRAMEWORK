@@ -9,6 +9,7 @@ import math
 import numpy as np
 from PIL import Image, ImageFont, ImageDraw
 import os
+import signal
 import shutil
 import utils as util
 from couple_sol_kit.sol_kit import SOL_KIT
@@ -118,6 +119,7 @@ class Coupler:
         #Enforce equal size ... Constrain at the moment
         kin_obj.init.yaml_file['Params']['Nx'] = self.init.yaml_file['Coupling_params']['Nx']
         fluid_obj.init.yaml_file['FixedParameters']['nx'] = self.init.yaml_file['Coupling_params']['Nx']
+        kin_obj.nx = kin_obj.init.yaml_file['Params']['Nx'] 
 
         #Store original fluid yaml
         self.original_f_init = fluid_obj.init.yaml_file
@@ -200,6 +202,22 @@ class Coupler:
 
             (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
             fluid_Z, _, fluid_mass) = fluid_obj.getLastStepQuants()
+            ####################
+            #Init coupling tools
+            ####################
+            #self.init heat_flow_tools here 
+            hfct_obj.electron_temperature = fluid_Te
+            hfct_obj.electron_number_density = fluid_ne
+            hfct_obj.zbar = fluid_Z
+            hfct_obj.cell_wall_coord = fluid_x_grid
+            hfct_obj.cell_centered_coord = fluid_x_centered_grid
+            hfct_obj.mass = fluid_mass
+
+            #Calculate spitzer harm from last step fluid quants
+            hfct_obj.lambda_ei(hfct_obj.electron_temperature, 
+                                hfct_obj.electron_temperature,
+                                hfct_obj.zbar)
+            hfct_obj.spitzerHarmHeatFlow()
             #############
             #Kinetic Step
             #############
@@ -218,6 +236,7 @@ class Coupler:
             
             kin_obj.initFromHydro(fluid_x_grid, fluid_x_centered_grid, 
                                 fluid_Te, fluid_ne, fluid_Z)
+            kin_obj.sh_heat_flow = hfct_obj.spitzer_harm_heat
             kin_obj.Run()
             
             #Set hfct to contain the vfp heat flow to do the neccessary coupling calcs.
@@ -229,19 +248,6 @@ class Coupler:
             #the _ are unused variables fluid_v and fluid_laser, for future
             #use these may be required and thus, left in. 
 
-            #self.init heat_flow_tools here 
-            hfct_obj.electron_temperature = fluid_Te
-            hfct_obj.electron_number_density = fluid_ne
-            hfct_obj.zbar = fluid_Z
-            hfct_obj.cell_wall_coord = fluid_x_grid
-            hfct_obj.cell_centered_coord = fluid_x_centered_grid
-            hfct_obj.mass = fluid_mass
-
-            #Calculate spitzer harm from last step fluid quants
-            hfct_obj.lambda_ei(hfct_obj.electron_temperature, 
-                                hfct_obj.electron_temperature,
-                                hfct_obj.zbar)
-            hfct_obj.spitzerHarmHeatFlow()
 
             if self.init.yaml_file['Coupling_params']['Couple_divq']:
                 #qe here is div.q_vfp 

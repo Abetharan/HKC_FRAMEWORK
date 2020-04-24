@@ -53,6 +53,7 @@ class SOL_KIT(Kinetic):
         #objects
         self.heat_flow_tools = HeatFlowCouplingTools() 
         self.init = Input(k_config_yml_file_path)
+        
         #paths
         self._run_path = run_path
         self._kinetic_output_path = kinetic_output_path
@@ -79,7 +80,6 @@ class SOL_KIT(Kinetic):
         self.normalisation()
 
         self.sh_heat_flow = 0
-        self.mnultipliers = 0
 
         if(self.init.yaml_file['Boundary']['Periodic']):
             self.boundary_condition = "periodic"
@@ -88,6 +88,37 @@ class SOL_KIT(Kinetic):
         else:
             self.boundary_condition = "noflow"
 
+        if self.cx1:
+            cmd = ["mpiexec", "./SOL-KiT"]    
+        else:
+            cmd = ["mpirun", "-np", str(self._np), "./SOL-KiT"]
+        if(convergence_monitoring):
+            Kinetic.__init__(self, cmd, convergence_monitoring, self.convergance_test,
+                                 self._run_path)
+        else:
+            Kinetic.__init__(self, cmd)
+
+    def convergance_test(self, path):
+        
+        """  
+        Purpose: Calculate q/q_sh given a path
+        Args: 
+            path = path to latest output heat flow
+        returns:
+            multipliers = q/q_sh for latest heat flow
+        """
+        
+        #Calculate Spitzer-Harm heat flow first time around
+        kinetic_heat_profile = np.loadtxt(path)
+        #Include first and celll wall for no flow set to 0 per no thermal influx BC = 0 
+        if self.boundary_condition =='noflow':
+            kinetic_heat_profile = np.insert(kinetic_heat_profile, 0, 0.)
+        #Periodic boundary condition removes last cell wall insert back and set to 0 via thermal influc BC
+        kinetic_heat_profile = np.append(kinetic_heat_profile, 0.) * self.normalised_values['qe']
+        multipliers = kinetic_heat_profile[::2] / self.sh_heat_flow
+
+        return multipliers
+
     def Run(self):
         """  
         Purpose: Launch the SOL-KiT
@@ -95,38 +126,9 @@ class SOL_KIT(Kinetic):
                 into memory of daemon. 
         Args:
         """
-        
-        def convergance_test(path):
-            
-            """  
-            Purpose: Calculate q/q_sh given a path
-            Args: 
-                path = path to latest output heat flow
-            returns:
-                multipliers = q/q_sh for latest heat flow
-            """
-            
-            #Calculate Spitzer-Harm heat flow first time around
-            kinetic_heat_profile = np.loadtxt(path)
-            #Include first and celll wall for no flow set to 0 per no thermal influx BC = 0 
-            if self.boundary_condition =='noflow':
-                kinetic_heat_profile = np.insert(kinetic_heat_profile, 0, 0.)
-            #Periodic boundary condition removes last cell wall insert back and set to 0 via thermal influc BC
-            kinetic_heat_profile = np.append(kinetic_heat_profile, 0.) * self.normalised_values['qe']
-            self.multipliers = kinetic_heat_profile[::2] / self.sh_heat_flow
-    
-            return self.multipliers
-
         os.chdir(self._run_path)
-        
-        if self.cx1:
-            cmd = ["mpiexec", "./SOL-KiT"]    
-        else:
-            cmd = ["mpirun", "-np", str(self._np), "./SOL-KiT"]
-
         heat_flow_path = os.path.join(self._run_path, 'OUTPUT/HEAT_FLOW_X/')
-        super().Execute(cmd, self.cycle_dump_path, self.convergence_monitoring,
-                        heat_flow_path, convergance_test, self.init.yaml_file['Params']['Nx'])
+        super().Execute(heat_flow_path)
     
     def getPhysicalRunTime(self):
         step = self.init.yaml_file['Params']['Nt'] 
