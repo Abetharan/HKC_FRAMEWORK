@@ -12,6 +12,7 @@ Codes:
 Coupling_params:
   Nx: 63
   Cycles: 2
+  Eta: 1e-2 #Coupling time for adaptive swithc, t_fluid = eta * t_kinetic
   Couple_divq: false
   Couple_multi: true
   Couple_adaptive: false

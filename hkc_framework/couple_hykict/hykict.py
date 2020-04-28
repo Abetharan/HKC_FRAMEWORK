@@ -83,7 +83,6 @@ class HyKiCT(Fluid):
             pre_params = Pre-Heat fit parameters, default is None.
             front_params = Front-Heat fit parameters, default is None.
         """ 
-
         largest_fluid_index = findLargestIndex(os.path.join(self._fluid_output_path, "ELECTRON_TEMPERATURE"))
         #Properitary names for HyKiCT. Looks for these files when run in coupled mode
         np.savetxt(os.path.join(next_fluid_input_path,"qe.txt"), qe)
