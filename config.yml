@@ -1,22 +1,22 @@
 Paths:
   Run_name: monitoring_check
-  Base_dir: /media/abetharan/DATADRIVE2/Abetharan 
-  K_src_dir: /home/abetharan/SOL-KiT/
-  F_src_dir: /home/abetharan/HyKiCT/build/apps/
-  Init_path: /home/abetharan/HYDRO_KINETIC_COUPLING/ES_Investigation/02_init_data/ 
-  F_config_path: /home/abetharan/HKC_FRAMEWORK/hkc_framework/couple_hykict/config.yml 
-  K_config_path: /home/abetharan/HKC_FRAMEWORK/hkc_framework/couple_sol_kit/config.yml
+  Base_dir: /Users/shiki/Documents/Imperial_College_London/Ph.D./ 
+  K_src_dir: //Users/shiki/Documents/Imperial_College_London/Ph.D./SOL-KiT/
+  F_src_dir: /Users/shiki/Documents/Imperial_College_London/Ph.D./HyKiCT/build/apps/
+  Init_path:  /Users/shiki/Documents/Imperial_College_London/Ph.D./CX1_stuff/test_data/
+  F_config_path: /Users/shiki/Documents/Imperial_College_London/Ph.D./HKC_FRAMEWORK/hkc_framework/couple_hykict/config.yml 
+  K_config_path: /Users/shiki/Documents/Imperial_College_London/Ph.D./HKC_FRAMEWORK/hkc_framework/couple_sol_kit/config.yml
 Codes:
   Kinetic_code: sol_kit
   Fluid_code: hykict
 Coupling_params:
-  Nx: 63
+  Nx: 150
   Cycles: 2
   Eta: 1e-2 #Coupling time for adaptive swithc, t_fluid = eta * t_kinetic
   Couple_divq: false
-  Couple_multi: true
-  Couple_adaptive: false
-  Start_from_kinetic: false 
+  Couple_multi: false
+  Couple_adaptive: true
+  Start_from_kinetic: true 
 Misc:
   Convergence_monitoring: true
   Zip: false

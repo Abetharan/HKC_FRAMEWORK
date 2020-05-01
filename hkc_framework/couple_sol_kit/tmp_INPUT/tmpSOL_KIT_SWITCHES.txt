@@ -59,7 +59,7 @@
          LOCAL_SAHA_BOLTZMANN_INIT_SWITCH =              F     Initialize ionization degree and excited state populations assuming local initial electron density is total density
 
  Restart switches:
-                           RESTART_SWITCH =              F     Initialize function from saved restart point
+                           RESTART_SWITCH =              $RESTART     Initialize function from saved restart point
                       SAVE_RESTART_SWITCH =              T     Save restart point after every timestep
                       CONTINUE_RUN_SWITCH =              F     Continue previous run from saved restart point
                   ADAPTIVE_RESTART_SWITCH =              F     Input restart vector updated for current (larger) number of neutral states and/or harmonics

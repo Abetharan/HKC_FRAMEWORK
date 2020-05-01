@@ -17,6 +17,7 @@ OUTPUT_TEMPERATURE = True,
 OUTPUT_VELOCITY = False,
 OUTPUT_E_FIELD = False,
 OUTPUT_SH_TEST = False,
+RESTART = False
 ):
     params = {
                 'EE0' : str(EE_0)[0],
@@ -35,7 +36,8 @@ OUTPUT_SH_TEST = False,
                 'OT' : str(OUTPUT_TEMPERATURE)[0],
                 'OV' : str(OUTPUT_VELOCITY)[0],
                 'OE' : str(OUTPUT_E_FIELD)[0],
-                'OSH': str(OUTPUT_SH_TEST)[0]
+                'OSH': str(OUTPUT_SH_TEST)[0],
+                'RESTART' : str(RESTART)[0]
                 }
     return(params) 
 

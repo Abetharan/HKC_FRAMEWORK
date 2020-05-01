@@ -229,6 +229,8 @@ class Coupler:
             if cycle_no == 0:
                 #input and output unchanged 
                 kin_obj.setFiles()
+            if cycle_no > 0:
+                kin_obj.load_f1 = True
 
             kin_obj._kinetic_input_path = io_obj.kinetic_input_path
             kin_obj._kinetic_output_path = io_obj.kinetic_output_path

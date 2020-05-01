@@ -65,6 +65,7 @@ class SOL_KIT(Kinetic):
         self._sol_kit_output_path = os.path.join(self._run_path, 'OUTPUT')
         
         self.maintain_f0 = self.init.yaml_file['Switches']['f_0_maintain']
+        self.load_f1 = False
         self.convergence_monitoring = convergence_monitoring
         self.normalised_values = None
         self.cx1 = cx1
@@ -216,7 +217,7 @@ class SOL_KIT(Kinetic):
         norms = setparams.NORMS(Z = self._norm_Z, Ar = self._norm_Ar, Density = np.float(self._norm_ne), 
                                 Temp = self._norm_Te)
 
-        switches = setparams.Switches(
+        self.switches = setparams.Switches(
                             EE_0 = self.init.yaml_file['Switches']['Coll_ee_0'] ,
                             EE_L = self.init.yaml_file['Switches']['Coll_ee_l'],
                             EI_L = self.init.yaml_file['Switches']['Coll_ei_l'],
@@ -240,12 +241,12 @@ class SOL_KIT(Kinetic):
         templating(tmpfilePath= os.path.join(self._run_path, 'INPUT/tmpSOL_KIT_NORMS.txt'),
             writePath=self._sol_kit_input_path, fileName="NORMALIZATION_INPUT.txt", parameters=norms)
         templating(tmpfilePath= os.path.join(self._run_path, 'INPUT/tmpSOL_KIT_SWITCHES.txt'),
-            writePath=self._sol_kit_input_path, fileName="SWITCHES_INPUT.txt", parameters=switches)
+            writePath=self._sol_kit_input_path, fileName="SWITCHES_INPUT.txt", parameters=self.switches)
         #remove tmp files
         os.rename(os.path.join(self._sol_kit_input_path, 'tmpSOL_KIT_SOLVER_PARAMS.txt'), os.path.join(self._sol_kit_input_path, 'SOLVER_PARAMS_INPUT.txt'))
         os.remove(os.path.join(self._sol_kit_input_path, 'tmpSOL_KIT_GRID.txt'))
         os.remove(os.path.join(self._sol_kit_input_path, 'tmpSOL_KIT_NORMS.txt'))
-        os.remove(os.path.join(self._sol_kit_input_path, 'tmpSOL_KIT_SWITCHES.txt'))
+        # os.remove(os.path.join(self._sol_kit_input_path, 'tmpSOL_KIT_SWITCHES.txt'))
 
 
     def _SOL_KITNormsToSI(self, var, var_name):
@@ -325,12 +326,22 @@ class SOL_KIT(Kinetic):
         #SOL_KIT_inter_Te = spliner_Te(SOL_KIT_grid)
         #SOL_KIT_inter_Z = spliner_Z(SOL_KIT_grid)
 
-        np.savetxt(os.path.join(self._sol_kit_input_path, "DENS_INPUT.txt"), sol_kit_inter_ne)    
-        np.savetxt(os.path.join(self._sol_kit_input_path, "TEMPERATURE_INPUT.txt"), sol_kit_inter_te)    
-        np.savetxt(os.path.join(self._sol_kit_input_path, "Z_PROFILE_INPUT.txt"), sol_kit_inter_z)    
-        np.savetxt(os.path.join(self._sol_kit_input_path, "X_GRID_INPUT.txt"), sol_kit_grid)
-        # np.savetxt(os.path.join(self._SOL_KIT_INPUT_PATH, "ION_VEL_INPUT.txt"), SOL_KIT_grid)
-        # np.savetxt(os.path.join(self._SOL_KIT_INPUT_PATH, "NEUT_HEAT_INPUT.txt"), SOL_KIT_heating)
+        if self.load_f1:
+            self.switches['RESTART'] = "T"
+            templating(tmpfilePath= os.path.join(self._run_path, 'INPUT/tmpSOL_KIT_SWITCHES.txt'),
+            writePath=self._sol_kit_input_path, fileName="SWITCHES_INPUT.txt", parameters=self.switches)
+            grid_path = os.path.join(self._run_path, "".join["OUTPUT/", "GRID"])
+            v_grid = np.loadtxt(os.path.join(grid_path, "V_GRID.txt"))
+            v_grid_width = np.loadtxt(os.path.join(grid_path, "V_GRID_WIDTH.txt"))
+            self.__initF_0(sol_kit_te, sol_kit_ne, v_grid, v_grid_width)
+            self.__initRestartVector()
+        else:
+            np.savetxt(os.path.join(self._sol_kit_input_path, "DENS_INPUT.txt"), sol_kit_inter_ne)    
+            np.savetxt(os.path.join(self._sol_kit_input_path, "TEMPERATURE_INPUT.txt"), sol_kit_inter_te)    
+            np.savetxt(os.path.join(self._sol_kit_input_path, "Z_PROFILE_INPUT.txt"), sol_kit_inter_z)    
+            np.savetxt(os.path.join(self._sol_kit_input_path, "X_GRID_INPUT.txt"), sol_kit_grid)
+            # np.savetxt(os.path.join(self._SOL_KIT_INPUT_PATH, "ION_VEL_INPUT.txt"), SOL_KIT_grid)
+            # np.savetxt(os.path.join(self._SOL_KIT_INPUT_PATH, "NEUT_HEAT_INPUT.txt"), SOL_KIT_heating)
     
     def getLastHeatFlow(self):
         """ Purpose: Gets the last heat flow from SOL-KiT after run finishes.
@@ -350,7 +361,34 @@ class SOL_KIT(Kinetic):
         
         return self._kinetic_heat_profile[::2] #here we assume heat flow is only defined on cell-walls 
 
+    def __initRestartVector(self):
+        """
+        Purpose: To speed up div.q coupling init the next cycle with previous f_1
+                done by starting from restart instead of loading in parameters. 
+        NOTE:
+        if ion things are included this has to be modified            
+        """
+        num_fields = 1
+        num_h = self.init.yaml_file['Params']['L_max'] + 1
+        num_0d = num_h*self.nv  + num_fields
+        restart_path =  os.path.join(self._run_path, "".join(["INPUT","/","RESTART","/", "VAR_VEC_INPUT.txt"]))
+        restart_vector = np.loadtxt(restart_path)
+        for i in range(self.nx):
+            F_0_POS = i*num_0d + self.nv * (num_h - 1)
+            for v in range(self.nv):
+                restart_vector[F_0_POS] = self.next_f0[i, v]
+        
+        np.savetxt(os.path.join(self._run_path, "".join(["INPUT","/","RESTART","/", "VAR_VEC_INPUT.txt"])), restart_vector)
 
-
-
+    def __initF_0(self, Te, ne, v_grid, v_grid_width ):
+        self.nv = self.init.yaml_file['Params']['Nv'] 
+        self.next_f0 = np.zeros(self.nx, self.nv)
+        f0 = np.zeros(self.nx, self.nv)
+        n_num = np.zeros(self.nx)
+        for i in range(self.nx):
+            for v in range(self.nv):
+                f0[i,v] = ne[i] * ((np.pi * Te[i]) ** (- 3.00/2.00)) * np.exp( - (v_grid[v] ** 2)/ Te[i])
+                n_num[i] = n_num[i] + 4.00 * np.pi * v_grid[v] ** 2 * v_grid_width[v] * f0[i,v]
+            for v in range(self.nv):
+                self.next_f0[i, v] = f0[i,v] * ne[i]/n_num[i]
 
