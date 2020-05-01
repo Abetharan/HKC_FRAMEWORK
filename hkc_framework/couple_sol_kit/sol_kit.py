@@ -60,7 +60,7 @@ class SOL_KIT(Kinetic):
         self._kinetic_input_path = kinetic_input_path
         self._kinetic_src_dir = k_src_dir
         self.cycle_dump_path = ""
-        
+        self.previous_cycle_output_path = ""
         self._sol_kit_input_path = os.path.join(self._run_path, 'INPUT')
         self._sol_kit_output_path = os.path.join(self._run_path, 'OUTPUT')
         
@@ -330,11 +330,13 @@ class SOL_KIT(Kinetic):
             self.switches['RESTART'] = "T"
             templating(tmpfilePath= os.path.join(self._run_path, 'INPUT/tmpSOL_KIT_SWITCHES.txt'),
             writePath=self._sol_kit_input_path, fileName="SWITCHES_INPUT.txt", parameters=self.switches)
-            grid_path = os.path.join(self._run_path, "".join["OUTPUT/", "GRID"])
+            grid_path = os.path.join(self.previous_cycle_output_path, "".join(["GRIDS"]))
             v_grid = np.loadtxt(os.path.join(grid_path, "V_GRID.txt"))
             v_grid_width = np.loadtxt(os.path.join(grid_path, "V_GRID_WIDTH.txt"))
-            self.__initF_0(sol_kit_te, sol_kit_ne, v_grid, v_grid_width)
+            self.interpolated_nx = len(sol_kit_inter_te)
+            self.__initF_0(sol_kit_inter_te, sol_kit_inter_ne, v_grid, v_grid_width)
             self.__initRestartVector()
+
         else:
             np.savetxt(os.path.join(self._sol_kit_input_path, "DENS_INPUT.txt"), sol_kit_inter_ne)    
             np.savetxt(os.path.join(self._sol_kit_input_path, "TEMPERATURE_INPUT.txt"), sol_kit_inter_te)    
@@ -369,23 +371,25 @@ class SOL_KIT(Kinetic):
         if ion things are included this has to be modified            
         """
         num_fields = 1
-        num_h = self.init.yaml_file['Params']['L_max'] + 1
-        num_0d = num_h*self.nv  + num_fields
+        num_h = self.init.yaml_file['Params']['L_max'] + 1 #References grid.f90:404
+        num_0d = num_h*self.nv  + num_fields #References grid.f90:309
         restart_path =  os.path.join(self._run_path, "".join(["INPUT","/","RESTART","/", "VAR_VEC_INPUT.txt"]))
         restart_vector = np.loadtxt(restart_path)
-        for i in range(self.nx):
-            F_0_POS = i*num_0d + self.nv * (num_h - 1)
+        for i in range(self.interpolated_nx):
+            F_0_POS = i*num_0d + self.nv * (num_h - 1) #References f_init.f90:219
             for v in range(self.nv):
-                restart_vector[F_0_POS] = self.next_f0[i, v]
+                restart_vector[F_0_POS + v] = self.next_f0[i, v]
         
-        np.savetxt(os.path.join(self._run_path, "".join(["INPUT","/","RESTART","/", "VAR_VEC_INPUT.txt"])), restart_vector)
-
+        np.savetxt(os.path.join(self._run_path, "".join(["INPUT","/","RESTART","/", "VAR_VEC_INPUT.txt"])),
+                     restart_vector,
+                     fmt ="%22.14e3") #Specific format expected by SOL-KiT
     def __initF_0(self, Te, ne, v_grid, v_grid_width ):
         self.nv = self.init.yaml_file['Params']['Nv'] 
-        self.next_f0 = np.zeros(self.nx, self.nv)
-        f0 = np.zeros(self.nx, self.nv)
-        n_num = np.zeros(self.nx)
-        for i in range(self.nx):
+        self.next_f0 = np.zeros((self.interpolated_nx, self.nv))
+        f0 = np.zeros((self.interpolated_nx, self.nv))
+        n_num = np.zeros(self.interpolated_nx)
+        #Method from f_init.f90:215::227
+        for i in range(self.interpolated_nx):
             for v in range(self.nv):
                 f0[i,v] = ne[i] * ((np.pi * Te[i]) ** (- 3.00/2.00)) * np.exp( - (v_grid[v] ** 2)/ Te[i])
                 n_num[i] = n_num[i] + 4.00 * np.pi * v_grid[v] ** 2 * v_grid_width[v] * f0[i,v]

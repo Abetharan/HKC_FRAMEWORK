@@ -229,13 +229,14 @@ class Coupler:
             if cycle_no == 0:
                 #input and output unchanged 
                 kin_obj.setFiles()
-            if cycle_no > 0:
-                kin_obj.load_f1 = True
 
             kin_obj._kinetic_input_path = io_obj.kinetic_input_path
             kin_obj._kinetic_output_path = io_obj.kinetic_output_path
             kin_obj._cycle_dump_path = io_obj.cycle_dump_path
-            
+            if self.init.yaml_file['Coupling_params']['Load_f1']:
+                if cycle_no > 0:
+                    kin_obj.previous_cycle_output_path = io_obj.preserved_kinetic_output_path[-2] 
+                    kin_obj.load_f1 = True
             kin_obj.initFromHydro(fluid_x_grid, fluid_x_centered_grid, 
                                 fluid_Te, fluid_ne, fluid_Z)
             kin_obj.sh_heat_flow = hfct_obj.spitzer_harm_heat

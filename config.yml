@@ -11,12 +11,13 @@ Codes:
   Fluid_code: hykict
 Coupling_params:
   Nx: 200
-  Cycles: 2
+  Cycles: 10
   Eta: 0.1E-2
   Couple_divq: false
   Couple_multi: false
   Couple_adaptive: true
   Start_from_kinetic: true 
+  Load_f1: true
 Misc:
   Convergence_monitoring: false
   Zip: false
