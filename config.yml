@@ -3,22 +3,22 @@ Paths:
   Base_dir: /Users/shiki/Documents/Imperial_College_London/Ph.D./ 
   K_src_dir: //Users/shiki/Documents/Imperial_College_London/Ph.D./SOL-KiT/
   F_src_dir: /Users/shiki/Documents/Imperial_College_London/Ph.D./HyKiCT/build/apps/
-  Init_path:  /Users/shiki/Documents/Imperial_College_London/Ph.D./CX1_stuff/test_data/
+  Init_path:  /Users/shiki/Documents/Imperial_College_London/Ph.D./CX1_stuff/Longer_Domain_SMOOTHED_PRE_HEAT_RAMP_10000_step/
   F_config_path: /Users/shiki/Documents/Imperial_College_London/Ph.D./HKC_FRAMEWORK/hkc_framework/couple_hykict/config.yml 
   K_config_path: /Users/shiki/Documents/Imperial_College_London/Ph.D./HKC_FRAMEWORK/hkc_framework/couple_sol_kit/config.yml
 Codes:
   Kinetic_code: sol_kit
   Fluid_code: hykict
 Coupling_params:
-  Nx: 150
+  Nx: 200
   Cycles: 2
-  Eta: 1e-2 #Coupling time for adaptive swithc, t_fluid = eta * t_kinetic
+  Eta: 0.1E-2
   Couple_divq: false
   Couple_multi: false
   Couple_adaptive: true
   Start_from_kinetic: true 
 Misc:
-  Convergence_monitoring: true
+  Convergence_monitoring: false
   Zip: false
   Continue: false
   HPC: false
