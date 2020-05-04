@@ -84,7 +84,7 @@ class Kinetic():
                     logging.info("Convergence: ")
                     logging.info(convergance)
 
-                if np.nanmax(convergance) < 5e-6 and np.nanmax(convergance) != 0:
+                if np.nanmax(convergance) < 1e-4 and np.nanmax(convergance) != 0:
                     self.clean_up()
                     self.converged = True
                     logging.info("Converged ....Exiting")
