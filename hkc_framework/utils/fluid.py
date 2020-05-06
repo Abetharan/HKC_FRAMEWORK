@@ -12,7 +12,7 @@ class Fluid():
             runPath = Path to exe looks for reference files
         """
        
-        filename = path + '/f_test.log'
+        filename = path + '/fluid.log'
         with io.open(filename, 'wb') as writer:
             process = subprocess.Popen(cmd, stdout=writer, stderr = subprocess.PIPE)
             _,err = process.communicate()

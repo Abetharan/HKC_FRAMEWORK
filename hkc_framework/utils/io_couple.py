@@ -137,8 +137,25 @@ class IO:
         NOTE: Slightly redundant general method should
             be changed
         """
+        log_path = os.path.join(self._run_path, "Logs")
+        os.makedirs(log_path)
+        log_cycle_paths = []
+        for i in range(self.max_cycle):
+            log_cy_path = os.path.join(log_path, "".join(["CYCLE_",str(i)]))
+            log_cycle_paths.append(log_cy_path)            
+            os.makedirs(log_cy_path)
+
+        for i, cycle_path in enumerate(self.preserved_cycle_path):
+            fluid_log_path = os.path.join(cycle_path, "fluid.log")
+            kinetic_log_path = os.path.join(cycle_path, "kinetic.log")
+            if os.path.exists(fluid_log_path):
+                shutil.move(fluid_log_path, log_cycle_paths[i])
+            if os.path.exists(kinetic_log_path):
+                shutil.move(kinetic_log_path, log_cycle_paths[i])
+
         for cycle_path in self.preserved_cycle_path:
             shutil.rmtree(cycle_path)
+        
 
     def _createHDF5(self):
         """

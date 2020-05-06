@@ -133,7 +133,7 @@ class Kinetic():
             daemon = True)
             monitor.start()
 
-        filename = self.cycle_dump_path + '/k_test.log'
+        filename = self.cycle_dump_path + '/kinetic.log'
         with io.open(filename, 'wb') as writer:
         #run command provided
             self.__process = subprocess.Popen(self.cmd, stdout=writer, stderr = subprocess.PIPE)
