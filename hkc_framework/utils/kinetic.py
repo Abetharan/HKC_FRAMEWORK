@@ -38,7 +38,7 @@ class Kinetic():
                     filemode='a',level=logging.DEBUG,
                     format='(%(threadName)-10s) %(message)s',
                     )
-        logging.debug('Starting')
+        logging.debug('Starting Cycle :')
         logging.info(self.cycle)
         #Path to heat flow
         convergance = 10
@@ -76,7 +76,7 @@ class Kinetic():
                 if len(np.shape(multipliers)) >= 2:
                     if np.shape(multipliers)[0] >= 2:
                         convergance = abs(np.array(multipliers[0, :]) -
-                                        np.array(multipliers[1, : ])) / np.array(multipliers[1,:])
+                                        np.array(multipliers[1, : ])) / np.array(multipliers[0,:])
                         convergance[np.isnan(convergance)] = 0
                         convergance[np.isinf(convergance)] = 0
                         multipliers = np.delete(multipliers, 0, 0)
@@ -84,7 +84,7 @@ class Kinetic():
                     logging.info("Convergence: ")
                     logging.info(convergance)
 
-                if np.nanmax(convergance) < 5e-3 and np.nanmax(convergance) != 0:
+                if np.nanmax(convergance) < 1e-4 and np.nanmax(convergance) != 0:
                     self.clean_up()
                     self.converged = True
                     logging.info("Converged ....Exiting")
