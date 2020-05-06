@@ -296,7 +296,8 @@ class Coupler:
             #update continue file
             np.savetxt(continue_step_path, np.array([cycle_no]), fmt = '%i')
 
-        io_obj.deleteAll()    
+        if self.init.yaml_file['Misc']['HDF5']:
+            io_obj.deleteAll()    
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'Coupling of Hydrodynamic and Kinetic code. The two codes are specified in the input file.')

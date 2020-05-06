@@ -25,8 +25,13 @@ TimeParameters:
       dt_max: 0.1e-15 
       dt_min: 0.1e-9
       t_max: 0
-      steps: 0 #2
+      steps: 20 #2
       cfl: 0.85
+      VolLimit: 0.05
+      RadLimit: 0.1
+      ElectronLimit: 0.005
+      IonLimit: 0.05
+      PVLimit: 0.05
 Limiters:
       heatflxlm: 1.0
       radflxlm: 1.0

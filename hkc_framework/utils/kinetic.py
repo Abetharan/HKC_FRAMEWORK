@@ -13,7 +13,6 @@ class Kinetic():
     def __init__(self, cmd, convergence_monitoring = False, convergence_func = None,
                     thread_log_path = None):
         self.log_path = thread_log_path
-        atexit.register(self.clean_up)
         self.cycle = 0
         self.cycle_dump_path = ""
         self.convergence_func = convergence_func
@@ -136,6 +135,7 @@ class Kinetic():
         filename = self.cycle_dump_path + '/kinetic.log'
         with io.open(filename, 'wb') as writer:
         #run command provided
+            atexit.register(self.clean_up)
             self.__process = subprocess.Popen(self.cmd, stdout=writer, stderr = subprocess.PIPE)
 
         _, err = self.__process.communicate()
