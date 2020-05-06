@@ -4,6 +4,8 @@ Creates folders and retains paths required to couple.
 @author = Abetharan Antony
 Last Update = 25/11/19
 """
+import atexit
+import h5py
 import os
 import shutil
 import string
@@ -12,7 +14,7 @@ from distutils.dir_util import copy_tree
 class IO:
 
     def __init__(self, run_name, base_dir, k_src_dir, f_src_dir, f_init_path,
-                    cycle_counter, max_cycle, overwrite):
+                    cycle_counter, max_cycle, overwrite, use_hdf5 = True):
 
         self._base_dir = base_dir
         self._k_src_dir = k_src_dir
@@ -20,7 +22,7 @@ class IO:
         self._f_src_dir = f_src_dir
         self._f_switch_path = None
         self._f_init_path = f_init_path
-
+        
         self.max_cycle = max_cycle        
         self._run_path = os.path.join(self._base_dir, self._run_name)
         self.cycle_counter = cycle_counter
@@ -30,7 +32,7 @@ class IO:
         self.kinetic_input_path = None
         self.kinetic_output_path = None
         self.next_fluid_input_path = None
-
+        self.__use_hdf5 = use_hdf5
         self.__overwrite_ok = overwrite
         self.preserved_cycle_path = []
         self.preserved_fluid_input_path = []
@@ -120,11 +122,34 @@ class IO:
         self.fluid_output_path, self.kinetic_input_path,
          self.kinetic_output_path)
     
-    def preservePaths(self, unit_test = False):
+    def preservePaths(self):
 
         self.preserved_cycle_path.append(self.cycle_dump_path)
         self.preserved_fluid_input_path.append(self.fluid_input_path)
         self.preserved_fluid_output_path.append(self.fluid_output_path)
         self.preserved_kinetic_input_path.append(self.kinetic_input_path)
         self.preserved_kinetic_output_path.append(self.kinetic_output_path)
-    
+
+    def deleteAll(self):
+        """
+        Purpose: Delete all directories created IF
+                hdf5 file storage is used
+        NOTE: Slightly redundant general method should
+            be changed
+        """
+        for cycle_path in self.preserved_cycle_path:
+            shutil.rmtree(cycle_path)
+
+    def _createHDF5(self):
+        """
+        Purpose: Create hdf5 file
+        """
+        self.hdf5_file = h5py.File(os.path.join(self._run_path,
+                                 "".join([self._run_name, "_Data.hdf5"])), "a")
+        atexit.register(self._closeHDF5)
+
+    def _closeHDF5(self):
+        """
+        Purpose: close the file upon exiting program.
+        """
+        self.hdf5_file.close()

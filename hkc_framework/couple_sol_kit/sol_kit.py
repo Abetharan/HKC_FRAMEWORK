@@ -384,6 +384,14 @@ class SOL_KIT(Kinetic):
                      restart_vector,
                      fmt ="%22.14e3") #Specific format expected by SOL-KiT
     def __initF_0(self, Te, ne, v_grid, v_grid_width ):
+        """
+        Purpose: Init maxwellian f_0 given some parameters
+        Args:
+            Te = Electron Temperature 
+            ne = Number Density
+            v_grid = velocity grid being used, taken from previous sol-kit cycle
+            v_grid_width = width of velocity cells.
+        """
         self.nv = self.init.yaml_file['Params']['Nv'] 
         self.next_f0 = np.zeros((self.interpolated_nx, self.nv))
         f0 = np.zeros((self.interpolated_nx, self.nv))
@@ -395,4 +403,40 @@ class SOL_KIT(Kinetic):
                 n_num[i] = n_num[i] + 4.00 * np.pi * v_grid[v] ** 2 * v_grid_width[v] * f0[i,v]
             for v in range(self.nv):
                 self.next_f0[i, v] = f0[i,v] * ne[i]/n_num[i]
+
+    def storeToHdf5(self, hdf5_file, cycle):
+        """
+        Purpose: Store SOL-KiT in/output to centralised hdf5
+        Args:
+            hdf5_file = h5py file 
+            cycle = cycle number
+        """
+        for folders in (self._kinetic_input_path, self._kinetic_output_path):
+            with os.scandir(folders) as subdir:
+                for var_dir in subdir:
+                    if var_dir.is_dir():
+                        if var_dir.name == "RESTART":
+                            continue
+                        all_files = os.scandir(var_dir.path)
+                        for var_file in all_files:
+                            if not var_file.name.startswith("."):
+                                tmp_read_file = np.loadtxt(var_file.path)
+                                if len(tmp_read_file) > 1:
+                                    hdf5_file.create_dataset("".join(["Cycle_", str(cycle), "/Kinetic_Output/",
+                                                             var_dir.name,"/", os.path.splitext(var_file.name)[0]]),
+                                                            data = tmp_read_file, compression="gzip")
+                                else:
+                                    hdf5_file.create_dataset("".join(["Cycle_", str(cycle),"/Kinetic_Output/",
+                                                             var_dir.name,"/", os.path.splitext(var_file.name)[0]]),
+                                                            data = tmp_read_file)
+                        all_files.close()
+               
+                    if var_dir.is_file():
+                        if var_dir.name.split('_')[0] in ["DENS", "TEMPERATURE", "X", "Z"]:
+                            tmp_read_file = np.loadtxt(var_dir.path)
+                            if len(tmp_read_file) > 1:
+                                hdf5_file.create_dataset("".join(["Cycle_", str(cycle), "/Kinetic_Input/",
+                                                        os.path.splitext(var_dir.name)[0]]),
+                                                        data = tmp_read_file, compression="gzip")
+
 

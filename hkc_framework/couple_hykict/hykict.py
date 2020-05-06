@@ -2,6 +2,7 @@
 Self-consistently runs the Rad-Hydro code HyKiCT
 @author = Abetharan Antony
 """
+import h5py
 import os
 import yaml
 import shutil
@@ -20,7 +21,7 @@ class HyKiCT(Fluid):
 
         self.init = Input(f_config_yml_file_path)
         self._fluid_src_dir = f_src_dir
-        self._init_file_path = f_input_path       
+        self._fluid_input_path = f_input_path       
         self._run_path = run_path
         self._fluid_output_path = "" 
         self.cycle_dump_path = ""
@@ -52,7 +53,10 @@ class HyKiCT(Fluid):
         return(np.loadtxt(os.path.join(self._fluid_output_path,
                  "".join(['TIME/TIME', str(last_index), ".txt"]))))
     def getLastStepQuants(self): 
-
+        """
+        Purpose: Get the last output from hykict ouput
+        Return: Return numpy arrays of all required files
+        """
         last_index = findLargestIndex(os.path.join(self._fluid_output_path, "ELECTRON_TEMPERATURE"))
         f_x_grid = np.loadtxt(os.path.join(self._fluid_output_path, 
                             "".join(["CELL_WALL_X/CELL_WALL_X_", str(last_index), ".txt"])), dtype = np.float64)
@@ -69,7 +73,7 @@ class HyKiCT(Fluid):
 #legacy        # f_brem = np.loadtxt(self._fluid_output_path + "BREM/BREM_" + str(last_index) + ".txt")
         f_Z = np.loadtxt(os.path.join(self._fluid_output_path,
                "".join(["ZBAR/ZBAR_", str(last_index), ".txt"])), dtype = np.float64)
-        mass = np.loadtxt(self._init_file_path + "/mass.txt")        
+        mass = np.loadtxt(self._fluid_input_path + "/mass.txt")        
         
         return(f_x_grid, f_x_centered_grid, f_v, f_ne, f_Te, f_Z, f_laser, mass)
     
@@ -107,9 +111,39 @@ class HyKiCT(Fluid):
                                         ,os.path.join(next_fluid_input_path,"electron_temperature.txt"))
         shutil.copyfile(os.path.join(self._fluid_output_path + "ION_TEMPERATURE/ION_TEMPERATURE_" + str(largest_fluid_index) +".txt")
                                         ,os.path.join(next_fluid_input_path,"ion_temperature.txt"))
-        shutil.copyfile(os.path.join(self._init_file_path + "mass.txt")
+        shutil.copyfile(os.path.join(self._fluid_input_path + "mass.txt")
                                         ,os.path.join(next_fluid_input_path,"mass.txt"))
-        shutil.copyfile(os.path.join(self._init_file_path + "Z.txt")
+        shutil.copyfile(os.path.join(self._fluid_input_path + "Z.txt")
                                         ,os.path.join(next_fluid_input_path, "Z.txt"))
-        shutil.copyfile(os.path.join(self._init_file_path + "Ar.txt")  
+        shutil.copyfile(os.path.join(self._fluid_input_path + "Ar.txt")  
                                     ,os.path.join(next_fluid_input_path, "Ar.txt"))
+
+    def storeToHdf5(self, hdf5_file, cycle):
+        """
+        Purpose: Store HyKiCT in/output to centralised hdf5
+        Args:
+            hdf5_file = h5py file 
+            cycle = cycle number
+        """
+        for folders in (self._fluid_input_path, self._fluid_output_path):
+            with os.scandir(folders) as subdir:
+                for var_dir in subdir:
+                    if var_dir.is_dir():
+                        with os.scandir(var_dir.path) as all_files:
+                            for var_file in all_files:
+                                if not var_file.name.startswith("."):
+                                    tmp_read_file = np.loadtxt(var_file.path)
+                                    if var_dir.name != "TIME":
+                                        hdf5_file.create_dataset("".join(["Cycle_", str(cycle), 
+                                                                        "/Fluid_Output/", var_dir.name,"/",
+                                                                        os.path.splitext(var_file.name)[0]]),
+                                                                data = tmp_read_file, compression="gzip")
+                                    else:
+                                        hdf5_file.create_dataset("".join(["Cycle_", str(cycle), 
+                                                                        "/Fluid_Output/", var_dir.name,"/",
+                                                                        os.path.splitext(var_file.name)[0]]),
+                                                                data = tmp_read_file)
+                    if var_dir.is_file():
+                        tmp_read_file = np.loadtxt(var_dir.path)
+                        hdf5_file.create_dataset("".join(["Cycle_", str(cycle), "/Fluid_Input/", var_dir.name]),
+                                                data = tmp_read_file, compression="gzip")

@@ -19,6 +19,7 @@ Coupling_params:
   Start_from_kinetic: true 
   Load_f1: true
 Misc:
+  HDF5: true
   Convergence_monitoring: false
   Zip: false
   Continue: false

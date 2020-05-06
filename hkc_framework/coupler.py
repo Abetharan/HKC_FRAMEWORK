@@ -96,6 +96,9 @@ class Coupler:
         #Create Folders
         #Has implicit checks on whether to create folder again or not
         io_obj.createDirectoryOfOperation()
+
+        if self.init.yaml_file['Misc']['HDF5']:
+            io_obj._createHDF5()
         
         fluid_obj = HyKiCT(
                             io_obj._run_path, 
@@ -177,6 +180,7 @@ class Coupler:
                         pass
                     else:
                         fluid_obj.init.yaml_file = self.original_f_init
+          
             ###########
             #Fluid Step
             ###########
@@ -187,7 +191,7 @@ class Coupler:
             fluid_obj.init.yaml_file['Paths']['Out_Path'] = io_obj.fluid_output_path
             fluid_obj._cycle_dump_path = io_obj.cycle_dump_path
             fluid_obj._fluid_output_path = io_obj.fluid_output_path
-            fluid_obj.init_file_path = io_obj.fluid_input_path
+            fluid_obj._fluid_input_path = io_obj.fluid_input_path
             ################
             #Any other parameter updates that needs to be set can be added here.
             #################
@@ -202,6 +206,7 @@ class Coupler:
 
             (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
             fluid_Z, _, fluid_mass) = fluid_obj.getLastStepQuants()
+         
             ####################
             #Init coupling tools
             ####################
@@ -218,6 +223,7 @@ class Coupler:
                                 hfct_obj.electron_temperature,
                                 hfct_obj.zbar)
             hfct_obj.spitzerHarmHeatFlow()
+         
             #############
             #Kinetic Step
             #############
@@ -245,6 +251,7 @@ class Coupler:
             #Set hfct to contain the vfp heat flow to do the neccessary coupling calcs.
             hfct_obj.vfp_heat= kin_obj.getLastHeatFlow()
             kin_obj.moveFiles()
+          
             ##############
             #Coupling Step
             ##############
@@ -277,15 +284,19 @@ class Coupler:
                     fluid_obj.init.yaml_file['FixedParameters']['Frontheat_StartIndex'] = front_heat_start_index.item()
                     fluid_obj.init.yaml_file['FixedParameters']['Frontheat_LastIndex'] = front_heat_last_index.item()
             
-            if self.init.yaml_file['Misc']['Zip']:
-                io_obj.zipAndDelete()        
-            
             #Finish by fluid init next set of files 
             fluid_obj.initHydroFromKinetic(io_obj.next_fluid_input_path, qe,
                                             pre_heat_fit_params, front_heat_fit_params)
             
+            if self.init.yaml_file['Misc']['HDF5']:
+                fluid_obj.storeToHdf5(io_obj.hdf5_file, cycle_no)
+                kin_obj.storeToHdf5(io_obj.hdf5_file, cycle_no)
+            if self.init.yaml_file['Misc']['Zip']:
+                io_obj.zipAndDelete()        
             #update continue file
             np.savetxt(continue_step_path, np.array([cycle_no]), fmt = '%i')
+
+        io_obj.deleteAll()    
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'Coupling of Hydrodynamic and Kinetic code. The two codes are specified in the input file.')
