@@ -13,9 +13,9 @@ Coupling_params:
   Nx: 63
   Cycles: 3
   Eta: 0.1E-2
-  Couple_divq: false
+  Couple_divq: true
   Couple_multi: false
-  Couple_adaptive: true
+  Couple_adaptive: false
   Start_from_kinetic: true 
   Load_f1: true
 Misc:

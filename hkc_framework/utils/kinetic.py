@@ -35,9 +35,9 @@ class Kinetic():
         """
         logging.basicConfig(filename=os.path.join(self.log_path, "Monitoring_debug.log"),
                     filemode='a',level=logging.DEBUG,
-                    format='(%(threadName)-10s) %(message)s',
+                    format='(%(threadName)-10s) %(asctime)s  %(message)s',
                     )
-        logging.debug('Starting Cycle :')
+        logging.info('Starting Cycle :')
         logging.info(self.cycle)
         #Path to heat flow
         convergance = 10
@@ -57,18 +57,15 @@ class Kinetic():
             #Last Heat 
             if(os.path.exists(sorted_heat_flows[-1].path)
                 and new_file_counter != file_counter):
-                
+                logging.info('Latest path') 
                 logging.info(sorted_heat_flows[-1].path)
                 if os.access(sorted_heat_flows[-1].path, os.R_OK):
-                    logging.info("Reading latest")
                     curr_multipliers = self.convergence_func(sorted_heat_flows[-1].path)
                     #Possible occurence where files is read safe but nothing has been written to it.
                     if(len(curr_multipliers) <= 0):
-                        logging.info("Read safe.. No Content")
+                        logging.warning("Read safe.. No Content")
                         continue                   
                     multipliers = np.vstack((multipliers, curr_multipliers))
-                    logging.info("New multipliers")
-                    logging.info(multipliers)
                 else:
                     continue
 
@@ -81,11 +78,12 @@ class Kinetic():
                         multipliers = np.delete(multipliers, 0, 0)
 
                     logging.info("Convergence: ")
-                    logging.info(convergance)
+                    logging.info(np.nanmax(convergance))
 
-                if np.nanmax(convergance) < 1e-4 and np.nanmax(convergance) != 0:
+                if np.nanmax(convergance) < 1e-3 and np.nanmax(convergance) != 0:
                     self.clean_up()
                     self.converged = True
+                    time.sleep(0.5)
                     logging.info("Converged ....Exiting")
                     stop_event.set()
                 #Update file counter
@@ -94,7 +92,7 @@ class Kinetic():
         
         #Kill thread on exit
         self.cycle+=1
-        logging.info("Killing thread")
+        logging.warning("Killing thread")
 
     def clean_up(self):
         try:

@@ -4,6 +4,7 @@ Heat-Flow coupling between Hydro and Kinetic codes.
 @author = Abetharan Antony
 """
 import argparse
+import copy
 from distutils.dir_util import copy_tree
 import math
 import numpy as np
@@ -125,7 +126,7 @@ class Coupler:
         kin_obj.nx = kin_obj.init.yaml_file['Params']['Nx'] 
 
         #Store original fluid yaml
-        self.original_f_init = fluid_obj.init.yaml_file
+        self.original_f_init = copy.deepcopy(fluid_obj.init.yaml_file)
         #modify original to represent run mode
         self.original_f_init['Switches']['CoupleDivQ'] = self.init.yaml_file['Coupling_params']['Couple_divq']
         self.original_f_init['Switches']['CoupleMulti'] = self.init.yaml_file['Coupling_params']['Couple_multi']
