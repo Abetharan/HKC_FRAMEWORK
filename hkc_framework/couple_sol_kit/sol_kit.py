@@ -71,6 +71,7 @@ class SOL_KIT(Kinetic):
         self.cx1 = cx1
         self._np = self.init.yaml_file['Params']['Np'] 
 
+        self.l_max = self.init.yaml_file['Params']['L_max']
         self._norm_Te = float(self.init.yaml_file['Norms']['Te'])
         self._norm_Z = float(self.init.yaml_file['Norms']['Z'])
         self._norm_Ar = float(self.init.yaml_file['Norms']['Ar'])
@@ -335,6 +336,7 @@ class SOL_KIT(Kinetic):
             v_grid_width = np.loadtxt(os.path.join(grid_path, "V_GRID_WIDTH.txt"))
             self.interpolated_nx = len(sol_kit_inter_te)
             self.__initF_0(sol_kit_inter_te, sol_kit_inter_ne, v_grid, v_grid_width)
+            self.__Dist_F()
             self.__initRestartVector()
 
         else:
@@ -363,26 +365,60 @@ class SOL_KIT(Kinetic):
         
         return self._kinetic_heat_profile[::2] #here we assume heat flow is only defined on cell-walls 
 
-    def __initRestartVector(self):
+    def __initRestartVector(self, f_L = None, e_field = None):
         """
         Purpose: To speed up div.q coupling init the next cycle with previous f_1
                 done by starting from restart instead of loading in parameters. 
+        Args:
+            f_L = An array of shape (L_max, nx, nv) defaults to None
+            e_field = Electric field shape (nx,)
         NOTE:
         if ion things are included this has to be modified            
+        
+        Vector follows this (f_lmax(x_k), f_lmax-1(x_k), f_0(x_k), E(x_k))
+        Where all v's are positionated at every point
         """
+        max_index = findLargestIndex(os.path.join(self.previous_cycle_output_path,
+                                                 "OUTPUT/HEAT_FLOW_X")) 
         num_fields = 1
-        num_h = self.init.yaml_file['Params']['L_max'] + 1 #References grid.f90:404
+        l_max = self.init.yaml_file['Params']['L_max']
+        num_h =  l_max + 1 #References grid.f90:404
         num_0d = num_h*self.nv  + num_fields #References grid.f90:309
         restart_path =  os.path.join(self._run_path, "".join(["INPUT","/","RESTART","/", "VAR_VEC_INPUT.txt"]))
-        restart_vector = np.loadtxt(restart_path)
-        for i in range(self.interpolated_nx):
-            F_0_POS = i*num_0d + self.nv * (num_h - 1) #References f_init.f90:219
-            for v in range(self.nv):
-                restart_vector[F_0_POS + v] = self.next_f0[i, v]
+        restart_vector = np.zeros(self.interpolated_nx * self.nv * self.l_max + self.nx)
+        for l in range(1, l_max):
+            E_path = os.path.join(self.previous_cycle_output_path,
+                                    "".join(["KINETIC_OUTPUT/E_FIELD_X/E_FIELD_X_",
+                                    str(max_index).zfill(5), '.txt']))
+            e_field = np.loadtxt(E_path)
+            for i in range(self.interpolated_nx):
+                F_L_POS = i * num_0d + self.nv * (l_max - l)
+                #F_0_POS = i * num_0d + self.nv * (num_h - 1) #References f_init.f90:219
+                E_POS = i*num_0d + self.nv * num_h + 1
+                restart_vector[E_POS] = e_field[i]
+                for v in range(self.nv):
+                    restart_vector[F_L_POS + v] = self.__Dist_F[l, v, i]
+                    #restart_vector[F_0_POS + v] = self.next_f0[i, v]
         
         np.savetxt(os.path.join(self._run_path, "".join(["INPUT","/","RESTART","/", "VAR_VEC_INPUT.txt"])),
                      restart_vector,
                      fmt ="%22.14e3") #Specific format expected by SOL-KiT
+    
+    def __initFVector(self):
+        max_index = findLargestIndex(os.path.join(self.previous_cycle_output_path,
+                                                 "OUTPUT/HEAT_FLOW_X")) 
+        self.__Dist_F = np.zeros(self.l_max, self.nv, self.nx)
+
+        for l in range(0, self.l_max + 1):
+            if l == 0:
+                dist_f = self.next_f0
+            else:
+                f_l_path = os.path.join(self.previous_cycle_output_path,
+                                    "".join(["KINETIC_OUTPUT/DIST_F/", "F_L  ", str(l),
+                                    "_", str(max_index).zfill(5), '.txt']))
+                dist_f = np.loadtxt(f_l_path)
+            self.__Dist_F[l, :, :] = dist_f
+
     def __initF_0(self, Te, ne, v_grid, v_grid_width ):
         """
         Purpose: Init maxwellian f_0 given some parameters
