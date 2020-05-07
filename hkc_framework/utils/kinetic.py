@@ -83,7 +83,7 @@ class Kinetic():
                 if np.nanmax(convergance) < 1e-3 and np.nanmax(convergance) != 0:
                     self.clean_up()
                     self.converged = True
-                    time.sleep(0.5)
+                    time.sleep(1)
                     logging.info("Converged ....Exiting")
                     stop_event.set()
                 #Update file counter
