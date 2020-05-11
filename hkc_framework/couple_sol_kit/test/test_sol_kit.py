@@ -85,3 +85,37 @@ class TestSOLKiT():
         true_qe = np.append(true_qe, 0) * k_obj.normalised_values['qe']
         qe = k_obj.getLastHeatFlow()
         assert true_qe[::2] == pytest.approx(qe)
+    
+    
+    @pytest.mark.parametrize("test_input", [(1), (2), (5)])
+    def test_initRestart(self ,test_input, tmpdir):
+        src_dir = os.environ["K_SRC_DIR"]
+        run_path = tmpdir.mkdir('cycle')
+        cycle_dump_path = tmpdir.mkdir('kinetic/')
+        kinetic_output = cycle_dump_path.mkdir("OUTPUT")
+        kinetic_input = cycle_dump_path.mkdir("INPUT")
+        restart_input = kinetic_input.mkdir("RESTART")
+        k_obj = SOL_KIT(run_path, src_dir, str(kinetic_input), str(kinetic_output), 
+                         k_config_yml_file_path= myPath + '/Load_f_tests/config.yml')
+        k_obj.setFiles()
+        k_obj.l_max = test_input
+        f_path = os.path.join(myPath, "Load_f_tests/init_data/FLUID_OUTPUT/")
+        f_x_grid = np.loadtxt(os.path.join(f_path, "CELL_WALL_X/CELL_WALL_X_0.txt"))
+        f_x_centered_grid = np.loadtxt(os.path.join(f_path, "CELL_CENTRE_X/CELL_CENTRE_X_0.txt"))
+        f_te = np.loadtxt(os.path.join(f_path, "ELECTRON_TEMPERATURE/ELECTRON_TEMPERATURE_0.txt"))
+        f_ne = np.loadtxt(os.path.join(f_path, "ELECTRON_NUMBER_DENSITY/ELECTRON_NUMBER_DENSITY_0.txt"))
+        f_z = np.loadtxt(os.path.join(f_path, "ZBAR/ZBAR_0.txt"))
+        k_obj.previous_kinetic_output_path = os.path.join(myPath, "".join(
+                                            ["Load_f_tests/init_data/kin_output/L_",
+                                            str(test_input),"/KINETIC_OUTPUT/"]))
+        k_obj.load_f1 = True
+        k_obj.initFromHydro(f_x_grid, f_x_centered_grid, 
+                                f_te, f_ne, f_z)
+        true_restart_vector = np.loadtxt(os.path.join(myPath,"".join(["Load_f_tests/f_",
+                                                    str(test_input), "_VAR_VEC_INPUT.txt"])))
+        assert(len(true_restart_vector) == len(k_obj.restart_vector))
+        difference = abs((true_restart_vector - k_obj.restart_vector))
+        args = difference.argsort()[-3:][::-1]
+        print(args)
+        print(difference[args])
+        assert(np.nanmax(difference) < 1e-15)

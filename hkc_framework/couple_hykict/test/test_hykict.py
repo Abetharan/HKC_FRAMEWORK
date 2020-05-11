@@ -24,7 +24,7 @@ class TestHyKiCT():
         output_path = myPath + "/test_last_step/OUTPUT/"
         input_path = myPath + "/test_last_step/INPUT/"
         f_obj._fluid_output_path = output_path
-        f_obj._init_file_path = input_path
+        f_obj._fluid_input_path = input_path
          
         (f_x_grid, f_x_centered_grid, f_v, 
         f_ne, f_Te, f_Z, f_laser, mass) = f_obj.getLastStepQuants()
@@ -49,7 +49,7 @@ class TestHyKiCT():
         output_path = myPath + "/test_last_step/OUTPUT/"
         input_path = myPath + "/test_last_step/INPUT/"
         f_obj._fluid_output_path = output_path
-        f_obj._init_file_path = input_path
+        f_obj._fluid_input_path = input_path
 
         f_obj.initHydroFromKinetic(tmpdir, qe, qe, qe)
         true_x = np.loadtxt(os.path.join(output_path, 'CELL_WALL_X/CELL_WALL_X_1.txt'))

@@ -60,7 +60,7 @@ class SOL_KIT(Kinetic):
         self._kinetic_input_path = kinetic_input_path
         self._kinetic_src_dir = k_src_dir
         self.cycle_dump_path = ""
-        self.previous_cycle_output_path = ""
+        self.previous_kinetic_output_path = ""
         self._sol_kit_input_path = os.path.join(self._run_path, 'INPUT')
         self._sol_kit_output_path = os.path.join(self._run_path, 'OUTPUT')
         
@@ -331,12 +331,12 @@ class SOL_KIT(Kinetic):
             self.switches['RESTART'] = "T"
             templating(tmpfilePath= os.path.join(self._run_path, 'INPUT/tmpSOL_KIT_SWITCHES.txt'),
             writePath=self._sol_kit_input_path, fileName="SWITCHES_INPUT.txt", parameters=self.switches)
-            grid_path = os.path.join(self.previous_cycle_output_path, "".join(["GRIDS"]))
+            grid_path = os.path.join(self.previous_kinetic_output_path, "".join(["GRIDS"]))
             v_grid = np.loadtxt(os.path.join(grid_path, "V_GRID.txt"))
             v_grid_width = np.loadtxt(os.path.join(grid_path, "V_GRID_WIDTH.txt"))
             self.interpolated_nx = len(sol_kit_inter_te)
             self.__initF_0(sol_kit_inter_te, sol_kit_inter_ne, v_grid, v_grid_width)
-            self.__Dist_F()
+            self.__initFVector()
             self.__initRestartVector()
 
         else:
@@ -378,46 +378,49 @@ class SOL_KIT(Kinetic):
         Vector follows this (f_lmax(x_k), f_lmax-1(x_k), f_0(x_k), E(x_k))
         Where all v's are positionated at every point
         """
-        max_index = findLargestIndex(os.path.join(self.previous_cycle_output_path,
-                                                 "OUTPUT/HEAT_FLOW_X")) 
+        max_index = findLargestIndex(os.path.join(self.previous_kinetic_output_path,
+                                                 "HEAT_FLOW_X")) 
         num_fields = 1
         l_max = self.init.yaml_file['Params']['L_max']
         num_h =  l_max + 1 #References grid.f90:404
         num_0d = num_h*self.nv  + num_fields #References grid.f90:309
-        restart_path =  os.path.join(self._run_path, "".join(["INPUT","/","RESTART","/", "VAR_VEC_INPUT.txt"]))
-        restart_vector = np.zeros(self.interpolated_nx * self.nv * self.l_max + self.nx)
-        for l in range(1, l_max):
-            E_path = os.path.join(self.previous_cycle_output_path,
-                                    "".join(["KINETIC_OUTPUT/E_FIELD_X/E_FIELD_X_",
+        self.restart_vector = np.zeros(self.interpolated_nx * self.nv * (self.l_max + 1) + self.interpolated_nx)
+        for l in range(0, l_max + 1):
+            E_path = os.path.join(self.previous_kinetic_output_path,
+                                    "".join(["E_FIELD_X/E_FIELD_X_",
                                     str(max_index).zfill(5), '.txt']))
             e_field = np.loadtxt(E_path)
             for i in range(self.interpolated_nx):
                 F_L_POS = i * num_0d + self.nv * (l_max - l)
                 #F_0_POS = i * num_0d + self.nv * (num_h - 1) #References f_init.f90:219
-                E_POS = i*num_0d + self.nv * num_h + 1
-                restart_vector[E_POS] = e_field[i]
+                E_POS = i * num_0d + self.nv * num_h
+                self.restart_vector[E_POS] = e_field[i]
                 for v in range(self.nv):
-                    restart_vector[F_L_POS + v] = self.__Dist_F[l, v, i]
+                    self.restart_vector[F_L_POS + v] = self._Dist_F[l, i, v]
                     #restart_vector[F_0_POS + v] = self.next_f0[i, v]
         
         np.savetxt(os.path.join(self._run_path, "".join(["INPUT","/","RESTART","/", "VAR_VEC_INPUT.txt"])),
-                     restart_vector,
+                     self.restart_vector,
                      fmt ="%22.14e3") #Specific format expected by SOL-KiT
     
     def __initFVector(self):
-        max_index = findLargestIndex(os.path.join(self.previous_cycle_output_path,
-                                                 "OUTPUT/HEAT_FLOW_X")) 
-        self.__Dist_F = np.zeros(self.l_max, self.nv, self.nx)
+        """
+        Purpose: Creates the F-vector vector in same format as SOL-KiT
+        Sets: self._Dist_F which has shape [l_max, nv, nx]
+        """
+        max_index = findLargestIndex(os.path.join(self.previous_kinetic_output_path,
+                                                 "HEAT_FLOW_X")) 
+        self._Dist_F = np.zeros((self.l_max + 1, self.interpolated_nx, self.nv))
 
         for l in range(0, self.l_max + 1):
             if l == 0:
                 dist_f = self.next_f0
             else:
-                f_l_path = os.path.join(self.previous_cycle_output_path,
-                                    "".join(["KINETIC_OUTPUT/DIST_F/", "F_L  ", str(l),
+                f_l_path = os.path.join(self.previous_kinetic_output_path,
+                                    "".join(["DIST_F/", "F_L  ", str(l),
                                     "_", str(max_index).zfill(5), '.txt']))
-                dist_f = np.loadtxt(f_l_path)
-            self.__Dist_F[l, :, :] = dist_f
+                dist_f = np.loadtxt(f_l_path).transpose()
+            self._Dist_F[l, :, :] = dist_f
 
     def __initF_0(self, Te, ne, v_grid, v_grid_width ):
         """

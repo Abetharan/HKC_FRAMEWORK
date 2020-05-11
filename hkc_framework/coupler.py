@@ -242,7 +242,7 @@ class Coupler:
             kin_obj._cycle_dump_path = io_obj.cycle_dump_path
             if self.init.yaml_file['Coupling_params']['Load_f1']:
                 if cycle_no > 0:
-                    kin_obj.previous_cycle_output_path = io_obj.preserved_kinetic_output_path[-2] 
+                    kin_obj.previous_kinetic_output_path = io_obj.preserved_kinetic_output_path[-2] 
                     kin_obj.load_f1 = True
             kin_obj.initFromHydro(fluid_x_grid, fluid_x_centered_grid, 
                                 fluid_Te, fluid_ne, fluid_Z)
