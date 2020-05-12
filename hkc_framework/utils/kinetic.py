@@ -50,6 +50,9 @@ class Kinetic():
         while not stop_event.is_set():
             all_heat_flower_files = os.scandir(kinetic_heat_flow_output_folder_path)
             heat_flow_only = [f for f in all_heat_flower_files if not f.name.startswith('.')]
+            if len(heat_flow_only) == 0:
+                time.sleep(1)
+                continue
             sorted_heat_flows = sorted(heat_flow_only, 
                                 key = lambda x: int(os.path.splitext(x.name)[0].split('_')[-1]))
 

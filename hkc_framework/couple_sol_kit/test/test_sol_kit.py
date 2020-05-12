@@ -114,8 +114,9 @@ class TestSOLKiT():
         true_restart_vector = np.loadtxt(os.path.join(myPath,"".join(["Load_f_tests/f_",
                                                     str(test_input), "_VAR_VEC_INPUT.txt"])))
         assert(len(true_restart_vector) == len(k_obj.restart_vector))
-        difference = abs((true_restart_vector - k_obj.restart_vector))
+        difference = abs((true_restart_vector - k_obj.restart_vector)/true_restart_vector)
         args = difference.argsort()[-3:][::-1]
         print(args)
         print(difference[args])
+        print(k_obj.restart_vector[-41:])
         assert(np.nanmax(difference) < 1e-15)

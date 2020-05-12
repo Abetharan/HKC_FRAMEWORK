@@ -18,7 +18,7 @@ Params:
   Dv_multi: 1.01
   Pre_step_nt: 0
   Pre_step_dt: 0.001
-  L_max: 5
+  L_max: 3
   Output_freq: 10
 
 Boundary:
