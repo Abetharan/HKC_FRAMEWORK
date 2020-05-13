@@ -117,9 +117,9 @@ class SOL_KIT(Kinetic):
             kinetic_heat_profile = np.insert(kinetic_heat_profile, 0, 0.)
         #Periodic boundary condition removes last cell wall insert back and set to 0 via thermal influc BC
         kinetic_heat_profile = np.append(kinetic_heat_profile, 0.) * self.normalised_values['qe']
-        multipliers = kinetic_heat_profile[::2] / self.sh_heat_flow
+        fluid_heat_profile = kinetic_heat_profile[::2]
 
-        return multipliers
+        return fluid_heat_profile
 
     def Run(self):
         """  

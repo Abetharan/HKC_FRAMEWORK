@@ -54,6 +54,7 @@ class Coupler:
         
         print('\n')   
     
+
     def main(self):
         self.init = util.Input(self.yml_init_file_path)
         RUN_PATH = os.path.join(self.init.yaml_file['Paths']['Base_dir'],
@@ -67,7 +68,7 @@ class Coupler:
         cycles = self.init.yaml_file['Coupling_params']['Cycles']
         
         #Admin
-        continue_step_path = os.path.join(RUN_PATH, 'CONTINUE_STEP.txt') 
+        continue_step_path = os.path.join(RUN_PATH, 'CONTINUE_STEP.txt')
         overwrite = self.init.yaml_file['Misc']['Overwrite']
         pre_heat_fit_params = None
         front_heat_fit_params = None
@@ -125,15 +126,15 @@ class Coupler:
         fluid_obj.init.yaml_file['FixedParameters']['nx'] = self.init.yaml_file['Coupling_params']['Nx']
         kin_obj.nx = kin_obj.init.yaml_file['Params']['Nx'] 
 
+        fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = self.init.yaml_file['Coupling_params']['Couple_divq']
+        fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = self.init.yaml_file['Coupling_params']['Couple_multi']
         #Store original fluid yaml
         self.original_f_init = copy.deepcopy(fluid_obj.init.yaml_file)
         #modify original to represent run mode
-        self.original_f_init['Switches']['CoupleDivQ'] = self.init.yaml_file['Coupling_params']['Couple_divq']
-        self.original_f_init['Switches']['CoupleMulti'] = self.init.yaml_file['Coupling_params']['Couple_multi']
 
         #initially fluid should always be run in no couple mode.
         #Has checks if continue mode is engaged
-        if(start_cycle == 0):
+        if(start_cycle == 0 and not self.init.yaml_file['Coupling_params']['Start_coupled']):
             fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = False
             fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = False
             if self.init.yaml_file['Coupling_params']['Start_from_kinetic']:
@@ -157,10 +158,11 @@ class Coupler:
                 np.savetxt(os.path.join(RUN_PATH, 'NO_CYCLES.txt'), np.array([cycles - 1]), fmt = '%i' )       
         
             if cycle_no >= 1:
-                #Update paths
                 #Engage coupling 
                 if(self.init.yaml_file['Coupling_params']['Couple_adaptive']):
-                    if(pre_heat_start_index > 0 or front_heat_start_index > 0):
+                    if(fluid_obj.init.yaml_file['FixedParameters']['Preheat_StartIndex'] > 0 or
+                        fluid_obj.init.yaml_file['FixedParameters']['Frontheat_StartIndex'] > 0):
+                    
                         k_physical_time = kin_obj.getPhysicalRunTime()
                         f_run_time = k_physical_time * self.init.yaml_file['Coupling_params']['Eta']
                         if(f_run_time < fluid_obj.init.yaml_file['TimeParameters']['dt']):
@@ -175,9 +177,12 @@ class Coupler:
                         fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = False 
                     else:
                         fluid_obj.init.yaml_file = self.original_f_init
+                        fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = False 
+                        fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = True 
 
                 if self.init.yaml_file['Coupling_params']['Start_from_kinetic']:
                     if(self.init.yaml_file['Coupling_params']['Couple_adaptive']):
+                        #Configurations already done above
                         pass
                     else:
                         fluid_obj.init.yaml_file = self.original_f_init
@@ -248,7 +253,6 @@ class Coupler:
                                 fluid_Te, fluid_ne, fluid_Z)
             kin_obj.sh_heat_flow = hfct_obj.spitzer_harm_heat
             kin_obj.Run()
-            
             #Set hfct to contain the vfp heat flow to do the neccessary coupling calcs.
             hfct_obj.vfp_heat= kin_obj.getLastHeatFlow()
             kin_obj.moveFiles()
@@ -258,7 +262,6 @@ class Coupler:
             ##############
             #the _ are unused variables fluid_v and fluid_laser, for future
             #use these may be required and thus, left in. 
-
 
             if self.init.yaml_file['Coupling_params']['Couple_divq']:
                 #qe here is div.q_vfp 
@@ -288,7 +291,6 @@ class Coupler:
             #Finish by fluid init next set of files 
             fluid_obj.initHydroFromKinetic(io_obj.next_fluid_input_path, qe,
                                             pre_heat_fit_params, front_heat_fit_params)
-            
             if self.init.yaml_file['Misc']['HDF5']:
                 fluid_obj.storeToHdf5(io_obj.hdf5_file, cycle_no)
                 kin_obj.storeToHdf5(io_obj.hdf5_file, cycle_no)
@@ -296,7 +298,7 @@ class Coupler:
                 io_obj.zipAndDelete()        
             #update continue file
             np.savetxt(continue_step_path, np.array([cycle_no]), fmt = '%i')
-
+            
         if self.init.yaml_file['Misc']['HDF5']:
             io_obj.deleteAll()    
 

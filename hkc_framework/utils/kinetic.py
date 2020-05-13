@@ -20,7 +20,32 @@ class Kinetic():
         self.nx = 0
         self.cmd = cmd
         self.converged = False
+        self.search_tolerance = 1e-15
+    
+    def convergenceTest(self):
+        """
+        Purpose: Convergence Test being run to monitor heat flow convergence
+        Args:self.convergence_variable_stackiable_stack, has shape (2, nx) contains variable to be tested.
+        Returns: convergence(double)
+        """
 
+        if np.shape(self.convergence_variable_stack)[0] >= 2:
+            comparison_value_index = np.where(self.convergence_variable_stack[1,:] > self.search_tolerance)
+            convergance = (abs(np.array(self.convergence_variable_stack[0, comparison_value_index]) -
+                            np.array(self.convergence_variable_stack[1, comparison_value_index])) /
+                            np.array(self.convergence_variable_stack[0, comparison_value_index]))
+            
+            convergance[np.isnan(convergance)] = 0
+            convergance[np.isinf(convergance)] = 0
+            self.convergence_variable_stack = np.delete(self.convergence_variable_stack, 0, 0)
+        else:
+            convergance = 0
+
+        if np.nanmax(convergance) < 1e-3 and np.nanmax(convergance) != 0:
+            self.converged = True
+
+        return convergance
+ 
     def convergenceMonitoring(self, kinetic_heat_flow_output_folder_path,  stop_event):
         """  
         Purpose: Function which the daemon i.e. thread is constantly doing.. checking for conergence
@@ -43,7 +68,7 @@ class Kinetic():
         convergance = 10
         file_counter = 0
         time.sleep(10)
-        multipliers = np.zeros(self.nx + 1)
+        self.convergence_variable_stack = np.zeros(self.nx + 1)
         #stop_event can be set internally once convergenced has been reached 
         # or externally to kill the daemon if the alloted time in the 
         # subprocess has been reached. 
@@ -63,33 +88,29 @@ class Kinetic():
                 logging.info('Latest path') 
                 logging.info(sorted_heat_flows[-1].path)
                 if os.access(sorted_heat_flows[-1].path, os.R_OK):
-                    curr_multipliers = self.convergence_func(sorted_heat_flows[-1].path)
+                    convergence_variable = self.convergence_func(sorted_heat_flows[-1].path)
                     #Possible occurence where files is read safe but nothing has been written to it.
-                    if(len(curr_multipliers) <= 0):
+                    if(len(convergence_variable) <= 0):
                         logging.warning("Read safe.. No Content")
                         continue                   
-                    multipliers = np.vstack((multipliers, curr_multipliers))
+                    self.convergence_variable_stack = np.vstack((self.convergence_variable_stack, convergence_variable))
                 else:
                     continue
+                
+                if len(np.shape(self.convergence_variable_stack)) >= 2:
+                    convergance = self.convergenceTest()
+                else:
+                    convergance = 0
 
-                if len(np.shape(multipliers)) >= 2:
-                    if np.shape(multipliers)[0] >= 2:
-                        convergance = abs(np.array(multipliers[0, :]) -
-                                        np.array(multipliers[1, : ])) / np.array(multipliers[0,:])
-                        convergance[np.isnan(convergance)] = 0
-                        convergance[np.isinf(convergance)] = 0
-                        multipliers = np.delete(multipliers, 0, 0)
+                logging.info("Convergence: ")
+                logging.info(np.nanmax(convergance))
 
-                    logging.info("Convergence: ")
-                    logging.info(np.nanmax(convergance))
-
-                if np.nanmax(convergance) < 1e-3 and np.nanmax(convergance) != 0:
+                if self.converged:
                     self.clean_up()
-                    self.converged = True
                     time.sleep(5)
                     logging.info("Converged ....Exiting")
                     stop_event.set()
-                #Update file counter
+                    #Update file counter
                 file_counter = new_file_counter
                 logging.info(file_counter)
         
