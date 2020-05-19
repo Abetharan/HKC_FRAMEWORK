@@ -20,7 +20,7 @@ class Kinetic():
         self.nx = 0
         self.cmd = cmd
         self.converged = False
-        self.search_tolerance = 1e-15
+        self.search_tolerance = 1e-16
     
     def convergenceTest(self):
         """
@@ -29,12 +29,25 @@ class Kinetic():
         Returns: convergence(double)
         """
 
+        if all(self.convergence_variable_stack[1, :]  == 0):
+            self.convergence_variable_stack = np.delete(self.convergence_variable_stack, 0, 0)
+            return 0
         if np.shape(self.convergence_variable_stack)[0] >= 2:
             comparison_value_index = np.where(self.convergence_variable_stack[1,:] > self.search_tolerance)
-            convergance = (abs(np.array(self.convergence_variable_stack[0, comparison_value_index]) -
-                            np.array(self.convergence_variable_stack[1, comparison_value_index])) /
-                            np.array(self.convergence_variable_stack[0, comparison_value_index]))
-            
+            if len(np.shape(comparison_value_index)) > 1:
+                convergance = (abs(np.array(self.convergence_variable_stack[0, comparison_value_index[0][0]:comparison_value_index[0][-1]]) -
+                                np.array(self.convergence_variable_stack[1, comparison_value_index[0][0]:comparison_value_index[0][-1]])) /
+                                np.array(self.convergence_variable_stack[0, comparison_value_index[0][0]:comparison_value_index[0][-1]]))
+            else:
+                if comparison_value_index[0] > int(self.nx/2):
+                    convergance = (abs(np.array(self.convergence_variable_stack[0, :comparison_value_index[0][0]]) -
+                                np.array(self.convergence_variable_stack[1, :comparison_value_index[0][0]])) /
+                                np.array(self.convergence_variable_stack[0, :comparison_value_index[0][0]]))
+                else:
+                    convergance = (abs(np.array(self.convergence_variable_stack[0, comparison_value_index[0][0]:]) -
+                                np.array(self.convergence_variable_stack[1, comparison_value_index[0][0]:])) /
+                                np.array(self.convergence_variable_stack[0, comparison_value_index[0][0]:]))
+
             convergance[np.isnan(convergance)] = 0
             convergance[np.isinf(convergance)] = 0
             self.convergence_variable_stack = np.delete(self.convergence_variable_stack, 0, 0)
@@ -80,7 +93,6 @@ class Kinetic():
                 continue
             sorted_heat_flows = sorted(heat_flow_only, 
                                 key = lambda x: int(os.path.splitext(x.name)[0].split('_')[-1]))
-
             new_file_counter = len(sorted_heat_flows)
             #Last Heat 
             if(os.path.exists(sorted_heat_flows[-1].path)

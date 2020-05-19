@@ -23,6 +23,7 @@ class Coupler:
     """
     def __init__(self, init_file_path):
         self.yml_init_file_path = init_file_path
+        self.pre_heat_present = False
         
     def startprint(self, fluid_code, kinetic_code):
 
@@ -160,9 +161,7 @@ class Coupler:
             if cycle_no >= 1:
                 #Engage coupling 
                 if(self.init.yaml_file['Coupling_params']['Couple_adaptive']):
-                    if(fluid_obj.init.yaml_file['FixedParameters']['Preheat_StartIndex'] > 0 or
-                        fluid_obj.init.yaml_file['FixedParameters']['Frontheat_StartIndex'] > 0):
-                    
+                    if self.pre_heat_present:
                         k_physical_time = kin_obj.getPhysicalRunTime()
                         f_run_time = k_physical_time * self.init.yaml_file['Coupling_params']['Eta']
                         if(f_run_time < fluid_obj.init.yaml_file['TimeParameters']['dt']):
@@ -278,6 +277,7 @@ class Coupler:
                 #Otherwise, apply the exponential models. 
                 if(self.init.yaml_file['Coupling_params']['Couple_adaptive']):
                     if(pre_heat_start_index > 0 or front_heat_start_index > 0):
+                        self.pre_heat_present = True
                         qe = hfct_obj.divQHeatFlow()
                         pre_heat_fit_params = None
                         front_heat_fit_params = None
