@@ -338,6 +338,10 @@ class SOL_KIT(Kinetic):
             self.__initF_0(sol_kit_inter_te, sol_kit_inter_ne, v_grid, v_grid_width)
             self.__initFVector()
             self.__initRestartVector()
+            np.savetxt(os.path.join(self._sol_kit_input_path, "DENS_INPUT.txt"), sol_kit_inter_ne)    
+            np.savetxt(os.path.join(self._sol_kit_input_path, "TEMPERATURE_INPUT.txt"), sol_kit_inter_te)    
+            np.savetxt(os.path.join(self._sol_kit_input_path, "Z_PROFILE_INPUT.txt"), sol_kit_inter_z)    
+            np.savetxt(os.path.join(self._sol_kit_input_path, "X_GRID_INPUT.txt"), sol_kit_grid)
 
         else:
             np.savetxt(os.path.join(self._sol_kit_input_path, "DENS_INPUT.txt"), sol_kit_inter_ne)    
@@ -397,11 +401,10 @@ class SOL_KIT(Kinetic):
                 self.restart_vector[E_POS] = e_field[i]
                 for v in range(self.nv):
                     self.restart_vector[F_L_POS + v] = self._Dist_F[l, i, v]
-                    #restart_vector[F_0_POS + v] = self.next_f0[i, v]
         
         np.savetxt(os.path.join(self._run_path, "".join(["INPUT","/","RESTART","/", "VAR_VEC_INPUT.txt"])),
                      self.restart_vector,
-                     fmt ="%22.14e3") #Specific format expected by SOL-KiT
+                     fmt ="%22.14e") #Specific format expected by SOL-KiT
     
     def __initFVector(self):
         """

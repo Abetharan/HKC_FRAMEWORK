@@ -3,7 +3,7 @@ Paths:
   Base_dir: /Users/shiki/Documents/Imperial_College_London/Ph.D./ 
   K_src_dir: //Users/shiki/Documents/Imperial_College_London/Ph.D./SOL-KiT/
   F_src_dir: /Users/shiki/Documents/Imperial_College_London/Ph.D./HyKiCT/build/apps/
-  Init_path:  /Users/shiki/Documents/Imperial_College_London/Ph.D./CX1_stuff/Longer_Domain_SMOOTHED_PRE_HEAT_RAMP_10000_step/
+  Init_path:  /Users/shiki/Documents/Imperial_College_London/Ph.D./CX1_stuff/Longer_Domain_SMOOTHED_PRE_HEAT_RAMP_div_q_80000_step/
   F_config_path: /Users/shiki/Documents/Imperial_College_London/Ph.D./HKC_FRAMEWORK/hkc_framework/couple_hykict/config.yml 
   K_config_path: /Users/shiki/Documents/Imperial_College_London/Ph.D./HKC_FRAMEWORK/hkc_framework/couple_sol_kit/config.yml
 Codes:
@@ -16,9 +16,9 @@ Coupling_params:
   Couple_divq: false
   Couple_multi: false
   Couple_adaptive: true
-  Start_from_kinetic: true 
+  Start_from_kinetic: false 
   Load_f1: true
-  Start_coupled: false #Takes precedence over start from kinetic, assumes relevant quanties exist. Does not work with adapative
+  Start_coupled: true #Takes precedence over start from kinetic, assumes relevant quanties exist. Does not work with adapative
 Misc:
   HDF5: false
   Convergence_monitoring: true

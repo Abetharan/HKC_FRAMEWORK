@@ -8,7 +8,6 @@ import sys
 import threading
 import time
 import numpy as np 
-
 class Kinetic():
     def __init__(self, cmd, convergence_monitoring = False, convergence_func = None,
                     thread_log_path = None):
@@ -21,7 +20,15 @@ class Kinetic():
         self.cmd = cmd
         self.converged = False
         self.search_tolerance = 1e-16
-    
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.DEBUG)
+
+        # fh = logging.FileHandler(os.path.join(self.log_path, 'Conv.log'))
+        # fh.setLevel(logging.DEBUG)
+        # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        # fh.setFormatter(formatter)
+        # self.logger.addHandler(fh)
+
     def convergenceTest(self):
         """
         Purpose: Convergence Test being run to monitor heat flow convergence
@@ -54,7 +61,7 @@ class Kinetic():
         else:
             convergance = 0
 
-        if np.nanmax(convergance) < 1e-3 and np.nanmax(convergance) != 0:
+        if np.nanmax(convergance) < 1e-9 and np.nanmax(convergance) != 0:
             self.converged = True
 
         return convergance
@@ -71,12 +78,11 @@ class Kinetic():
             convergence_func : function that calculates convergance values i.e. q/q_sh
             nx : number of cell-centrs.
         """
-        logging.basicConfig(filename=os.path.join(self.log_path, "Monitoring_debug.log"),
-                    filemode='a',level=logging.DEBUG,
-                    format='(%(threadName)-10s) %(asctime)s  %(message)s',
-                    )
-        logging.info('Starting Cycle :')
-        logging.info(self.cycle)
+        # logging.basicConfig(filename=os.path.join(self.log_path, "Monitoring_debug.log"),
+        #             filemode='a',level=logging.DEBUG,
+                    # format='(%(threadName)-10s) %(asctime)s  %(message)s',
+                    # )
+        self.logger.info("Monitoring Convergence for Cycle {}".format(self.cycle))
         #Path to heat flow
         convergance = 10
         file_counter = 0
@@ -97,13 +103,13 @@ class Kinetic():
             #Last Heat 
             if(os.path.exists(sorted_heat_flows[-1].path)
                 and new_file_counter != file_counter):
-                logging.info('Latest path') 
-                logging.info(sorted_heat_flows[-1].path)
+                self.logger.info('Latest path') 
+                self.logger.info(sorted_heat_flows[-1].path)
                 if os.access(sorted_heat_flows[-1].path, os.R_OK):
                     convergence_variable = self.convergence_func(sorted_heat_flows[-1].path)
                     #Possible occurence where files is read safe but nothing has been written to it.
                     if(len(convergence_variable) <= 0):
-                        logging.warning("Read safe.. No Content")
+                        self.logger.warning("Read safe.. No Content")
                         continue                   
                     self.convergence_variable_stack = np.vstack((self.convergence_variable_stack, convergence_variable))
                 else:
@@ -114,26 +120,28 @@ class Kinetic():
                 else:
                     convergance = 0
 
-                logging.info("Convergence: ")
-                logging.info(np.nanmax(convergance))
+                self.logger.info("Convergence: ")
+                self.logger.info(np.nanmax(convergance))
 
                 if self.converged:
+                    self.logger.info("Converged ....Exiting")
                     self.clean_up()
-                    time.sleep(5)
-                    logging.info("Converged ....Exiting")
                     stop_event.set()
                     #Update file counter
                 file_counter = new_file_counter
-                logging.info(file_counter)
+                self.logger.info(file_counter)
         
         #Kill thread on exit
         self.cycle+=1
-        logging.warning("Killing thread")
+        self.logger.warning("Killing thread")
 
     def clean_up(self):
         try:
+            for handler in self.logger.handlers:
+                handler.close()
+                self.logger.removeHandler(handler)
             self.__process.terminate()
-            logging.shutdown()
+            # logging.shutdown()
         except OSError:
             pass #ignore the error.  The OSError doesn't seem to be documented(?)
                 #as such, it *might* be better to process.poll() and check for 
@@ -179,3 +187,4 @@ class Kinetic():
         if err and not self.converged:
             print("Kinetic code failed see log")
             sys.exit(0)
+        self.converged = False
