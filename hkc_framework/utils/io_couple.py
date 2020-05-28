@@ -22,10 +22,11 @@ class IO:
         self._f_src_dir = f_src_dir
         self._f_switch_path = None
         self._f_init_path = f_init_path
-        self._fast_tmp_base_dir = os.environ("TMPDIR") 
+        print(os.environ("BASE_PATH"))
+        self._fast_tmp_base_dir = os.environ("BASE_PATH") 
         self.max_cycle = max_cycle        
-        self._home_path = os.path.join(self._base_dir, self._run_name)
-        self._run_path = os.path.join(self._fast_tmp_base_dir, self._run_name)
+        self._run_path = os.path.join(self._base_dir, self._run_name)
+        self._fast_run_path = os.path.join(self._fast_tmp_base_dir, self._run_name)
         self.cycle_counter = cycle_counter
         self.cycle_dump_path = None
         self.fluid_input_path = None
@@ -156,9 +157,6 @@ class IO:
 
         for cycle_path in self.preserved_cycle_path:
             shutil.rmtree(cycle_path)
-        
-    def copyDirToHomeDir(self):
-        copy_tree(self._run_path, self._home_path)
         
     def _createHDF5(self):
         """

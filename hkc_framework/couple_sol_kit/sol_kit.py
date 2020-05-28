@@ -37,7 +37,7 @@ BOHR_RADIUS = constants.value("Bohr radius")
 
 class SOL_KIT(Kinetic):
     
-    def __init__(self,run_path, k_src_dir, kinetic_input_path, kinetic_output_path,
+    def __init__(self,run_path,  k_src_dir, kinetic_input_path, kinetic_output_path,
                 k_config_yml_file_path, convergence_monitoring = False, cx1 = False):
         
         # config_yml_file_path = os.path.join(

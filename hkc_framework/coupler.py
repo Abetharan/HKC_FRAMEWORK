@@ -133,7 +133,7 @@ class Coupler:
                          
         if(self.init.yaml_file['Codes']['Kinetic_code'] == 'sol_kit'):
             kin_obj = SOL_KIT(
-                            io_obj._run_path,
+                            io_obj._fast_run_path,
                             io_obj._k_src_dir,
                             io_obj.kinetic_input_path,
                             io_obj.kinetic_output_path,
@@ -389,7 +389,6 @@ class Coupler:
             #update continue file
             np.savetxt(continue_step_path, np.array([cycle_no]), fmt = '%i')
             
-        io_obj.copyDirToHomeDir()
         if self.init.yaml_file['Misc']['HDF5']:
             self.logger.info("Delete All Folders")
             io_obj.deleteAll()    
