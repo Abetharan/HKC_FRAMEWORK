@@ -178,6 +178,8 @@ class HeatFlowCouplingTools:
         ##Test for pre-heat via looking at NaN outputs expected from q/q_sh
         #if nans
         self.q_vfp_q_sh_multipliers = np.array(self.vfp_heat/self.spitzer_harm_heat)
+        self.q_vfp_q_sh_multipliers[0] = 0
+        self.q_vfp_q_sh_multipliers[-1] = 0
         #Detect if there is Front heat
         #Detect if there is Pre-Heat
         #Modify as bounds will always be nan. 
