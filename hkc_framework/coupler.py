@@ -266,6 +266,7 @@ class Coupler:
             if cycle_no == cycles - 1:
                 if self.init.yaml_file['Misc']['Zip']:
                     io_obj.zipAndDelete()        
+                np.savetxt(continue_step_path, np.array([cycle_no]), fmt = '%i')
                 self.logger.info("End Coupling")
                 break 
 
