@@ -389,6 +389,7 @@ class Coupler:
             #update continue file
             np.savetxt(continue_step_path, np.array([cycle_no]), fmt = '%i')
             
+        io_obj.copyDirToHomeDir()
         if self.init.yaml_file['Misc']['HDF5']:
             self.logger.info("Delete All Folders")
             io_obj.deleteAll()    
