@@ -22,11 +22,11 @@ class IO:
         self._f_src_dir = f_src_dir
         self._f_switch_path = None
         self._f_init_path = f_init_path
-        print(os.environ("BASE_PATH"))
-        self._fast_tmp_base_dir = os.environ("BASE_PATH") 
+        print(os.environ["BASE_PATH"])
+        self._fast_tmp_base_dir = os.environ["BASE_PATH"] 
         self.max_cycle = max_cycle        
         self._run_path = os.path.join(self._base_dir, self._run_name)
-        self._fast_run_path = os.path.join(self._fast_tmp_base_dir, self._run_name)
+        self._fast_run_path = self._fast_tmp_base_dir
         self.cycle_counter = cycle_counter
         self.cycle_dump_path = None
         self.fluid_input_path = None
