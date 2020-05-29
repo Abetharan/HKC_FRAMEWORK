@@ -189,6 +189,6 @@ class Kinetic():
             stop_event.set()
 
         if err and not self.converged:
-            print("Kinetic code failed see log")
+            self.logger.warning("Kinetic code failed see log")
             sys.exit(0)
         self.converged = False
