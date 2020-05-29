@@ -41,7 +41,11 @@ class Kinetic():
             return 0
         if np.shape(self.convergence_variable_stack)[0] >= 2:
             comparison_value_index = np.where(self.convergence_variable_stack[1,:] > self.search_tolerance)
-            if len(np.shape(comparison_value_index)) > 1:
+            self.logger.info("COMPARISON VALUES")
+            self.logger.info(comparison_value_index)
+            if len(comparison_value_index[0]) <= 1:
+                convergance = np.zeros(self.nx)
+            elif len(np.shape(comparison_value_index)) > 1:
                 convergance = (abs(np.array(self.convergence_variable_stack[0, comparison_value_index[0][0]:comparison_value_index[0][-1]]) -
                                 np.array(self.convergence_variable_stack[1, comparison_value_index[0][0]:comparison_value_index[0][-1]])) /
                                 np.array(self.convergence_variable_stack[0, comparison_value_index[0][0]:comparison_value_index[0][-1]]))
