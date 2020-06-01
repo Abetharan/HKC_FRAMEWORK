@@ -33,7 +33,6 @@ class Coupler:
     def __init__(self, init_file_path):
         self.yml_init_file_path = init_file_path
         self.pre_heat_present = False
-        atexit.register(self.cleanUpHandlers)
     def startprint(self, fluid_code, kinetic_code):
 
         ShowText = ('COUPLING ' + fluid_code + '-' 
@@ -130,6 +129,7 @@ class Coupler:
         self.logger.setLevel(logging.DEBUG)
         # self.logger.addHandler(fh)
         self.logger.addHandler(ch)
+        atexit.register(self.cleanUpHandlers)
         if self.init.yaml_file['Misc']['HDF5']:
             io_obj._createHDF5()
         
