@@ -190,6 +190,10 @@ class Kinetic():
 
         if err and not self.converged:
             self.logger.warning("Kinetic code failed see log")
+            self.logger.debug("Error Code ")
+            self.logger.debug(err)
+            self.logger.debug("Has Converged ")
+            self.logger.debug(self.converged)
             if not os.path.exists("SOL-KiT"):
                 self.logger.debug("SOL KIT NO LONGER EXISTS")
             sys.exit(0)
