@@ -18,6 +18,14 @@ import sys
 import utils as util
 from couple_sol_kit.sol_kit import SOL_KIT
 from couple_hykict.hykict import HyKiCT
+from scipy import constants
+BOLTZMANN_CONSTANT = constants.value("Boltzmann constant")
+ELECTRON_MASS = constants.value("electron mass")
+PROTON_MASS = constants.value("proton mass")
+ELEMENTARY_CHARGE = constants.value("elementary charge")
+VACUUM_PERMITTIVITY = 8.854188E-12    # Vacuum dielectric constant
+PLANCK_CONSTANT = constants.value("Planck constant")
+BOHR_RADIUS = constants.value("Bohr radius")
 class Coupler:
     """
     main class i.e. where all objects are passed into and the coupling is run.
@@ -287,8 +295,8 @@ class Coupler:
             hfct_obj.mass = fluid_mass
 
             #Calculate spitzer harm from last step fluid quants
-            hfct_obj.lambda_ei(hfct_obj.electron_temperature, 
-                                hfct_obj.electron_temperature,
+            hfct_obj.lambda_ei(hfct_obj.electron_temperature * (BOLTZMANN_CONSTANT/ELEMENTARY_CHARGE), 
+                                hfct_obj.electron_number_density,
                                 hfct_obj.zbar)
             self.logger.info("HFCT Spitzer Calculation")
             hfct_obj.spitzerHarmHeatFlow()
@@ -361,20 +369,20 @@ class Coupler:
                 #If pre heat or front heat is present, in adapativbe coupling
                 #We utilise div.q coupling to get rid of these fronts.
                 #Otherwise, apply the exponential models. 
-                if(self.init.yaml_file['Coupling_params']['Couple_adaptive']):
-                    if(pre_heat_start_index > 0 or front_heat_start_index > 0):
-                        self.logger.info("Pre-heat present in MODE: Adapative ignore multipliers")
-                        self.pre_heat_present = True
-                        qe = hfct_obj.divQHeatFlow()
-                        pre_heat_fit_params = None
-                        front_heat_fit_params = None
-                else:
-                    self.logger.info("Pre-heat Present in MODE: Multipliers")
-                    #Modify yaml for future write
-                    fluid_obj.init.yaml_file['FixedParameters']['Preheat_StartIndex'] = pre_heat_start_index.item()
-                    fluid_obj.init.yaml_file['FixedParameters']['Preheat_LastIndex'] = pre_heat_last_index.item()
-                    fluid_obj.init.yaml_file['FixedParameters']['Frontheat_StartIndex'] = front_heat_start_index.item()
-                    fluid_obj.init.yaml_file['FixedParameters']['Frontheat_LastIndex'] = front_heat_last_index.item()
+                if(pre_heat_start_index > 0 or front_heat_start_index > 0):
+                    if(self.init.yaml_file['Coupling_params']['Couple_adaptive']):
+                            self.logger.info("Pre-heat present in MODE: Adapative ignore multipliers")
+                            self.pre_heat_present = True
+                            qe = hfct_obj.divQHeatFlow()
+                            pre_heat_fit_params = None
+                            front_heat_fit_params = None
+                    else:
+                        self.logger.info("Pre-heat Present in MODE: Multipliers")
+                        #Modify yaml for future write
+                        fluid_obj.init.yaml_file['FixedParameters']['Preheat_StartIndex'] = pre_heat_start_index.item()
+                        fluid_obj.init.yaml_file['FixedParameters']['Preheat_LastIndex'] = pre_heat_last_index.item()
+                        fluid_obj.init.yaml_file['FixedParameters']['Frontheat_StartIndex'] = front_heat_start_index.item()
+                        fluid_obj.init.yaml_file['FixedParameters']['Frontheat_LastIndex'] = front_heat_last_index.item()
             
             #Finish by fluid init next set of files 
             self.logger.info("Init Fluid")

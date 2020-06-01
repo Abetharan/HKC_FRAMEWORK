@@ -27,6 +27,8 @@ class HeatFlowCouplingTools:
 
     def lambda_ei(self, T_norm , n_norm, Z_norm, return_arg = False):
         coulomb_logs = []
+        T_norm = T_norm
+
         for T,n,Z in zip(T_norm, n_norm, Z_norm):
             if T < 10.00 * Z ** 2:
                 result = 23.00 - math.log(math.sqrt(n * 1.00E-6) * Z * (T) ** (-3.00/2.00))
