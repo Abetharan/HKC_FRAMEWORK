@@ -274,6 +274,9 @@ class Coupler:
             if cycle_no == cycles - 1:
                 if self.init.yaml_file['Misc']['Zip']:
                     io_obj.zipAndDelete()        
+                if self.init.yaml_file['Misc']['HDF5']:
+                    self.logger.info("Store to HDF5")
+                    fluid_obj.storeToHdf5(io_obj.hdf5_file, cycle_no)
                 np.savetxt(continue_step_path, np.array([cycle_no]), fmt = '%i')
                 self.logger.info("End Coupling")
                 break 
