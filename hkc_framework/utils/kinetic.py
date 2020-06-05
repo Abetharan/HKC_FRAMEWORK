@@ -182,6 +182,8 @@ class Kinetic():
         with io.open(filename, 'wb') as writer:
         #run command provided
             atexit.register(self.clean_up)
+            signal.signal(signal.SIGTERM, self.clean_up)
+            signal.signal(signal.SIGINT, self.clean_up)
             self.__process = subprocess.Popen(self.cmd, stdout=writer, stderr = subprocess.PIPE)
 
         _, err = self.__process.communicate()

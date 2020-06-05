@@ -2,6 +2,7 @@ import atexit
 import io
 import logging
 import os
+import signal
 import subprocess
 import sys
 class Fluid():
@@ -34,6 +35,9 @@ class Fluid():
         filename = path + '/fluid.log'
         with io.open(filename, 'wb') as writer:
             atexit.register(self.clean_up)
+            signal.signal(signal.SIGTERM, self.clean_up)
+            signal.signal(signal.SIGINT, self.clean_up)
+            
             self.__process = subprocess.Popen(cmd, stdout=writer, stderr = subprocess.PIPE)
             _,err = self.__process.communicate()
 

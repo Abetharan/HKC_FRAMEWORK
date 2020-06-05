@@ -130,6 +130,9 @@ class Coupler:
         # self.logger.addHandler(fh)
         self.logger.addHandler(ch)
         atexit.register(self.cleanUpHandlers)
+        signal.signal(signal.SIGTERM, self.cleanUpHandlers)
+        signal.signal(signal.SIGINT, self.cleanUpHandlers)
+
         if self.init.yaml_file['Misc']['HDF5']:
             io_obj._createHDF5()
         

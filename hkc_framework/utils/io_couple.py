@@ -7,6 +7,7 @@ Last Update = 25/11/19
 import atexit
 import h5py
 import os
+import signal
 import shutil
 import string
 import sys
@@ -165,6 +166,8 @@ class IO:
         self.hdf5_file = h5py.File(os.path.join(self._run_path,
                                  "".join([self._run_name, "_Data.hdf5"])), "a")
         atexit.register(self._closeHDF5)
+        signal.signal(signal.SIGTERM, self._closeHDF5)
+        signal.signal(signal.SIGINT, self._closeHDF5)
 
     def _closeHDF5(self):
         """
