@@ -11,7 +11,7 @@ Codes:
   Fluid_code: hykict
 Coupling_params:
   Nx: 100
-  Cycles: 3
+  Cycles: 5
   Eta: 0.1E-2
   Couple_divq: false
   Couple_multi: true
@@ -20,9 +20,9 @@ Coupling_params:
   Load_f1: true
   Start_coupled: false #Takes precedence over start from kinetic, assumes relevant quanties exist. Does not work with adapative
 Misc:
-  HDF5: false
+  HDF5: true
   Convergence_monitoring: true
   Zip: false
-  Continue: false
+  Continue: true
   HPC: false
   Overwrite: true

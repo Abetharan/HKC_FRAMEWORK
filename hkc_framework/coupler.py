@@ -154,6 +154,7 @@ class Coupler:
             #kin_obj = IMPACT()
         self.logger.info("Initial Conditions")
         self.logger.info("Run path {}".format(RUN_PATH))
+        self.logger.info("Fast Tmp Run path {}".format(io_obj._fast_run_path))
         self.logger.info("Start Cycle {}".format(start_cycle)) 
         self.logger.info("Max Cycle {}".format(cycles)) 
         self.logger.info("Overwrite {}".format(overwrite)) 
@@ -202,6 +203,7 @@ class Coupler:
 
         #Coupling loop
         self.logger.info("Starting couple LOOP")
+        self.first_pass = True
         for cycle_no in range(start_cycle, cycles, 1):
             self.prettyPrint(' RUNNING CYCLE ' + str(cycle_no)) 
             self.logger.info("Running Cycle {}".format(cycle_no))
@@ -314,7 +316,7 @@ class Coupler:
             #Move files if neccessary
             self.prettyPrint(' RUNNING ' + self.init.yaml_file['Codes']['Kinetic_code'], color = True)
             self.logger.info("Setting Kinetic Parameters")
-            if cycle_no == 0:
+            if cycle_no == 0 or self.first_pass:
                 #input and output unchanged 
                 self.logger.info("Set files... These are UNCHANGED EXCEPT IF LOAD_f1")
                 kin_obj.setFiles()
@@ -329,8 +331,9 @@ class Coupler:
             if self.init.yaml_file['Coupling_params']['Load_f1']:
                 if cycle_no > 0:
                     self.logger.info("Engaging MODE: Load F1")
-                    kin_obj.previous_kinetic_output_path = io_obj.preserved_kinetic_output_path[-2] 
-                    kin_obj.load_f1 = True
+                    #all_kinetic_output_paths contain all paths for kinetic output, require last cycle for load F1, thus cycle_no - 1
+                    kin_obj.previous_kinetic_output_path = io_obj.all_kinetic_output_path[cycle_no - 1] 
+                    kin_obj.load_f1 = True                                                              
                 if self.init.yaml_file['Coupling_params']['Start_coupled']:
                     self.logger.info("Engaging MODE: Load F1 from Start Coupled")
                     #Hack to continue broken sims, assumes RESTART and GRID exists in init folder
@@ -401,6 +404,7 @@ class Coupler:
                 io_obj.zipAndDelete()        
             #update continue file
             np.savetxt(continue_step_path, np.array([cycle_no]), fmt = '%i')
+            self.first_pass = False
             
         if self.init.yaml_file['Misc']['HDF5']:
             self.logger.info("Delete All Folders")

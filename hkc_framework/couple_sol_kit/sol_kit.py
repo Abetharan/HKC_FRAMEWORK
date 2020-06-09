@@ -78,7 +78,7 @@ class SOL_KIT(Kinetic):
         self._norm_ne = float(self.init.yaml_file['Norms']['Ne'])
 
         self.copyAndCreateSOL_KiT()
-        self.setFiles()
+        # self.setFiles()
         self.normalisation()
 
         self.sh_heat_flow = 0
