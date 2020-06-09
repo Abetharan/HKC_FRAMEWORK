@@ -99,7 +99,8 @@ class SOL_KIT(Kinetic):
                                  self._run_path)
         else:
             Kinetic.__init__(self, cmd)
-
+        self.search_tolerance = self.init.yaml_file['Convergence']
+        
     def convergance_test(self, path):
         
         """  
