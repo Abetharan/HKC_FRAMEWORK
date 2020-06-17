@@ -2,7 +2,7 @@ Paths:
   Run_name: monitoring_check
   Base_dir: /Users/shiki/Documents/Imperial_College_London/Ph.D./ 
   K_src_dir: //Users/shiki/Documents/Imperial_College_London/Ph.D./SOL-KiT/
-  F_src_dir: /Users/shiki/Documents/Imperial_College_London/Ph.D./HyKiCT/build/apps/
+  F_src_dir: /Users/shiki/Documents/Imperial_College_London/Ph.D./HyKiCT/debug/apps/
   Init_path:  /Users/shiki/Documents/Imperial_College_London/Ph.D./CX1_stuff/multi_divq_comp_brodrick_longer_hohlraum/
   F_config_path: /Users/shiki/Documents/Imperial_College_London/Ph.D./HKC_FRAMEWORK/hkc_framework/couple_hykict/config.yml 
   K_config_path: /Users/shiki/Documents/Imperial_College_London/Ph.D./HKC_FRAMEWORK/hkc_framework/couple_sol_kit/config.yml
