@@ -131,8 +131,6 @@ class Coupler:
         self.logger.addHandler(ch)
         atexit.register(self.cleanUpHandlers)
 
-        if self.init.yaml_file['Misc']['HDF5']:
-            io_obj._createHDF5()
         
         fluid_obj = HyKiCT(
                             io_obj._run_path, 
@@ -281,8 +279,10 @@ class Coupler:
                 if self.init.yaml_file['Misc']['Zip']:
                     io_obj.zipAndDelete()        
                 if self.init.yaml_file['Misc']['HDF5']:
+                    io_obj._createHDF5()
                     self.logger.info("Store to HDF5")
                     fluid_obj.storeToHdf5(io_obj.hdf5_file, cycle_no)
+                    io_obj.hdf5_file.close()
                 np.savetxt(continue_step_path, np.array([cycle_no]), fmt = '%i')
                 self.logger.info("End Coupling")
                 break 
@@ -399,9 +399,11 @@ class Coupler:
             fluid_obj.initHydroFromKinetic(io_obj.next_fluid_input_path, qe,
                                             pre_heat_fit_params, front_heat_fit_params)
             if self.init.yaml_file['Misc']['HDF5']:
+                io_obj._createHDF5()
                 self.logger.info("Store to HDF5")
                 fluid_obj.storeToHdf5(io_obj.hdf5_file, cycle_no)
                 kin_obj.storeToHdf5(io_obj.hdf5_file, cycle_no)
+                io_obj.hdf5_file.close()
             if self.init.yaml_file['Misc']['Zip']:
                 self.logger.info("Store to zip")
                 io_obj.zipAndDelete()        
