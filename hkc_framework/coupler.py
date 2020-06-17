@@ -12,6 +12,7 @@ import math
 import numpy as np
 from PIL import Image, ImageFont, ImageDraw
 import os
+import pathlib
 import signal
 import shutil
 import sys
@@ -127,7 +128,6 @@ class Coupler:
         root.addHandler(fh)
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.DEBUG)
-        # self.logger.addHandler(fh)
         self.logger.addHandler(ch)
         atexit.register(self.cleanUpHandlers)
 
@@ -204,6 +204,7 @@ class Coupler:
         #Coupling loop
         self.logger.info("Starting couple LOOP")
         self.first_pass = True
+        np.savetxt(os.path.join(RUN_PATH, "status.txt"), np.array([0], dtype=np.int), fmt = '%1.1i')
         for cycle_no in range(start_cycle, cycles, 1):
             self.prettyPrint(' RUNNING CYCLE ' + str(cycle_no)) 
             self.logger.info("Running Cycle {}".format(cycle_no))
@@ -259,7 +260,9 @@ class Coupler:
             self.logger.info("Setting Fluid Parameters")
             #Set Paths that change
             fluid_obj.init.yaml_file['Paths']['Init_Path'] = io_obj.fluid_input_path
+            fluid_obj.init.yaml_file['Paths']['Laser_Profile_Path'] = os.path.join(io_obj.fluid_input_path, "laser_profile.txt")
             fluid_obj.init.yaml_file['Paths']['Out_Path'] = io_obj.fluid_output_path
+            
             fluid_obj._cycle_dump_path = io_obj.cycle_dump_path
             fluid_obj._fluid_output_path = io_obj.fluid_output_path
             fluid_obj._fluid_input_path = io_obj.fluid_input_path

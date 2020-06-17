@@ -8,6 +8,7 @@ import sys
 import threading
 import time
 import numpy as np 
+import pathlib
 class Kinetic():
     def __init__(self, cmd, convergence_monitoring = False, convergence_func = None,
                     thread_log_path = None):
@@ -22,12 +23,6 @@ class Kinetic():
         self.search_tolerance = 1e-16
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.DEBUG)
-
-        # fh = logging.FileHandler(os.path.join(self.log_path, 'Conv.log'))
-        # fh.setLevel(logging.DEBUG)
-        # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        # fh.setFormatter(formatter)
-        # self.logger.addHandler(fh)
 
     def convergenceTest(self):
         """
@@ -127,11 +122,13 @@ class Kinetic():
                 self.logger.info("Convergence: ")
                 self.logger.info(np.nanmax(convergance))
 
-                if self.converged:
+                if self.converged and file_counter > 2:
                     self.logger.info("Converged ....Exiting")
                     self.clean_up()
                     stop_event.set()
                     #Update file counter
+                elif self.converged and not file_counter > 2:
+                    self.converged = False
                 file_counter = new_file_counter
                 self.logger.info(file_counter)
         
@@ -196,5 +193,9 @@ class Kinetic():
             self.logger.debug(self.converged)
             if not os.path.exists("SOL-KiT"):
                 self.logger.debug("SOL KIT NO LONGER EXISTS")
+            
+            path_obj = pathlib.Path(self.cycle_dump_path)
+            root_path = path_obj.parent
+            np.savetxt(os.path.join(root_path, "status.txt"), np.array([1], dtype=np.int), fmt = '%1.1i')
             sys.exit(0)
         self.converged = False

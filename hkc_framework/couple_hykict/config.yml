@@ -1,86 +1,89 @@
-Paths:
-      Init_Path: "" ##leave empty handled by coupler
-      Out_Path: "" #leave empty handled by coupler
-      FEOS_Path_1: ""
-      FEOS_Path_2: ""
 FixedParameters:
-      nx: 0 #handled internally
-      Rad_Flux_Temperature: 0
-      Laser_Wavelength: 100e-9
-      Laser_Power: 1e12
-      Laser_Dur: 0
-      Left_Fluid_Boundary: 0
-      Right_Fluid_Boundary: 0
-      Left_Rad_Boundary: 2
-      Right_Rad_Boundary: 2
-      Preheat_StartIndex: 0 #handled internally
-      Preheat_LastIndex: 0 #handled internally
-      Frontheat_StartIndex: 0 #handled internally
-      Frontheat_LastIndex: 0
-      Output_Frequency: 1
-      FixedOpacityValue: 0
-      FixedEnergyDensityValue: 0
-TimeParameters:
-      dt: 0.1e-15
-      dt_max: 0.1e-9 
-      dt_min: 0.1e-16
-      t_max: 0.1e-14
-      steps: 0 #2
-      cfl: 0.85
-      VolLimit: 0.05
-      RadLimit: 0.1
-      ElectronLimit: 0.005
-      IonLimit: 0.05
-      PVLimit: 0.05
+  nx: 100
+  FixedEnergyDensityValue: 0
+  FixedOpacityValue: 0
+  Frontheat_LastIndex: 0
+  Frontheat_StartIndex: 0
+  Left_Fluid_Boundary: 0
+  Left_Rad_Boundary: 1
+  Rad_Flux_Temperature: 0
+  Right_Fluid_Boundary: 0
+  Right_Rad_Boundary: 1
+  Output_Frequency: 10000
+  Preheat_LastIndex: 0
+  Preheat_StartIndex: 0
+LaserParams:
+  Time_Bin: 1e-13 #Only relevant if load in laser profile is used. 
+  Duration: 1e-9 #Always relevant
+  Constant_Power: 1e12 #If load in laser profile is true this is ignored.
+  Wavelength: 100e-9
 Limiters:
-      heatflxlm: 1.0
-      radflxlm: 1.0
-      prrm: 1.0
-      radabm: 1.0
-      radbrm: 1.0
-      radcmm: 1.0
-      raddfm: 1.0
-      radesm: 1.0
-Switches:
-      Viscosity: true #Artificial Viscosity Include
-      Velocity: true #Velocity
-      PdVWork: true #pDv Work included in energy update
-      HeatConduction: true #Thermal conduction included
-      Exchange: false #Exchange between ions and electrons.. basedon NRL 2018
-      InvBrem: false #Inverse bremstrahllung i.e. laser. 
-      RadiationTransport: false #Radiation Transport 
-      RadFreeFree: false #Free-Free Emission
-      RadPdVWork: false #Radiatoin PdVwork
-      RadDiffusion: false #Ficks diffusion of radation
-      IdealGas: true # EoS Ideal gas
-      MultiMaterial: false # Multi material
-      SingleTemperature: true # Te = Ti
-      CoupleDivQ: false # Coupling between kinetic and fluid using div.q
-      CoupleMulti: true # Coupling between kinetic and fluid using q/q_sh
-      AdapativeTimeStep: false #Adapative time step
-      ConstantCoulombLog: false #Coulomb log kept constant which is set above
-      FullyIonized: true #Fully ionized
-      AdiabaticMode: false # No heat flow
-      IsothermalMode: false #Temperature constant
+  heatflxlm: 1.0
+  prrm: 1.0
+  radabm: 1.0
+  radbrm: 1.0
+  radcmm: 1.0
+  raddfm: 1.0
+  radesm: 1.0
+  radflxlm: 1.0
 Output:
-      CreateOutputFolder: false #Create output folder if not specified
-      Coordinates: true
-      Viscosity: false
-      Velocity: true
-      Pressure: false
-      MassDensity: true
-      NumberDensity: true
-      Temperature: true
-      Zbar: true
-      HeatFlow: true
-      ThermalConduction: false
-      InternalEnergy: false
-      Exchange: false
-      InverseBrem: true
-      RadFreeFree: false
-      RadDiffusion: false
-      RadTemperature: false
-      RadEnergyDensity: false
-      RadPressure: false
-      PlasmaParameters: false
-
+  Coordinates: true
+  CreateOutputFolder: false
+  Exchange: false
+  HeatFlow: true
+  InternalEnergy: false
+  InverseBrem: true
+  MassDensity: true
+  NumberDensity: true
+  PlasmaParameters: false
+  Pressure: false
+  RadDiffusion: false
+  RadEnergyDensity: false
+  RadFreeFree: false
+  RadPressure: false
+  RadTemperature: false
+  Temperature: true
+  ThermalConduction: true
+  Velocity: true
+  Viscosity: false
+  Zbar: true
+Paths:
+  FEOS_Path_1: ''
+  FEOS_Path_2: ''
+  Laser_Profile_Path: ""
+  Init_Path: 
+  Out_Path: 
+Switches:
+  AdapativeTimeStep: false
+  AdiabaticMode: false
+  ConstantCoulombLog: false
+  CoupleDivQ: false
+  CoupleMulti: false
+  Exchange: false
+  FullyIonized: true
+  HeatConduction: true
+  IdealGas: true
+  InvBrem: true
+  IsothermalMode: false
+  LoadInLaserProfile: false
+  MultiMaterial: false
+  PdVWork: true
+  RadDiffusion: false
+  RadFreeFree: false
+  RadPdVWork: false
+  RadiationTransport: false
+  SingleTemperature: false
+  Velocity: true
+  Viscosity: true
+TimeParameters:
+  ElectronLimit: 0.05
+  IonLimit: 0.05
+  PVLimit: 0.05
+  RadLimit: 0.1
+  VolLimit: 0.05
+  cfl: 0.85
+  dt: 1.0e-17
+  dt_max: 1.0e-10
+  dt_min: 1.0e-19
+  steps: 0
+  t_max: 1.0e-16

@@ -13,7 +13,7 @@ Params:
   Dx: 0.5
   Dv: 0.0307
   Dv_multi: 1.025
-  Nt: 50
+  Nt: 10
   Pre_step_nt: 0
   Pre_step_dt: 0.001
   L_max: 3
