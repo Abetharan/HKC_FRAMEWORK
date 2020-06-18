@@ -3,14 +3,14 @@ Paths:
   Base_dir: /Users/shiki/Documents/Imperial_College_London/Ph.D./ 
   K_src_dir: //Users/shiki/Documents/Imperial_College_London/Ph.D./SOL-KiT/
   F_src_dir: /Users/shiki/Documents/Imperial_College_London/Ph.D./HyKiCT/debug/apps/
-  Init_path:  /Users/shiki/Documents/Imperial_College_London/Ph.D./CX1_stuff/multi_divq_comp_brodrick_longer_hohlraum/
+  Init_path:  /Users/shiki/Documents/Imperial_College_London/Ph.D./CX1_stuff/Longer_Domain_hohlraum/
   F_config_path: /Users/shiki/Documents/Imperial_College_London/Ph.D./HKC_FRAMEWORK/hkc_framework/couple_hykict/config.yml 
   K_config_path: /Users/shiki/Documents/Imperial_College_London/Ph.D./HKC_FRAMEWORK/hkc_framework/couple_sol_kit/config.yml
 Codes:
   Kinetic_code: sol_kit
   Fluid_code: hykict
 Coupling_params:
-  Nx: 100
+  Nx: 200
   Cycles: 5
   Eta: 0.1E-2
   Couple_divq: false
@@ -20,9 +20,9 @@ Coupling_params:
   Load_f1: true
   Start_coupled: false #Takes precedence over start from kinetic, assumes relevant quanties exist. Does not work with adapative
 Misc:
-  HDF5: true
+  HDF5: False
   Convergence_monitoring: true
   Zip: false
   Continue: true
-  HPC: false
+  HPC: false 
   Overwrite: true

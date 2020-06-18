@@ -13,12 +13,12 @@ Params:
   Dx: 0.5
   Dv: 0.0307
   Dv_multi: 1.025
-  Nt: 10
+  Nt: 50
   Pre_step_nt: 0
   Pre_step_dt: 0.001
   L_max: 3
   Output_freq: 10
-  Convergence: 0.1e-9
+  Convergence: 0.1e-2
 Boundary:
   Periodic: false
   Fixed_up: false

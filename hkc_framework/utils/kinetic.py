@@ -21,9 +21,9 @@ class Kinetic():
         self.cmd = cmd
         self.converged = False
         self.search_tolerance = 1e-16
+        self.convergence_tolerance = 0
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.DEBUG)
-
     def convergenceTest(self):
         """
         Purpose: Convergence Test being run to monitor heat flow convergence
@@ -60,7 +60,7 @@ class Kinetic():
         else:
             convergance = 0
 
-        if np.nanmax(convergance) < 1e-9 and np.nanmax(convergance) != 0:
+        if np.nanmax(convergance) < self.convergence_tolerance and np.nanmax(convergance) != 0:
             self.converged = True
 
         return convergance
@@ -168,6 +168,8 @@ class Kinetic():
         """
 
         if self.monitor_convergence:
+            self.logger.info("Convergence Tolerance Value is")
+            self.logger.info(self.convergence_tolerance)
             stop_event = threading.Event()
             monitor = threading.Thread(name = "Convergence_Monitoring", 
             target=self.convergenceMonitoring, args = 
