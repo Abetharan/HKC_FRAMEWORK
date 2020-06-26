@@ -100,6 +100,7 @@ class SOL_KIT(Kinetic):
         else:
             Kinetic.__init__(self, cmd)
         self.convergence_tolerance = self.init.yaml_file["Params"]['Convergence']
+        self.number_of_files_before_kill = self.init.yaml_file["Params"]['Files_allowed'] 
 
     def convergance_test(self, path):
         

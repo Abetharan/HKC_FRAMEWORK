@@ -24,6 +24,7 @@ class Kinetic():
         self.convergence_tolerance = 0
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.DEBUG)
+        self.number_of_files_before_kill = 1
     def convergenceTest(self):
         """
         Purpose: Convergence Test being run to monitor heat flow convergence
@@ -122,12 +123,12 @@ class Kinetic():
                 self.logger.info("Convergence: ")
                 self.logger.info(np.nanmax(convergance))
 
-                if self.converged and file_counter > 2:
+                if self.converged and file_counter > self.number_of_files_before_kill:
                     self.logger.info("Converged ....Exiting")
                     self.clean_up()
                     stop_event.set()
                     #Update file counter
-                elif self.converged and not file_counter > 2:
+                elif self.converged and not file_counter > self.number_of_files_before_kill:
                     self.converged = False
                 file_counter = new_file_counter
                 self.logger.info(file_counter)

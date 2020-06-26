@@ -150,6 +150,9 @@ class Coupler:
         #Impact not ready
         # else:
             #kin_obj = IMPACT()
+        if self.init.yaml_file['Misc']['Continue'] and start_cycle > 1:
+                self.logger.info("CONTINUING FROM CYCLE")
+                self.logger.info(start_cycle)
         self.logger.info("Initial Conditions")
         self.logger.info("Run path {}".format(RUN_PATH))
         self.logger.info("Fast Tmp Run path {}".format(io_obj._fast_run_path))
