@@ -125,6 +125,7 @@ class Kinetic():
 
                 if self.converged and file_counter > self.number_of_files_before_kill:
                     self.logger.info("Converged ....Exiting")
+		    time.sleep(0.1)
                     self.clean_up()
                     stop_event.set()
                     #Update file counter
