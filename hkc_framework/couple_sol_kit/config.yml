@@ -19,7 +19,7 @@ Params:
   L_max: 2
   Output_freq: 10
   Convergence: 0.5
-  Files_allowed: 10
+  Files_allowed: 1
 
 Boundary:
   Periodic: false

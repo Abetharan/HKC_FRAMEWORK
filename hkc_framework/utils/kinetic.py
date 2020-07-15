@@ -15,7 +15,7 @@ class Kinetic():
         self.log_path = thread_log_path
         self.cycle = 0
         self.cycle_dump_path = ""
-        self._kinetic_output_path = ""
+        self.status_path = ""
         self.convergence_func = convergence_func
         self.monitor_convergence = convergence_monitoring
         self.nx = 0
@@ -155,10 +155,9 @@ class Kinetic():
         self.__pid = self.__process.pid
     def clean_up_proc(self):
         while True:
-            status_path = os.path.join(self._kinetic_output_path, "STATUS.txt")
-            if os.path.exists(status_path):
-                if os.access(status_path, os.W_OK):
-                    np.savetxt(status_path, np.array(0, dtype=np.int32)) 
+            if os.path.exists(self.status_path):
+                if os.access(self.status_path, os.W_OK):
+                    np.savetxt(self.status_path, np.array(0, dtype=np.int32)) 
                     break
                 else:
                     time.sleep(1e-4) 
@@ -204,9 +203,9 @@ class Kinetic():
             #Err is denoted as 1
             #Read status file created by SOL-KiT 
             err = 0
-            if os.path.exists(os.path.join(self._kinetic_output_path, "STATUS.txt")):
-                if(os.access(os.path.join(self._kinetic_output_path, "STATUS.txt"), os.R_OK)):
-                    err = np.genfromtxt(os.path.join(self._kinetic_output_path, "STATUS.txt"), skip_footer=2)
+            if os.path.exists(self.status_path):
+                if(os.access(self.status_path, os.R_OK)):
+                    err = np.genfromtxt(self.status_path, skip_footer=2)
             if bool(err):
                 self.logger.warning("Kinetic code failed see log")
                 self.logger.debug("HAS IT CONVERGED:")
