@@ -56,7 +56,6 @@ class SOL_KIT(Kinetic):
         
         #paths
         self._run_path = run_path
-        self._kinetic_output_path = kinetic_output_path
         self._kinetic_input_path = kinetic_input_path
         self._kinetic_src_dir = k_src_dir
         self.cycle_dump_path = ""
@@ -101,6 +100,7 @@ class SOL_KIT(Kinetic):
             Kinetic.__init__(self, cmd)
         self.convergence_tolerance = self.init.yaml_file["Params"]['Convergence']
         self.number_of_files_before_kill = self.init.yaml_file["Params"]['Files_allowed'] 
+        self._kinetic_output_path = kinetic_output_path
 
     def convergance_test(self, path):
         

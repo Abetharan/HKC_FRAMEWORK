@@ -18,7 +18,7 @@ Params:
   Pre_step_dt: 0.001
   L_max: 2
   Output_freq: 10
-  Convergence: 0.1E-1
+  Convergence: 0.5
   Files_allowed: 10
 
 Boundary:

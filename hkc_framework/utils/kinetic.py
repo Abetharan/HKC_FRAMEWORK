@@ -15,6 +15,7 @@ class Kinetic():
         self.log_path = thread_log_path
         self.cycle = 0
         self.cycle_dump_path = ""
+        self._kinetic_output_path = ""
         self.convergence_func = convergence_func
         self.monitor_convergence = convergence_monitoring
         self.nx = 0
@@ -125,7 +126,7 @@ class Kinetic():
 
                 if self.converged and file_counter > self.number_of_files_before_kill:
                     self.logger.info("Converged ....Exiting")
-                    time.sleep(0.1)
+                    self.clean_up_proc()
                     self.clean_up()
                     stop_event.set()
                     #Update file counter
@@ -143,7 +144,6 @@ class Kinetic():
             for handler in self.logger.handlers:
                 handler.close()
                 self.logger.removeHandler(handler)
-            self.__process.terminate()
             # logging.shutdown()
         except OSError:
             pass #ignore the error.  The OSError doesn't seem to be documented(?)
@@ -153,7 +153,15 @@ class Kinetic():
                 #hopefully someone that knows more about this than I do can 
                 #comment.
         self.__pid = self.__process.pid
-    
+    def clean_up_proc(self):
+        while True:
+            status_path = os.path.join(self._kinetic_output_path, "STATUS.txt")
+            if os.path.exists(status_path):
+                if os.access(status_path, os.W_OK):
+                    np.savetxt(status_path, np.array(0, dtype=np.int32)) 
+                    break
+                else:
+                    time.sleep(1e-4) 
     def Execute(self,  kinetic_heat_flow_output_folder_path):
         """  
         Purpose: Launch the command relevant to kinetic code specified, if maintain 
@@ -184,22 +192,29 @@ class Kinetic():
         #run command provided
             atexit.register(self.clean_up)
             self.__process = subprocess.Popen(self.cmd, stdout=writer, stderr = subprocess.PIPE)
-
+        
+        #stdout stderr
         _, err = self.__process.communicate()
+        #Checks for exception via self.__process.poll 
+        #If exception safely exit thread. Using stop event.
         if self.__process.poll() is not None and self.monitor_convergence:
             stop_event.set()
-
+        
         if err and not self.converged:
-            self.logger.warning("Kinetic code failed see log")
-            self.logger.debug("Error Code ")
-            self.logger.debug(err)
-            self.logger.debug("Has Converged ")
-            self.logger.debug(self.converged)
-            if not os.path.exists("SOL-KiT"):
-                self.logger.debug("SOL KIT NO LONGER EXISTS")
-            
-            path_obj = pathlib.Path(self.cycle_dump_path)
-            root_path = path_obj.parent
-            np.savetxt(os.path.join(root_path, "status.txt"), np.array([1], dtype=np.int), fmt = '%1.1i')
-            sys.exit(0)
-        self.converged = False
+            #Err is denoted as 1
+            #Read status file created by SOL-KiT 
+            err = 0
+            if os.path.exists(os.path.join(self._kinetic_output_path, "STATUS.txt")):
+                if(os.access(os.path.join(self._kinetic_output_path, "STATUS.txt"), os.R_OK)):
+                    err = np.genfromtxt(os.path.join(self._kinetic_output_path, "STATUS.txt"), skip_footer=2)
+            if bool(err):
+                self.logger.warning("Kinetic code failed see log")
+                self.logger.debug("HAS IT CONVERGED:")
+                self.logger.debug(self.converged)
+                if not os.path.exists("SOL-KiT"):
+                    self.logger.debug("SOL KIT NO LONGER EXISTS")
+                path_obj = pathlib.Path(self.cycle_dump_path)
+                root_path = path_obj.parent
+                np.savetxt(os.path.join(root_path, "status.txt"), np.array([1], dtype=np.int), fmt = '%1.1i')
+                sys.exit(0)
+            self.converged = False
