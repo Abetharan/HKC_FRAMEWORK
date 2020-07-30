@@ -77,7 +77,7 @@ class HyKiCT(Fluid):
         
         return(f_x_grid, f_x_centered_grid, f_v, f_ne, f_Te, f_Z, f_laser, mass)
     
-    def initHydroFromKinetic(self, next_fluid_input_path, qe, pre_params = None, front_params = None):
+    def initHydro(self, next_fluid_input_path, qe = None, pre_params = None, front_params = None):
         """
         Purpose: 
             Move fluid files
@@ -89,7 +89,8 @@ class HyKiCT(Fluid):
         """ 
         largest_fluid_index = findLargestIndex(os.path.join(self._fluid_output_path, "ELECTRON_TEMPERATURE"))
         #Properitary names for HyKiCT. Looks for these files when run in coupled mode
-        np.savetxt(os.path.join(next_fluid_input_path,"qe.txt"), qe)
+        if not None:
+            np.savetxt(os.path.join(next_fluid_input_path,"qe.txt"), qe)
 
         if pre_params is not None:
             np.savetxt(os.path.join(next_fluid_input_path,"pre_heat_fit_param.txt"), pre_params)

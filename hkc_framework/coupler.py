@@ -112,6 +112,8 @@ class Coupler:
                         self.init.yaml_file['Paths']['F_src_dir'], 
                         self.init.yaml_file['Paths']['Init_path'],
                         start_cycle, cycles, overwrite)
+        if self.init.yaml_file['Mode']['Couple_leap_frog']:
+            io_obj.leap_frog = True
         #Create Folders
         #Has implicit checks on whether to create folder again or not
         io_obj.createDirectoryOfOperation()
@@ -158,27 +160,30 @@ class Coupler:
         self.logger.info("Fast Tmp Run path {}".format(io_obj._fast_run_path))
         self.logger.info("Start Cycle {}".format(start_cycle)) 
         self.logger.info("Max Cycle {}".format(cycles)) 
-        self.logger.info("Overwrite {}".format(overwrite)) 
+        self.logger.info("Overwrite {}".format(overwrite))
+        self.logger.info("Number of Process for KINETIC {}".format(kin_obj.init.yaml_file['Params']['Np'])) 
+
         #Enforce equal size ... Constrain at the moment
         kin_obj.init.yaml_file['Params']['Nx'] = self.init.yaml_file['Coupling_params']['Nx']
         fluid_obj.init.yaml_file['FixedParameters']['nx'] = self.init.yaml_file['Coupling_params']['Nx']
         kin_obj.nx = kin_obj.init.yaml_file['Params']['Nx'] 
 
-        fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = self.init.yaml_file['Coupling_params']['Couple_divq']
-        fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = self.init.yaml_file['Coupling_params']['Couple_multi']
+        fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = self.init.yaml_file['Mode']['Couple_divq']
+        fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = self.init.yaml_file['Mode']['Couple_multi']
         #Store original fluid yaml
         self.original_f_init = copy.deepcopy(fluid_obj.init.yaml_file)
         #modify original to represent run mode
 
-        #initially fluid should always be run in no couple mode.
+        #This If statements allows the fluid code to run independent initially.
+        #The time parameters specified in its config is followed at the moment.
         #Has checks if continue mode is engaged
-        if(start_cycle == 0 and not self.init.yaml_file['Coupling_params']['Start_coupled']):
+        if(start_cycle == 0 and not self.init.yaml_file['Mode']['Start_coupled']):
             self.logger.info("Starting in MODE: No-Coupling")
 
             fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = False
             fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = False
 
-            if self.init.yaml_file['Coupling_params']['Start_from_kinetic']:
+            if self.init.yaml_file['Mode']['Start_from_kinetic']:
                 self.logger.info("Starting in MODE: Start From Kinetic")
 
                 fluid_obj.init.yaml_file['TimeParameters']['steps'] = 0
@@ -187,8 +192,14 @@ class Coupler:
                 self.logger.info("Steps is {}".format(fluid_obj.init.yaml_file['TimeParameters']['steps']))
                 self.logger.info("Tmax is {}".format(fluid_obj.init.yaml_file['TimeParameters']['t_max']))
         
-        if (self.init.yaml_file['Coupling_params']['Start_coupled'] and
-             self.init.yaml_file['Coupling_params']['Couple_adaptive']):
+        #Allows to run coupled immediately 
+        #Assumes the necessary files exists in the init folder
+        #This statements allows for adaptive coupling mode 
+        #Otherwise the start_coupled will follow whatever
+        #specified in the config. 
+        #At present it div.q is default opition initiallyi
+        if (self.init.yaml_file['Mode']['Start_coupled'] and
+             self.init.yaml_file['Mode']['Couple_adaptive']):
 
             self.logger.info("Starting Coupled with Adaptive Switching")
 
@@ -225,10 +236,11 @@ class Coupler:
         
             if cycle_no >= 1:
                 #Engage coupling 
-                self.logger.info("Engage Coupling if MODE: NO-COUPLING/ Start from Kinetic")
-                if(self.init.yaml_file['Coupling_params']['Couple_adaptive']):
-                    if self.pre_heat_present or self.init.yaml_file['Coupling_params']['Start_coupled']:
-                        self.init.yaml_file['Coupling_params']['Start_coupled'] = False
+                #Initial logic specific only adapative 
+                self.logger.info("Engage Coupling if MODE: Adapative")
+                if(self.init.yaml_file['Mode']['Couple_adaptive']):
+                    if self.pre_heat_present or self.init.yaml_file['Mode']['Start_coupled']:
+                        self.init.yaml_file['Mode']['Start_coupled'] = False
                         k_physical_time = kin_obj.getPhysicalRunTime()
                         f_run_time = k_physical_time * self.init.yaml_file['Coupling_params']['Eta']
                         if(f_run_time < fluid_obj.init.yaml_file['TimeParameters']['dt']):
@@ -245,13 +257,27 @@ class Coupler:
                         fluid_obj.init.yaml_file = self.original_f_init
                         fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = False 
                         fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = True 
-
-                if self.init.yaml_file['Coupling_params']['Start_from_kinetic']:
-                    if(self.init.yaml_file['Coupling_params']['Couple_adaptive']):
+                
+                #For coupling without the bells and whilstls.
+                if self.init.yaml_file['Mode']['Start_from_kinetic']:
+                    if(self.init.yaml_file['Mode']['Couple_adaptive']):
                         #Configurations already done above
                         pass
                     else:
-                        fluid_obj.init.yaml_file = self.original_f_init
+                        if (self.init.yaml_file['Mode']['Couple_div_q'] or 
+                            self.init.yaml_file['Mode']['Couple_multi']):
+
+                            fluid_obj.init.yaml_file = self.original_f_init
+                            if self.init.yaml_file['Mode']['Couple_div_q']:
+                                self.logger.info("Engage Coupling if MODE: Div.q")
+                            elif self.init.yaml_file['Mode']['Couple_multi']:
+                                self.logger.info("Engage Coupling if MODE: Multi")
+
+                        elif self.init.yaml_file['Mode']['Couple_leap_frog']:
+                            self.logger.info("Engage Coupling if MODE: LeapFrog")
+                            fluid_obj.init.yaml_file = self.original_f_init
+                            fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = False
+                            fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = False
           
             ###########
             #Fluid Step
@@ -262,13 +288,23 @@ class Coupler:
             #Set Paths that change
             fluid_obj.init.yaml_file['Paths']['Init_Path'] = io_obj.fluid_input_path
             fluid_obj.init.yaml_file['Paths']['Laser_Profile_Path'] = os.path.join(io_obj.fluid_input_path, "laser_profile.txt")
-            fluid_obj.init.yaml_file['Paths']['Out_Path'] = io_obj.fluid_output_path
             
             fluid_obj._cycle_dump_path = io_obj.cycle_dump_path
-            fluid_obj._fluid_output_path = io_obj.fluid_output_path
             fluid_obj._fluid_input_path = io_obj.fluid_input_path
+            
+            #First pass in Leap frog ... run in default mode with specified flux limiter and 
+            #save to a different folder 
+            if self.init.yaml_file['Mode']['Couple_leap_frog']:
+                self.logger.info("Setting Leap Frog Fluid Output Path")
+                fluid_obj.init.yaml_file['Paths']['Out_Path'] = io_obj.fluid_leap_frog_path 
+                fluid_obj._fluid_output_path = io_obj.fluid_leap_frog_path
+            else:
+                fluid_obj.init.yaml_file['Paths']['Out_Path'] = io_obj.fluid_output_path
+                fluid_obj._fluid_output_path = io_obj.fluid_output_path
+            
             self.logger.info("Fluid input path {}".format(fluid_obj.init.yaml_file['Paths']['Init_Path']))
             self.logger.info("Fluid output path {}".format(fluid_obj.init.yaml_file['Paths']['Out_Path']))
+
             ################
             #Any other parameter updates that needs to be set can be added here.
             #################
@@ -334,13 +370,13 @@ class Coupler:
             self.logger.info("Kinetic input path {}".format(io_obj.kinetic_input_path))
             self.logger.info("Kinetic output path {}".format(io_obj.kinetic_output_path))
 
-            if self.init.yaml_file['Coupling_params']['Load_f1']:
+            if self.init.yaml_file['Mode']['Load_f1']:
                 if cycle_no > 0:
                     self.logger.info("Engaging MODE: Load F1")
                     #all_kinetic_output_paths contain all paths for kinetic output, require last cycle for load F1, thus cycle_no - 1
                     kin_obj.previous_kinetic_output_path = io_obj.all_kinetic_output_path[cycle_no - 1] 
                     kin_obj.load_f1 = True                                                              
-                if self.init.yaml_file['Coupling_params']['Start_coupled']:
+                if self.init.yaml_file['Mode']['Start_coupled']:
                     self.logger.info("Engaging MODE: Load F1 from Start Coupled")
                     #Hack to continue broken sims, assumes RESTART and GRID exists in init folder
                     if os.path.exists(os.path.join(self.init.yaml_file['Paths']['Init_path'], "kinetic_restart")):
@@ -367,13 +403,13 @@ class Coupler:
             #use these may be required and thus, left in. 
 
             self.logger.info("Coupling Heat-Flow")
-            if self.init.yaml_file['Coupling_params']['Couple_divq']:
+            if self.init.yaml_file['Mode']['Couple_divq']:
                 #qe here is div.q_vfp 
                 self.logger.info("Calculate Div.q")
                 qe = hfct_obj.divQHeatFlow()
             
-            elif (self.init.yaml_file['Coupling_params']['Couple_multi'] or 
-                    self.init.yaml_file['Coupling_params']['Couple_adaptive']):
+            elif (self.init.yaml_file['Mode']['Couple_multi'] or 
+                    self.init.yaml_file['Mode']['Couple_adaptive']):
                 #qe here is q_vfp/q_sh
                 self.logger.info("Calculate Multipliers")
                 (qe, pre_heat_start_index, pre_heat_last_index,
@@ -383,7 +419,7 @@ class Coupler:
                 #We utilise div.q coupling to get rid of these fronts.
                 #Otherwise, apply the exponential models. 
                 if(pre_heat_start_index > 0 or front_heat_start_index > 0):
-                    if(self.init.yaml_file['Coupling_params']['Couple_adaptive']):
+                    if(self.init.yaml_file['Mode']['Couple_adaptive']):
                             self.logger.info("Pre-heat present in MODE: Adapative ignore multipliers")
                             self.pre_heat_present = True
                             qe = hfct_obj.divQHeatFlow()
@@ -396,11 +432,45 @@ class Coupler:
                         fluid_obj.init.yaml_file['FixedParameters']['Preheat_LastIndex'] = pre_heat_last_index.item()
                         fluid_obj.init.yaml_file['FixedParameters']['Frontheat_StartIndex'] = front_heat_start_index.item()
                         fluid_obj.init.yaml_file['FixedParameters']['Frontheat_LastIndex'] = front_heat_last_index.item()
-            
+
+            #Leap Frog Step if turned on 
+            if self.init.yaml_file['Mode']['Couple_leap_frog']:
+
+                self.logger.info("Init Leap-Frogged Fluid")
+
+                np.savetxt(os.path.join(io_obj.fluid_input_path,"qe.txt"), qe)
+                if pre_heat_fit_params is not None:
+                    np.savetxt(os.path.join(io_obj.fluid_input_path,"pre_heat_fit_param.txt"), pre_heat_fit_params)
+                    np.savetxt(os.path.join(io_obj.fluid_input_path,"front_heat_fit_param.txt"), front_heat_fit_params)
+
+                self.logger.info("Setting Files")
+                fluid_obj.init.yaml_file = self.original_f_init
+                fluid_obj.init.yaml_file['Paths']['Init_Path'] = io_obj.fluid_input_path
+                fluid_obj.init.yaml_file['Paths']['Laser_Profile_Path'] = os.path.join(io_obj.fluid_input_path, "laser_profile.txt")
+                fluid_obj._cycle_dump_path = io_obj.cycle_dump_path
+                fluid_obj._fluid_input_path = io_obj.fluid_input_path
+                fluid_obj.init.yaml_file['Paths']['Out_Path'] = io_obj.fluid_output_path
+                fluid_obj._fluid_output_path = io_obj.fluid_output_path
+
+                self.logger.info("Progress Fluid Step from Leap Frogged Heat-Flow")
+                self.logger.info("Fluid input path {}".format(fluid_obj.init.yaml_file['Paths']['Init_Path']))
+                self.logger.info("Fluid output path {}".format(fluid_obj.init.yaml_file['Paths']['Out_Path']))
+                fluid_obj.setFiles()
+                self.logger.info("Start Fluid")
+                fluid_obj.Run()
+                self.logger.info("End Fluid")
+                
+
+
             #Finish by fluid init next set of files 
             self.logger.info("Init Fluid")
-            fluid_obj.initHydroFromKinetic(io_obj.next_fluid_input_path, qe,
-                                            pre_heat_fit_params, front_heat_fit_params)
+            if self.init.yaml_file['Mode']['Couple_leap_frog']:
+                fluid_obj.initHydro(io_obj.next_fluid_input_path, None,
+                                                None, None)
+            else:
+                fluid_obj.initHydro(io_obj.next_fluid_input_path, qe,
+                                                pre_heat_fit_params, front_heat_fit_params)
+
             if self.init.yaml_file['Misc']['HDF5']:
                 io_obj._createHDF5()
                 self.logger.info("Store to HDF5")
