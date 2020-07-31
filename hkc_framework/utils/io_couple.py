@@ -62,12 +62,12 @@ class IO:
         print('\n')
         self.cycle_dump_path = os.path.join(self._run_path,
                                 "".join(["CYCLE_", str(self.cycle_counter)]))
-        self.fluid_input_path = os.path.join(self.cycle_dump_path + "/FLUID_INPUT/")
-        self.fluid_output_path = os.path.join(self.cycle_dump_path + "/FLUID_OUTPUT/")
-        self.kinetic_input_path = os.path.join(self.cycle_dump_path + "/KINETIC_INPUT/")
-        self.kinetic_output_path = os.path.join(self.cycle_dump_path + "/KINETIC_OUTPUT/")
+        self.fluid_input_path = os.path.join(self.cycle_dump_path, "FLUID_INPUT/")
+        self.fluid_output_path = os.path.join(self.cycle_dump_path, "FLUID_OUTPUT/")
+        self.kinetic_input_path = os.path.join(self.cycle_dump_path, "KINETIC_INPUT/")
+        self.kinetic_output_path = os.path.join(self.cycle_dump_path, "KINETIC_OUTPUT/")
         if self.leap_frog:
-            self.fluid_leap_frog_path = os.path.join(self.cycle_dump_path, "/LEAP_FROG_OUTPUT")
+            self.fluid_leap_frog_path = os.path.join(self.cycle_dump_path, "LEAP_FROG_OUTPUT")
     def createDirectoryOfOperation(self,):
         """ Purpose: Creates all folders required immediately .. reduces overhead later one 
             Args: no_cycles = no of total cycles.
@@ -86,11 +86,11 @@ class IO:
         for i in range(self.max_cycle):
             cycle_path = os.path.join(self._run_path, ("CYCLE_" + str(i)))
         
-            fluid_input_path = os.path.join(cycle_path + "/FLUID_INPUT/")
-            fluid_output_path = os.path.join(cycle_path + "/FLUID_OUTPUT/")
-            kinetic_input_path = os.path.join(cycle_path + "/KINETIC_INPUT/")
-            kinetic_output_path = os.path.join(cycle_path + "/KINETIC_OUTPUT/")
-            fluid_leap_frog_path = os.path.join(cycle_path, "/LEAP_FROG_OUTPUT")
+            fluid_input_path = os.path.join(cycle_path, "FLUID_INPUT/")
+            fluid_output_path = os.path.join(cycle_path, "FLUID_OUTPUT/")
+            kinetic_input_path = os.path.join(cycle_path, "KINETIC_INPUT/")
+            kinetic_output_path = os.path.join(cycle_path, "KINETIC_OUTPUT/")
+            fluid_leap_frog_path = os.path.join(cycle_path, "LEAP_FROG_OUTPUT/")
             self.all_cycle_path.append(cycle_path)
             self.all_fluid_input_path.append(fluid_input_path)
             self.all_fluid_output_path.append(fluid_output_path)

@@ -7,13 +7,13 @@ Norms:
 
 Params:
   Nx: 0 #handled internally
-  Nv: 100
-  Np: 14
+  Nv: 20
+  Np: 2
   Dt: 0.04
   Dx: 0.5
   Dv: 0.0307
   Dv_multi: 1.03
-  Nt: 80000
+  Nt: 20
   Pre_step_nt: 0
   Pre_step_dt: 0.001
   L_max: 2

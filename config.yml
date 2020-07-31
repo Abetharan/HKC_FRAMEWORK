@@ -11,19 +11,19 @@ Codes:
   Fluid_code: hykict
 Coupling_params:
   Nx: 150
-  Cycles: 2
+  Cycles: 5
   Eta: 0.1E-2
- 
+  hdf5_output_freq: 2
 Mode:
   Couple_divq: false
   Couple_multi: false
-  Couple_adaptive: false
+  Couple_adaptive: true
   Couple_leap_frog: true
-  Start_from_kinetic: false 
+  Start_from_kinetic: false
   Load_f1: true
-  Start_coupled: false #Takes precedence over start from kinetic, assumes relevant quanties exist. Does not work with adapative
+  Start_coupled: false #Takes precedence over start from kinetic, assumes relevant quanties exist. Does not work with leap-frog
 Misc:
-  HDF5: False
+  HDF5: false
   Convergence_monitoring: true
   Zip: false
   Continue: true

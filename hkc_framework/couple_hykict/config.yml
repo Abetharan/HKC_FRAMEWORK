@@ -21,7 +21,7 @@ LaserParams:
   Constant_Power: 0.1e11 #If load in laser profile is true this is ignored.
   Wavelength: 0.100e-8
 Limiters:
-  heatflxlm: 1.0
+  heatflxlm: 0.05
   prrm: 1.0
   radabm: 1.0
   radbrm: 1.0
@@ -85,8 +85,8 @@ TimeParameters:
   RadLimit: 0.1
   VolLimit: 0.05
   cfl: 0.85
-  dt: 1.0e-17
+  dt: 1.0e-15
   dt_max: 1.0e-10
   dt_min: 1.0e-19
   steps: 0
-  t_max: 1.0e-16
+  t_max: 1.0e-12
