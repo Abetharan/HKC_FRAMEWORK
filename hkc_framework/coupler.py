@@ -16,6 +16,7 @@ import pathlib
 import signal
 import shutil
 import sys
+import time
 import utils as util
 from couple_sol_kit.sol_kit import SOL_KIT
 from couple_hykict.hykict import HyKiCT
@@ -225,6 +226,7 @@ class Coupler:
         self.first_pass = True
         np.savetxt(os.path.join(RUN_PATH, "status.txt"), np.array([0], dtype=np.int), fmt = '%1.1i')
         for cycle_no in range(start_cycle, cycles, 1):
+            t0 = time.time()
             self.prettyPrint(' Initiating CYCLE ' + str(cycle_no)) 
             self.logger.info("Initiating Cycle {}".format(cycle_no))
             #Update Paths
@@ -336,7 +338,10 @@ class Coupler:
                     fluid_obj.storeToHdf5(io_obj.hdf5_file, cycle_no)
                     io_obj.hdf5_file.close()
                 np.savetxt(continue_step_path, np.array([cycle_no]), fmt = '%i')
+                t1 = time.time()
+                self.logger.info('CPU TIME FOR CYCLE {} IS {} '.format(cycle_no, t1-t0))
                 self.logger.info("Terminating Coupling")
+         
                 break 
 
             self.logger.info("Get Last Fluid Quants")
@@ -483,6 +488,9 @@ class Coupler:
                         io_obj.hdf5_file.close()
                     np.savetxt(continue_step_path, np.array([cycle_no]), fmt = '%i')
                     self.logger.info("Terminating Coupling")
+                    t1 = time.time()
+                    self.logger.info('CPU TIME FOR CYCLE {} IS {} '.format(cycle_no, t1-t0))
+                    self.logger.info("Terminating Coupling")
                     break 
 
             #Finish by fluid init next set of files 
@@ -505,6 +513,8 @@ class Coupler:
                 self.logger.info("Store to zip")
                 io_obj.zipAndDelete()        
             #update continue file
+            t1 = time.time()
+            self.logger.info('CPU TIME FOR CYCLE {} IS {} '.format(cycle_no, t1-t0))
             np.savetxt(continue_step_path, np.array([cycle_no]), fmt = '%i')
             self.first_pass = False
             
