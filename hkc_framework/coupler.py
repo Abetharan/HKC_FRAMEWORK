@@ -225,8 +225,8 @@ class Coupler:
         self.first_pass = True
         np.savetxt(os.path.join(RUN_PATH, "status.txt"), np.array([0], dtype=np.int), fmt = '%1.1i')
         for cycle_no in range(start_cycle, cycles, 1):
-            self.prettyPrint(' RUNNING CYCLE ' + str(cycle_no)) 
-            self.logger.info("Running Cycle {}".format(cycle_no))
+            self.prettyPrint(' Initiating CYCLE ' + str(cycle_no)) 
+            self.logger.info("Initiating Cycle {}".format(cycle_no))
             #Update Paths
             io_obj.cycle_counter = cycle_no
             io_obj.nextCyclePathManager()
@@ -336,7 +336,7 @@ class Coupler:
                     fluid_obj.storeToHdf5(io_obj.hdf5_file, cycle_no)
                     io_obj.hdf5_file.close()
                 np.savetxt(continue_step_path, np.array([cycle_no]), fmt = '%i')
-                self.logger.info("End Coupling")
+                self.logger.info("Terminating Coupling")
                 break 
 
             self.logger.info("Get Last Fluid Quants")
@@ -482,7 +482,7 @@ class Coupler:
                         kin_obj.storeToHdf5(io_obj.hdf5_file, cycle_no)
                         io_obj.hdf5_file.close()
                     np.savetxt(continue_step_path, np.array([cycle_no]), fmt = '%i')
-                    self.logger.info("End Coupling")
+                    self.logger.info("Terminating Coupling")
                     break 
 
             #Finish by fluid init next set of files 
