@@ -105,12 +105,13 @@ class IO:
                         os.path.exists(kinetic_output_path) and 
                         os.path.exists(fluid_leap_frog_path)):
                             continue
-                    elif(os.path.exists(fluid_input_path) and
-                        os.path.exists(fluid_output_path) and
-                        os.path.exists(kinetic_output_path) and
-                        os.path.exists(kinetic_output_path)):
-                            continue
-                    
+                        
+                elif(os.path.exists(fluid_input_path) and
+                    os.path.exists(fluid_output_path) and
+                    os.path.exists(kinetic_output_path) and
+                    os.path.exists(kinetic_output_path)):
+                    continue
+	    
             
             os.makedirs(cycle_path)
             os.makedirs(fluid_output_path)
