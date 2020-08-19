@@ -3,6 +3,8 @@ from scipy import linalg
 import matplotlib.pyplot as plt 
 from scipy import constants
 import math
+import sys
+from mpl_toolkits.mplot3d import Axes3D
 kb = constants.value("Boltzmann constant")
 me = constants.value("electron mass")
 mp = constants.value("proton mass")
@@ -84,14 +86,13 @@ def free_param_calc(Te, ne, Z):
 
     gamma_ei_0 = Z ** 2 * gamma_ee_0
 
-    v_t = np.sqrt(2.0 * T_J / me)                  # Velocity normalization
-    k = lambda_ei(T_norm = Te, n_norm = ne, Z_norm = Z)
-    time_norm = pow(v_t, 3) / (gamma_ei_0 * (ne/Z) * lambda_ei(T_norm = Te, n_norm = ne, Z_norm = Z)) # Time normalization
+    v_t = np.sqrt(T_J / me)                  # Velocity normalization
+    k = lambda_ei(T_norm = Te, n_norm = ne, Z_norm = Z) #0.75 * pow(np.pi/2, 0.5) *
+    time_norm =   pow(v_t, 3) / (gamma_ei_0 * (ne/Z) * lambda_ei(T_norm = Te, n_norm = ne, Z_norm = Z)) # Time normalization
     x_0 = v_t * time_norm               # Space normalization
 
     e_0 = me * v_t / (el_charge * time_norm) # Electric field normalization
     q_0 = me * ne * pow(v_t, 3)
-
     param_dict = {}
 
     param_dict['ne'] = ne
@@ -104,8 +105,30 @@ def free_param_calc(Te, ne, Z):
     param_dict['nu_ei'] = 1/time_norm
     param_dict['lambda_mfp'] = x_0
     param_dict['qe'] = q_0
+    param_dict['E'] = e_0
     return(param_dict)
 
+def getLambdaStar(Te, ne, Z, v_grid):
+    """
+    Purpose: Calculates velocity dependent collision frequency
+             and mfp
+    Args:
+        Te = Temperature
+        ne = Numbe r density 
+        Z = ionization
+        v_grid = centered grid
+    Returns: nue_ei, lambda_star
+    """
+    coulomb_log = lambda_ei(T_norm = Te * (kb/e), n_norm = ne, Z_norm = Z)
+    gamma_ee_0 = e ** 4 / pow((4 * math.pi * me * epsilon_0), 2)
+    nue_ei = np.zeros((len(Te), len(v_grid)))
+    lambda_star = np.zeros((len(Te), len(v_grid)))
+    for j,v in enumerate(v_grid):
+        nue_ei[:, j] = (4 * np.pi * Z *ne*gamma_ee_0 *coulomb_log) / (pow(v,3)) 
+        zeta = (Z + 0.24) / (Z + 4.2)
+        lambda_star[:, j] = (v / nue_ei[:, j]) * zeta 
+    return nue_ei, lambda_star
+    
 def lambda_star(nue_ei, v_grid, Z):
     lambda_star = np.zeros((len(nue_ei), len(v_grid)))
     for i, local_nue in enumerate(nue_ei):
@@ -114,35 +137,42 @@ def lambda_star(nue_ei, v_grid, Z):
             lambda_star[i, j] = zeta * (v/local_nue)
     return(lambda_star)
 
-# def lambda_star(ne, Te, Z, coulomb_log, v_grid):
-#     lambda_star = np.zeros((len(Te), len(v_grid)))
-#     gamma_ee = pow(e, 4) / pow((4 * np.pi * epsilon_0), 2)
-#     for i, (n, T, ioniza, lamb_ei) in enumerate(zip(ne, Te, Z, coulomb_log)):
-#         zeta = (ioniza + 0.24) / (ioniza + 4.2)
-#         for j, v in enumerate(v_grid):
-#             lambda_star[i, j] = ((2 * pow(2, 0.5)*(0.5 * me * pow(v, 2))) / 
-#                                 (4 * np.pi * pow(ioniza, 0.5) * gamma_ee * lamb_ei * pow(zeta, 0.5)))
-
-    # return(lambda_star)
-
 def electric_field(x, Te, ne, Z):
-    n = len(Te)
-    E = np.zeros(n)
-    for i in range(n - 2):
-        dx = x[i + 1] - x[i]
-        gamma =  1 + 3 * (Z[i] + 0.477) / (2*(Z[i] + 2.15))
-        if i == n - 1:
-            print("kapp")
-        E[i + 1] = -1 * (kb/(pow((4 * np.pi * epsilon_0),0.5) * e)) * Te[i] * ((ne[i + 1] - ne[i]) / (ne[i] * dx) +
-                        gamma * ((Te[i + 1] - Te[i]) /(Te[i] * dx)))
+    """
+    Purpose: Calculate Spizter-Harm Electric Field
+    Args: 
+        x = Cell-centered grid, shape (nx)
+        Te = Full grid, shape (2 * nx + 1)
+        ne = Full grid, shape (2 * nx + 1)
+        Z = Cell-wall grid, shape (nx)
+    Returns E_field with 0 field at boundaries. 
+    Checked: 13/08/2020
+    """
+    n = len(x)
+    E = np.zeros(n + 1)
+    #gamma_ee_0 = e  / pow((4 * math.pi* epsilon_0), 0.5)
+    for i in range(1, n):
+        dx = x[i] - x[i - 1]
+        gamma =  1 + ((3 * (Z[i] + 0.477)) / (2*(Z[i] + 2.15)))
+        E[i] = (-1 * (kb/e) * Te[i*2] * 
+                    (((ne[i*2 + 1] - ne[i*2 - 1]) / (ne[i*2] * dx)) +
+                    gamma * ((Te[i*2 + 1] - Te[i*2 - 1]) /(Te[i*2] * dx))))
     return(E)
 
 def lambda_E(lambda_star, E, v_grid):
+    """
+    Purpose: Phemenlogical corrections to mfp via addition of E-field
+    Args:
+        Lambda_star = velocity dependent mfp 
+        E = E-field
+        v_grid = centered v grid 
+    Returns:
+        lambda_E = corrected mfp.
+    """
     lambda_E = np.zeros(np.shape(lambda_star))
     for i, e_field in enumerate(E):
         for j, v in enumerate(v_grid):
-            k = 1/(lambda_star[i, j]) + abs((e * e_field) 
-                                        / (0.5 * me * pow(v, 2))) 
+            k = 1/(lambda_star[i, j]) + abs((e * e_field) / (0.5 * me * pow(v, 2))) 
             lambda_E[i, j] = 1/k
 
     return(lambda_E)
@@ -153,56 +183,99 @@ def f_maxwellian(Te, ne, v_grid, v_grid_width):
     Args:
         Te = Electron Temperature 
         ne = Number Density
-        v_grid = velocity grid being used, taken from previous sol-kit cycle
+        v_grid = velocity grid being used
         v_grid_width = width of velocity cells.
     """
     nv = len(v_grid)
     nx = len(Te)
     f0 = np.zeros((nx, nv))
-    f0 = np.zeros((nx, nv))
     n_num = np.zeros(nx)
     #Method from f_init.f90:215::227
     for i in range(nx):
+        v_th = np.sqrt((kb * Te[i])/me)
         for v in range(nv):
-            v_th = np.sqrt((kb * Te[i])/me)
             f0[i,v] = ne[i] * ((np.pi * 2*v_th) ** (- 3.00/2.00)) * np.exp( - (v_grid[v] ** 2)/ (2*v_th**2))
             n_num[i] = n_num[i] + 4.00 * np.pi * v_grid[v] ** 2 * v_grid_width[v] * f0[i,v]
+        
+        #Ensure density is consistent via scaling with numerical density.
         for v in range(nv):
             f0[i, v] = f0[i,v] * ne[i]/n_num[i]
     return(f0)
 
 def g_1_maxwellian(lambda_star, f_0_maxwellian, x, Te):
+    """
+    Purpose: Calculates g_1
+    Args: 
+        lambda_star = cell-wall mfp defined in energy groups with collision fix, shape = (nx + 1, nv).
+        f_0_maxwellian = maxwell-boltzmann distribution defined on entire grid, shape = (2*nx +1, nv)
+        x = cell-centered grid, shape = (nx)
+        Te = full grid Te, shape = (2*nx + 1)
+    Returns:
+        g_1
+    Checked: 13/08/2020
+    """
     nx, nv = np.shape(lambda_star)
     g_1 = np.zeros((nx ,nv))
-    for i in range(nx - 2):
+    for i in range(1, nx - 1):
+        dx = x[i] - x[i - 1]
+        gradient = (Te[i*2 + 1] - Te[i*2 - 1])/ dx
+        temperature_correction = (gradient/Te[i*2])
         for v in range(nv):
-            # if v == 0:
-            #     g_1[i + 1, v] = 0# -1 * lambda_star[i + 1, v] * f_0_maxwellian[i + 1, v] * (gradient/Te[i + 1]) 
-                # continue
-            dx = x[i + 1] - x[i]
-            gradient = (Te[i + 1] - Te[i]/ dx )
-            # centered = (Te[i] + Te[i + 1]) / 2
-            g_1[i + 1, v] = -1 * lambda_star[i + 1, v] * f_0_maxwellian[i + 1, v] * (gradient/Te[i]) 
+            g_1[i, v] = -1 * lambda_star[i, v] * f_0_maxwellian[2*i, v] * temperature_correction
     return(g_1)
 
 def get_delta_f(g_1, nue_ei, Z, lambda_E, v_grid, x):
+    """
+    Purpose: Calculates delta_f_0 
+    Args:
+        g_1: modified SNB f_1 maxwellian, shape (nx + 1, nv)
+        nue_ei: Collision Frequency, shape nx
+        Z: Ionization, shape nx 
+        Lambda_E: SNB modified collision mfp shape (nx + 1, nv) 
+        v_grid: Velocity grid/groups, shape (nv)
+        x: full X grid has length,  2*nx + 1
+    Returns:
+        delta_f_0
+    Checked: 13/08/2020
+    """
     nx, nv = np.shape(g_1)
     delta_f0 = np.zeros((nx - 1, nv))
     r = 2
-    A = np.zeros(nx)
-    B = np.zeros(nx)
-    C = np.zeros(nx)
-    S = np.zeros(nx - 1)
     for j, v in enumerate(v_grid):
+        A = np.zeros(nx - 1)
+        B = np.zeros(nx - 1)
+        C = np.zeros(nx - 1)
+        S = np.zeros(nx - 1)
         for i in range(0, nx - 1):
-            dx_k = x[i+1] - x[i]
-            dx_k_1_2 = x[i+3] - x[i + 1]
+            if i == 0:
+                dx_k = 2 * (x[1] - x[0]) #extrapolate grid unformly
+            else:
+                dx_k = x[2 * i + 1] - x[2 * i - 1]
+
+            if 2 *i + 3 > len(x) - 1:
+                dx_k_1 = 2 * (x[-1] - x[-2]) #extrapolate grid unformly beyond grid 
+            else:
+                dx_k_1 = x[2 * i + 3] - x[2 * i + 1]
+
+            if i == 0:
+                x__1_2 = 0 - (x[1] - x[0])
+                dx_k_1_2 = x[2 * i + 3] - x__1_2
+            if 2 *i + 3 > len(x) - 1:
+                x_k_n_1_2 = x[-1] + (x[-1] - x[-2]) 
+                dx_k_1_2 = x_k_n_1_2 - x[2 * i - 1] 
+            else:
+                dx_k_1_2 = x[2 * i + 3] - x[2 * i - 1]
+
             A[i] = lambda_E[i, j] / (3 * dx_k * dx_k_1_2)
-            B[i] = -1*((lambda_E[i + 1, j] / (3 * dx_k*dx_k_1_2) +
+
+            B[i] = -1*((lambda_E[i + 1, j] / (3 * dx_k_1*dx_k_1_2) +
                 lambda_E[i, j] / (3 * dx_k*dx_k_1_2) + 
-                ((r * nue_ei[i]) / (v * Z[i]))))
-            C[i] = lambda_E[i + 1, j] / (3 * dx_k*dx_k_1_2)
-            S[i] = (g_1[i, j] - g_1[i - 1, j]) / (3 * dx_k_1_2)
+                ((r * nue_ei[i,j]) / (v * Z[i]))))
+                
+            C[i] = lambda_E[i + 1, j] / (3 * dx_k_1*dx_k_1_2)
+            
+            S[i] = (g_1[i + 1, j] - g_1[i, j]) / (3 * (x[2 * i + 2] - x[2 * i]))
+        
         mat = createMatrix(A, B, C)
         d = solve(mat, S)
         delta_f0[:, j] = d
@@ -210,61 +283,100 @@ def get_delta_f(g_1, nue_ei, Z, lambda_E, v_grid, x):
     return delta_f0
 
 def integrate(delta_f0, lambda_E, v_grid, v_grid_width, x_grid):
-
+    """
+    Purpose: numerically integrate to get non-local correction
+    Args:
+        delta_f0 : Pertubed f0 f_mb - non_local_f_0, shape (nx, nv)
+        lambda_E : phemenlogically corrected mfp, shape (nx + 1, nv) 
+        v_grid : cell-centered velcoity grid, shape (nv) 
+        v_grid_width: dv , shape (nv  - 1)
+        x_grid : cell centered x grid, shape (nx)
+    Returns: 
+        dq = non-local correction
+    Checked: 13/08/2020
+    """
     nx, nv = np.shape(delta_f0)
-    dv = np.diff(v_grid)
     dx = np.diff(x_grid)
     dq = np.zeros(nx + 1)
-    for i in range(1, nx - 1):
+    for i in range(1, nx):
+        heat_flow = 0
+        grad_delta_f0 = ((delta_f0[i, :] - delta_f0[i - 1, :]) / dx[i - 1]) #Spatial derivative
+        #Integrate
+        for v in range(nv):
+            heat_flow +=  pow(v_grid[v], 5) * v_grid_width[v] * lambda_E[i, v] * grad_delta_f0[v]
+        print(heat_flow)
+        dq[i] = -1*((2 * np.pi * me)/3) * heat_flow
+    return dq
+def integrate_g1(g_1, v_grid, v_grid_width):
+    nx, nv = np.shape(g_1)
+    q = np.zeros(nx)
+    for i in range(1, nx):
         heat_flow = 0
         for v in range(nv):
-            heat_flow +=  pow(v_grid[v], 5) * v_grid_width[v] * lambda_E[i, v] * ((delta_f0[i+1, v] - delta_f0[i, v]) / dx[i])
-        dq[i] = ((2 * np.pi * me)/3) * heat_flow
-    return dq
+            heat_flow +=  pow(v_grid[v], 5) * v_grid_width[v] * g_1[i, v]
+        q[i] = ((2 * np.pi * me)/3) * heat_flow
+    return q 
+
 def snb_heat_flow(x, v_grid, Te, ne , Z, norms = 0):
     """
     Purpose: Calculates SNB-Heat flow
     Args: 
         x = cell-wall coords nx+1
-        v_grid = cell-wall velocity grid nv+1
+        v_grid = cell-wall velocity grid defined in terms of v_th,  nv+1
         Te = cell-centered temperature nx 
         ne = cell-centered density nx
         Z = cell-centered ionisation nx 
         Ar = cell-centered atomix mass nx
     Returns: q_snb
     """
-
-    dv = np.diff(v_grid)
     x_centered = np.array([(x[i+1] + x[i])/ 2 for i in range(len(x) - 1)])
-    v_grid_centered = np.array([(v_grid[i+1] + v_grid[i])/ 2 for i in range(len(v_grid) - 1)])
     full_x, interp_Te, interp_ne, interp_Z = _interpolate(x, x_centered, Te, ne, Z, 'noflow', norms)
 
     free_params= free_param_calc(interp_Te * (kb/e), interp_ne ,interp_Z )
-    lamb_star = lambda_star(free_params['nu_ei'], v_grid_centered * free_params['vte'][1], interp_Z)
-    # coulomb_logs = lambda_ei(interp_Te,interp_ne, interp_Z)
-    # lamb_star = lambda_star(interp_ne, interp_Te, interp_Z,
-    #                  coulomb_logs, v_grid_centered * free_params['vte'][1])
+    # print("Vth scaling factor is {}".format(free_params['vte'][1]))
+    # vth = np.sqrt(100 * e /me)
+    # print("Hand Calculated value is {}".format(vth))
+    v_grid_centered = np.array([(v_grid[i+1] + v_grid[i])/ 2 for i in range(len(v_grid) - 1)]) * free_params['vte'][1]
+    dv = np.diff(v_grid) * free_params['vte'][1] 
+    # print("Wall velocity grid is {} and centered \n {} \n with dv of {}".format(v_grid * free_params['vte'][1] , v_grid_centered, dv))
+    
+    #Get velocity dependent collision frequency and subsequent mfp on entire grid 
+    nu_ei, lamb_star = getLambdaStar(interp_Te, interp_ne, interp_Z, v_grid_centered)
+    # print("The velocity dependent collision frequency is {} \n with reference backgroudn collision frequency i.e. vth particle {}".format(nu_ei[0],free_params['nu_ei'][0]))
+    # print("The velocity dependent mfp is {} \n with reference backgroudn mfp i.e. vth particle {}".format(lamb_star[0],free_params['lambda_mfp'][0]))
 
     #Electric field only needs to be defined at cell- walls 
     #Every second entry in computer indicies 0 2 etc are cell-walls 
-    E_field = electric_field(centered_x, interp_Te[1::2], interp_ne[1::2], interp_Z[1::2])
+    #Electric field currently inaccurate
+    E_field = electric_field(centered_x, interp_Te, interp_ne, interp_Z[::2])
+    # plt.plot(x, E_field, "k--")
+    free_params = free_param_calc(np.array([100]), np.array([1e19]), np.array([1]))
+    true_E = np.loadtxt("/Users/shiki/DATA/E_FIELD_X_01000.txt") * free_params['E']
+    # x = np.loadtxt("/Users/shiki/DATA/GRIDS/X_GRID.txt") * free_params['lambda_mfp']
+    # plt.plot(x, true_E)
+    # plt.show()
+    E_field[:] = 0 #true_E[::2]
     #Likewise Lambda_E only needs to be defined at cell-walls 
-    lamb_E = lambda_E(lamb_star[::2], E_field, v_grid_centered * free_params['vte'][1])
-    lamb_E = lamb_star[::2]
-    #f0 should be definedo n the entire grid 
-    f0_mb = f_maxwellian(interp_Te, interp_ne, v_grid_centered * free_params['vte'][1], dv * free_params['vte'][1])
+    lamb_E = lambda_E(lamb_star[::2], E_field, v_grid_centered)
+    #f0 should be defined on the entire grid 
+    f0_mb = f_maxwellian(interp_Te, interp_ne, v_grid_centered, dv)
     #g_1 only on cell-walls 
-    g_1_mb = g_1_maxwellian(lamb_star[::2], f0_mb, x, Te)
+    g_1_mb = g_1_maxwellian(lamb_star[::2], f0_mb, x_centered, interp_Te)
      #Lambda_E, g_1 needs to be cell-wall and rest cell-centereed
-    delta_f0 = get_delta_f(g_1_mb, free_params['nu_ei'][1::2], Z, lamb_E, v_grid_centered * free_params['vte'][1], full_x) 
-
+    delta_f0 = get_delta_f(g_1_mb, nu_ei[1::2, :], Z, lamb_E, v_grid_centered, full_x) 
     #integrate to get corrections
-    dq = integrate(delta_f0, lamb_E, v_grid_centered * free_params['vte'][1], dv * free_params['vte'][1], x_centered)
-    q_sh = spitzer_harm_heat(x, Te, ne, Z)
-    #q_snb = q_sh - dq
-    q_snb = q_sh - dq
+    q = integrate_g1(g_1_mb, v_grid_centered, dv) #Check if g_1 corresponds to spitzer-harm as it should.
+    dq = integrate(delta_f0, lamb_E, v_grid_centered, dv, x_centered) # nonlocal deviation
+    q_sh = spitzer_harm_heat(x_centered, Te, ne, Z) # local 
 
-    return q_sh, q_snb
+    #Fail if g_1 heat flow error larger than ~1.5 error scales with v-grid resolution% 
+    #if this passes, correpsonds to f0_mb, g_1, nue_ei, lamb_star is correctly calculated
+    # if any((abs(q - q_sh) / q_sh)[1:-1] * 100 > 1.5):
+    #     sys.exit(0)
+
+    q_snb = q - dq
+
+    return q, q_sh, q_snb
 
 def spitzer_harm_heat(x, Te, ne, Z):
     def lambda_ei(T_norm , n_norm, Z_norm, return_arg = False):
@@ -298,20 +410,31 @@ def spitzer_harm_heat(x, Te, ne, Z):
     return(-1 * HeatFlowE)
 
 def createMatrix(A, B, C):
-    matrix = np.zeros((len(A) - 1, len(A) - 1))
+    """
+    Purpose: Creates a tridagional Matrix 
+    Args:
+        A = off diagonal term defined at n - 1
+        B = leading diagonal defined at n 
+        C = off diagonal term defined at n + 1
+    Returns:
+        matrix
+    Checked: 13/08/2020
+    """
+    matrix = np.zeros((len(A), len(A)))
     for i, (a,b,c) in enumerate(zip(A,B,C)):
         if i == 0:
             matrix[i, 0] = b 
             matrix[i, 1] = c
-        elif i == len(A) - 2:
+        elif i == len(A) - 1:
             matrix[-1, -2] = a
             matrix[-1, -1] = b
-        elif i < len(A) - 2:
+        elif i < len(A) - 1:
             matrix[i, i - 1] = a 
             matrix[i, i] = b 
             matrix[i, i +1] = c
 
     return matrix
+
 def solve(A, b):
     """
     Purpose : Solves A*x = b 
@@ -329,11 +452,10 @@ def epperlein_short(nx, L, Z_ = 37.25, ne_ = 1e27, Te_ = 100., perturb = 1e-3, s
     x_u = L
     initial_coord = np.linspace(x_l, x_u, nx+1, dtype=np.float64)
     x_centered = np.array([(initial_coord[i] + initial_coord[i+1]) /2 for i in range(len(initial_coord) -1)], dtype=np.float64)
-    Z = np.zeros(nx, dtype = np.float64) + Z_#37.25
-    Ar = np.zeros(nx, dtype = np.float64) + 2#37.25
+    Z = np.zeros(nx, dtype = np.float64) + Z_
+    Ar = np.zeros(nx, dtype = np.float64) + 2
     
-    ne = np.zeros(nx, dtype = np.float64) + ne_# 1e27
-    #temperatureE = np.linspace(3, 300, nx)
+    ne = np.zeros(nx, dtype = np.float64) + ne_
     
     ##Relevant for periodic systems .. fluid cannot be
     if sin: 
@@ -346,11 +468,15 @@ def epperlein_short(nx, L, Z_ = 37.25, ne_ = 1e27, Te_ = 100., perturb = 1e-3, s
     return(initial_coord, x_centered, Te, ne, Z, Ar)
 
 nx = 100
-nv = 100
-coord, centered_x, Te, ne, Z, Ar = epperlein_short(nx, 784.48, Z_= 1, ne_ = 1e19, sin =True)
-v_grid = np.linspace(0, 30, nv + 1)
+nv = 50
+#klambda 0.0075
+coord, centered_x, Te, ne, Z, Ar = epperlein_short(nx, 393.93740248643060431 * 2.81400056, Z_= 1, ne_ = 1e19, sin = False)
+v_grid = np.linspace(0, 10, nv + 1)
 
-q_sh, q_snb = snb_heat_flow(coord, v_grid, Te *(e/kb), ne, Z, Ar)
-plt.plot(coord, q_sh, 'k--')
-plt.plot(coord, q_snb)
+q, q_sh, q_snb = snb_heat_flow(coord, v_grid, Te *(e/kb), ne, Z, Ar)
+plt.plot(coord, q_sh, 'k-', label = "Spitzer")
+plt.plot(coord, q, 'rx', label = "Apprixmated Spitzer")
+plt.plot(coord, q_snb, label = "SNB")
+# plt.plot(q_snb/q_sh)
+plt.legend()
 plt.show()

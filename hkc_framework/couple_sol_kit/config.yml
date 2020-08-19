@@ -9,15 +9,15 @@ Params:
   Nx: 0 #handled internally
   Nv: 20
   Np: 2
-  Dt: 0.04
+  Dt: 0.9
   Dx: 0.5
   Dv: 0.0307
   Dv_multi: 1.03
-  Nt: 20
+  Nt: 10
   Pre_step_nt: 0
   Pre_step_dt: 0.001
   L_max: 2
-  Output_freq: 10
+  Output_freq: 10000
   Convergence: 0.5
   Files_allowed: 1
 

@@ -279,11 +279,11 @@ class Coupler:
                         #Configurations already done above
                         pass
                     else:
-                        if (self.init.yaml_file['Mode']['Couple_div_q'] or 
+                        if (self.init.yaml_file['Mode']['Couple_divq'] or 
                             self.init.yaml_file['Mode']['Couple_multi']):
 
                             fluid_obj.init.yaml_file = self.original_f_init
-                            if self.init.yaml_file['Mode']['Couple_div_q']:
+                            if self.init.yaml_file['Mode']['Couple_divq']:
                                 self.logger.info("Engage Coupling if MODE: Div.q")
                             elif self.init.yaml_file['Mode']['Couple_multi']:
                                 self.logger.info("Engage Coupling if MODE: Multi")
