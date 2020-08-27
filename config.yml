@@ -19,12 +19,13 @@ Mode:
   Couple_multi: true
   Couple_adaptive: false 
   Couple_leap_frog: true
+  Couple_operator_split: false
   Start_from_kinetic: false
   Load_f1: true
   Start_coupled: false #Takes precedence over start from kinetic, assumes relevant quanties exist. Does not work with leap-frog
 Misc:
   HDF5: false
-  Convergence_monitoring: false
+  Convergence_monitoring: true
   Zip: false
   Continue: true
   HPC: false 

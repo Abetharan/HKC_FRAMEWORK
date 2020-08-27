@@ -30,7 +30,7 @@ class IO:
         self.cycle_counter = cycle_counter
         self.cycle_dump_path = None
         self.fluid_input_path = None
-        self.fluid_leap_frog_path = None
+        self.intermediate_fluid_outpath = None
         self.fluid_output_path = None
         self.kinetic_input_path = None
         self.kinetic_output_path = None
@@ -42,7 +42,7 @@ class IO:
         self.all_fluid_output_path = []  
         self.all_kinetic_input_path = []
         self.all_kinetic_output_path = []
-        self.leap_frog = False 
+        self.intermediate_folder = False 
 
         #self.createDirectoryOfOperation(self.max_cycle)
     
@@ -66,8 +66,8 @@ class IO:
         self.fluid_output_path = os.path.join(self.cycle_dump_path, "FLUID_OUTPUT/")
         self.kinetic_input_path = os.path.join(self.cycle_dump_path, "KINETIC_INPUT/")
         self.kinetic_output_path = os.path.join(self.cycle_dump_path, "KINETIC_OUTPUT/")
-        if self.leap_frog:
-            self.fluid_leap_frog_path = os.path.join(self.cycle_dump_path, "LEAP_FROG_OUTPUT")
+        if self.intermediate_folder :
+            self.intermediate_fluid_outpath = os.path.join(self.cycle_dump_path, "INTERMEDIATE_OUTPUT")
     def createDirectoryOfOperation(self,):
         """ Purpose: Creates all folders required immediately .. reduces overhead later one 
             Args: no_cycles = no of total cycles.
@@ -90,20 +90,20 @@ class IO:
             fluid_output_path = os.path.join(cycle_path, "FLUID_OUTPUT/")
             kinetic_input_path = os.path.join(cycle_path, "KINETIC_INPUT/")
             kinetic_output_path = os.path.join(cycle_path, "KINETIC_OUTPUT/")
-            fluid_leap_frog_path = os.path.join(cycle_path, "LEAP_FROG_OUTPUT/")
+            intermediate_fluid_outpath = os.path.join(cycle_path, "INTERMEDIATE_OUTPUT/")
             self.all_cycle_path.append(cycle_path)
             self.all_fluid_input_path.append(fluid_input_path)
             self.all_fluid_output_path.append(fluid_output_path)
             self.all_kinetic_input_path.append(kinetic_input_path)
             self.all_kinetic_output_path.append(kinetic_output_path)
             if path_exists:
-                if self.leap_frog:
+                if self.intermediate_folder :
 
                     if (os.path.exists(fluid_input_path) and
                         os.path.exists(fluid_output_path) and
                         os.path.exists(kinetic_output_path) and
                         os.path.exists(kinetic_output_path) and 
-                        os.path.exists(fluid_leap_frog_path)):
+                        os.path.exists(intermediate_fluid_outpath)):
                             continue
                         
                 elif(os.path.exists(fluid_input_path) and
@@ -118,7 +118,7 @@ class IO:
             os.makedirs(fluid_input_path)
             os.makedirs(kinetic_input_path)
             os.makedirs(kinetic_output_path)
-            os.makedirs(fluid_leap_frog_path)
+            os.makedirs(intermediate_fluid_outpath)
     
     def nextCyclePathManager(self):
         """

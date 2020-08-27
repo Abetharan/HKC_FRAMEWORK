@@ -62,6 +62,7 @@ Switches:
   ConstantCoulombLog: false
   CoupleDivQ: false
   CoupleMulti: false
+  CoupleOperatorSplit: false
   Exchange: false
   FullyIonized: true
   HeatConduction: true
