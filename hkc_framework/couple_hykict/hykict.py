@@ -102,22 +102,33 @@ class HyKiCT(Fluid):
         #For other codes this might not be the case. 
         #NOTE Maybe require radiation density to be loaded in. 
 
-        shutil.copyfile(os.path.join(self._fluid_output_path + "CELL_WALL_X/CELL_WALL_X_" + str(largest_fluid_index) +".txt")    
+        shutil.copyfile(os.path.join(self._fluid_output_path, "CELL_WALL_X/CELL_WALL_X_" + str(largest_fluid_index) +".txt")    
                                         ,os.path.join(next_fluid_input_path,"coord.txt"))
-        shutil.copyfile(os.path.join(self._fluid_output_path + "VELOCITY/VELOCITY_" + str(largest_fluid_index) +".txt") 
+        shutil.copyfile(os.path.join(self._fluid_output_path,  "VELOCITY/VELOCITY_" + str(largest_fluid_index) +".txt") 
                                         ,os.path.join(next_fluid_input_path,"velocity.txt"))
-        shutil.copyfile(os.path.join(self._fluid_output_path + "DENSITY/DENSITY_" + str(largest_fluid_index) +".txt")  
+        shutil.copyfile(os.path.join(self._fluid_output_path,  "DENSITY/DENSITY_" + str(largest_fluid_index) +".txt")  
                                         ,os.path.join(next_fluid_input_path,"density.txt"))
-        shutil.copyfile(os.path.join(self._fluid_output_path + "ELECTRON_TEMPERATURE/ELECTRON_TEMPERATURE_" + str(largest_fluid_index) +".txt")
+        shutil.copyfile(os.path.join(self._fluid_output_path, "ELECTRON_TEMPERATURE/ELECTRON_TEMPERATURE_" + str(largest_fluid_index) +".txt")
                                         ,os.path.join(next_fluid_input_path,"electron_temperature.txt"))
-        shutil.copyfile(os.path.join(self._fluid_output_path + "ION_TEMPERATURE/ION_TEMPERATURE_" + str(largest_fluid_index) +".txt")
+        shutil.copyfile(os.path.join(self._fluid_output_path, "ION_TEMPERATURE/ION_TEMPERATURE_" + str(largest_fluid_index) +".txt")
                                         ,os.path.join(next_fluid_input_path,"ion_temperature.txt"))
-        shutil.copyfile(os.path.join(self._fluid_input_path + "mass.txt")
-                                        ,os.path.join(next_fluid_input_path,"mass.txt"))
-        shutil.copyfile(os.path.join(self._fluid_input_path + "Z.txt")
-                                        ,os.path.join(next_fluid_input_path, "Z.txt"))
-        shutil.copyfile(os.path.join(self._fluid_input_path + "Ar.txt")  
-                                    ,os.path.join(next_fluid_input_path, "Ar.txt"))
+        #REF IF MASS EVER CHANGES IN FLUID SIMULATION OR WE NOW USING IONISATION MODELS
+        #THIS NEEDS TO BE CHANGED AND GET COPIED FROM OUTPUT
+        # AR REMAINS CONSTANT AS LONG AS MATERIALS DONT CHANGE
+        mass_copy_path  = os.path.join(self._fluid_input_path, "mass.txt")
+        mass_new_path = os.path.join(next_fluid_input_path,"mass.txt")
+        if not os.path.exists(mass_new_path):
+            shutil.copyfile(mass_copy_path, mass_new_path)
+
+        z_copy_path  = os.path.join(self._fluid_input_path, "Z.txt")
+        z_new_path = os.path.join(next_fluid_input_path, "Z.txt")
+        if not os.path.exists(z_new_path):
+            shutil.copyfile(z_copy_path, z_new_path)
+
+        Ar_copy_path  = os.path.join(self._fluid_input_path, "Ar.txt")
+        Ar_new_path = os.path.join(next_fluid_input_path, "Ar.txt")
+        if not os.path.exists(Ar_new_path):
+            shutil.copyfile(Ar_copy_path, Ar_new_path)
 
     def storeToHdf5(self, hdf5_file, cycle):
         """

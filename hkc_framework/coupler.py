@@ -184,13 +184,13 @@ class Coupler:
             fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = False
             fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = False
 
-            if ((self.init.yaml_file['Mode']['Couple_leap_frog'] and self.init.yaml_file['Mode']['Couple_adaptive']) or 
-            (self.init.yaml_file['Mode']['Couple_operator_split'] and self.init.yaml_file['Mode']['Couple_adaptive'])):
+            if self.init.yaml_file['Mode']['Couple_adaptive'] and (self.init.yaml_file['Mode']['Couple_operator_split'] 
+            or self.init.yaml_file['Mode']['Couple_leap_frog']): 
                 self.init.yaml_file['Mode']['Couple_divq'] = True
                 self.init.yaml_file['Mode']['Couple_multi'] = False
 
-            if ((self.init.yaml_file['Mode']['Start_from_kinetic'] and not self.init.yaml_file['Mode']['Couple_leap_frog'])
-            or (self.init.yaml_file['Mode']['Start_from_kinetic'] and not self.init.yaml_file['Mode']['Couple_operator_split'])):
+            if self.init.yaml_file['Mode']['Start_from_kinetic'] and not (self.init.yaml_file['Mode']['Couple_leap_frog']
+            or self.init.yaml_file['Mode']['Couple_operator_split']):
                 self.logger.info("Starting in MODE: Start From Kinetic")
 
                 fluid_obj.init.yaml_file['TimeParameters']['steps'] = 0
@@ -199,8 +199,8 @@ class Coupler:
                 self.logger.info("Steps is {}".format(fluid_obj.init.yaml_file['TimeParameters']['steps']))
                 self.logger.info("Tmax is {}".format(fluid_obj.init.yaml_file['TimeParameters']['t_max']))
         
-        elif ((start_cycle > 0 and self.init.yaml_file['Mode']['Couple_leap_frog']) or 
-            (start_cycle > 0 and self.init.yaml_file['Mode']['Couple_operator_split'])):
+        elif start_cycle > 0 and (self.init.yaml_file['Mode']['Couple_leap_frog'] or 
+            self.init.yaml_file['Mode']['Couple_operator_split']):
             fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = False
             fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = False
 
@@ -278,8 +278,8 @@ class Coupler:
                             self.init.yaml_file['Mode']['Couple_multi'] = True
                 
                 #For coupling without the bells and whilstls.
-                if ((self.init.yaml_file['Mode']['Start_from_kinetic'] and not self.init.yaml_file['Mode']['Couple_leap_frog'])
-                or (self.init.yaml_file['Mode']['Start_from_kinetic'] and not self.init.yaml_file['Mode']['Coupler_operator_split'])):
+                if self.init.yaml_file['Mode']['Start_from_kinetic'] and not (self.init.yaml_file['Mode']['Couple_leap_frog']
+                or self.init.yaml_file['Mode']['Coupler_operator_split']):
                     if(self.init.yaml_file['Mode']['Couple_adaptive']):
                         #Configurations already done above
                         pass
@@ -293,6 +293,16 @@ class Coupler:
                             elif self.init.yaml_file['Mode']['Couple_multi']:
                                 self.logger.info("Engage Coupling if MODE: Multi")
 
+                
+                if (self.init.yaml_file['Mode']['Couple_divq'] or 
+                    self.init.yaml_file['Mode']['Couple_multi']):
+
+                    fluid_obj.init.yaml_file = self.original_f_init
+                    if self.init.yaml_file['Mode']['Couple_divq']:
+                        self.logger.info("Engage Coupling if MODE: Div.q")
+                    elif self.init.yaml_file['Mode']['Couple_multi']:
+                        self.logger.info("Engage Coupling if MODE: Multi")
+                        
                 if self.init.yaml_file['Mode']['Couple_leap_frog'] or self.init.yaml_file['Mode']['Couple_operator_split']:
                     if self.init.yaml_file['Mode']['Couple_leap_frog']:   
                         self.logger.info("Engage Coupling MODE: LeapFrog")
@@ -336,8 +346,8 @@ class Coupler:
             self.logger.info("End Fluid")
 
             #Breaks here ... Last cycle allowed to run hydro step
-            if ((cycle_no == cycles - 1 and not self.init.yaml_file['Mode']['Couple_leap_frog'])
-                or (cycle_no == cycles - 1 and not self.init.yaml_file['Mode']['Couple_operator_split'])):
+            if cycle_no == cycles - 1 and not (self.init.yaml_file['Mode']['Couple_leap_frog'] or 
+                self.init.yaml_file['Mode']['Couple_operator_split']):
                 if self.init.yaml_file['Misc']['Zip']:
                     io_obj.zipAndDelete()        
                 if self.init.yaml_file['Misc']['HDF5']:
@@ -462,7 +472,12 @@ class Coupler:
             #Leap Frog Step if turned on 
             if self.init.yaml_file['Mode']['Couple_leap_frog'] or self.init.yaml_file['Mode']['Couple_operator_split']:
 
-                self.logger.info("Init Leap-Frogged Fluid")
+                if self.init.yaml_file['Mode']['Couple_operator_split']:
+                    self.logger.info("Init Operator-Split Fluid")
+                    fluid_obj.initHydro(io_obj.fluid_input_path, None,
+                                                None, None)
+                else:
+                    self.logger.info("Init Leap-Frogged Fluid")
 
                 np.savetxt(os.path.join(io_obj.fluid_input_path,"qe.txt"), qe)
                 if pre_heat_fit_params is not None:
@@ -478,8 +493,11 @@ class Coupler:
                 fluid_obj._fluid_output_path = io_obj.fluid_output_path
                 if self.init.yaml_file['Mode']['Couple_operator_split']:
                     fluid_obj.init.yaml_file['Switches']['CoupleOperatorSplit'] = True
-
-                self.logger.info("Progress Fluid Step from Leap Frogged Heat-Flow")
+                
+                if self.init.yaml_file['Mode']['Couple_operator_split']:
+                    self.logger.info("Progress Fluid Step from Operator-Split Corrections")
+                else:
+                    self.logger.info("Progress Fluid Step from Leap Frogged Heat-Flow")
                 self.logger.info("Fluid input path {}".format(fluid_obj.init.yaml_file['Paths']['Init_Path']))
                 self.logger.info("Fluid output path {}".format(fluid_obj.init.yaml_file['Paths']['Out_Path']))
                 fluid_obj.setFiles()

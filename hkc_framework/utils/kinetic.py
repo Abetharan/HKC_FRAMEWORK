@@ -157,7 +157,7 @@ class Kinetic():
         while True:
             if os.path.exists(self.status_path):
                 if os.access(self.status_path, os.W_OK):
-                    np.savetxt(self.status_path, np.array(0, dtype=np.int32)) 
+                    np.savetxt(self.status_path, np.array([0], dtype=np.int32)) 
                     break
                 else:
                     time.sleep(1e-4) 
