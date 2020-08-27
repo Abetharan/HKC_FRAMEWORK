@@ -13,7 +13,7 @@ epsilon_0 = 8.854188E-12    # Vacuum dielectric constant
 planck_h = constants.value("Planck constant")
 bohr_radi = constants.value("Bohr radius")
 
-def _interpolate(x, x_centered, Te, ne, Z, boundary_condition, normalised_values):
+def interpolateThermo(x, x_centered, Te, ne, Z, boundary_condition, normalised_values):
     # NOrmalise SI to Impact norms
     sol_kit_x_grid = x# / normalised_values["lambda_mfp"]
     sol_kit_x_centered_grid = x_centered# / normalised_values["lambda_mfp"]
@@ -33,31 +33,61 @@ def _interpolate(x, x_centered, Te, ne, Z, boundary_condition, normalised_values
     #SOL-KiT periodic condition == .\.\.\ i.e. start with cell centre and end with cell wall
     #SOL-KiT noflow == .\.\. i.e. start and end with cell centres
     sol_kit_x_grid = None
-    # if boundary_condition == 'periodic':
-    #     sol_kit_grid = full_x_grid[:-1]
+    if boundary_condition == 'periodic':
+        sol_kit_grid = full_x_grid[:-1]
     
-    # elif boundary_condition == "noflow":
-    #     sol_kit_grid = full_x_grid[1:-1]
+    elif boundary_condition == "noflow":
+        sol_kit_grid = full_x_grid[1:-1]
 
     sol_kit_grid = full_x_grid
     #Conver to SOL-KiT units
     sol_kit_ne = ne #/ (normalised_values['ne'])
     sol_kit_te = Te #* (kb/e)) / normalised_values['Te']
-    #SOL_KIT_laser = (f_laser * f_density) / power_density
-    #SOL_KIT_brem = (f_brem * f_density) / power_density
     sol_kit_z = Z
-    # SOL_KIT_HEATING = SOL_KIT_laser + SOL_KIT_brem
     
     #Require interpolation to get the centre quanties in SOL-KiT this is done via linear interpolations 
     #here we use cubic spline to smooth quanties. 
     sol_kit_inter_ne = np.interp(sol_kit_grid, sol_kit_x_centered_grid, sol_kit_ne)
     sol_kit_inter_te = np.interp(sol_kit_grid, sol_kit_x_centered_grid, sol_kit_te)
     sol_kit_inter_z =  np.interp(sol_kit_grid, sol_kit_x_centered_grid, sol_kit_z)
-    #SOL_KIT_inter_ne = spliner_ne(SOL_KIT_grid)
-    #SOL_KIT_inter_Te = spliner_Te(SOL_KIT_grid)
-    #SOL_KIT_inter_Z = spliner_Z(SOL_KIT_grid)
     return(sol_kit_grid, sol_kit_inter_te, sol_kit_inter_ne, sol_kit_inter_z)
-#    return(np.array([(x[i] + x[i+1])/ 2 for i in range(len(x) - 1)]))
+
+def getDifferenceX(x):
+    nx = len(x)
+    dxc = np.zeros(nx)
+    for i in range(1, nx - 1):
+        dxc[i] = x[i + 1] -  x[i - 1]
+    dxc[0] = 2 * (x[1] - x[0])
+    dxc[-1] = 2 * (x[-1] - x[-2])
+    return dxc
+
+def interpolateDistribution(full_x, dxc, f_0, f_1, E_field, boundary_condition):
+    interpolated_f_0 = np.zeros(np.shape(f_0)) + f_0
+    interpolated_f_1 = np.zeros(np.shape(f_1)) + f_1
+    nx, nv = np.shape(f_0)
+    interpolated_E_field = np.zeros(nx) + E_field
+    for i in range(1, nx - 1):
+        a_minus = (full_x[i + 1] - full_x[i]) / dxc[i]
+        a_plus = (full_x[i] - full_x[i - 1]) / dxc[i]
+        for v in range(nv):
+            if i % 2 == 0:
+                interpolated_f_0[i, v] = a_minus * f_0[i - 1, v] + a_plus * f_0[i + 1, v]
+            elif i % 2 == 1:
+                interpolated_f_1[i, v] = a_minus * f_1[i - 1, v] + a_plus * f_1[i + 1, v]
+                interpolated_E_field[i] = a_minus * E_field[i - 1] + a_plus * E_field[i + 1]
+
+    for i in range(nv):
+        if boundary_condition == "periodic":
+            interpolated_f_0[-1, i] = 0.5 * (f_0[0,i] + f_0[-2, i])
+            interpolated_f_1[0, i] = 0.5 * (f_1[1,i] + f_1[-1,i])
+            interpolated_E_field[0, i] = 0.5 * (E_field[1, i] + E_field[-1, i])
+        else:
+            interpolated_f_1[0, i]= 0.5 * f_1[1,i]
+            interpolated_f_1[-1, i] = 0.5 * f_1[-2, i]
+            interpolated_E_field[0] = 0.5 * (E_field[1])
+            interpolated_E_field[-1] = 0.5 * (E_field[-2])
+
+    return(interpolated_f_0, interpolated_f_1)
 
 def lambda_ei(T_norm = 10, n_norm = 0.25E20, Z_norm = 1.0, return_arg = False):
     coulomb_logs = []
@@ -173,6 +203,8 @@ def lambda_E(lambda_star, E, v_grid):
     for i, e_field in enumerate(E):
         for j, v in enumerate(v_grid):
             k = 1/(lambda_star[i, j]) + abs((e * e_field) / (0.5 * me * pow(v, 2))) 
+            if 1/(1/(lambda_star[i, j])) - lambda_star[i,j] > 1e-9:
+                print("Da fuq {}".format(abs((e * e_field) / (0.5 * me * pow(v, 2)))))
             lambda_E[i, j] = 1/k
 
     return(lambda_E)
@@ -304,9 +336,9 @@ def integrate(delta_f0, lambda_E, v_grid, v_grid_width, x_grid):
         #Integrate
         for v in range(nv):
             heat_flow +=  pow(v_grid[v], 5) * v_grid_width[v] * lambda_E[i, v] * grad_delta_f0[v]
-        print(heat_flow)
         dq[i] = -1*((2 * np.pi * me)/3) * heat_flow
     return dq
+
 def integrate_g1(g_1, v_grid, v_grid_width):
     nx, nv = np.shape(g_1)
     q = np.zeros(nx)
@@ -330,14 +362,14 @@ def snb_heat_flow(x, v_grid, Te, ne , Z, norms = 0):
     Returns: q_snb
     """
     x_centered = np.array([(x[i+1] + x[i])/ 2 for i in range(len(x) - 1)])
-    full_x, interp_Te, interp_ne, interp_Z = _interpolate(x, x_centered, Te, ne, Z, 'noflow', norms)
-
+    full_x, interp_Te, interp_ne, interp_Z = interpolateThermo(x, x_centered, Te, ne, Z, 'periodic', norms)
+    dxc = getDifferenceX(full_x)
     free_params= free_param_calc(interp_Te * (kb/e), interp_ne ,interp_Z )
     # print("Vth scaling factor is {}".format(free_params['vte'][1]))
     # vth = np.sqrt(100 * e /me)
     # print("Hand Calculated value is {}".format(vth))
-    v_grid_centered = np.array([(v_grid[i+1] + v_grid[i])/ 2 for i in range(len(v_grid) - 1)]) * free_params['vte'][1]
-    dv = np.diff(v_grid) * free_params['vte'][1] 
+    v_grid_centered = np.array([(v_grid[i+1] + v_grid[i])/ 2 for i in range(len(v_grid) - 1)]) 
+    dv = np.diff(v_grid) 
     # print("Wall velocity grid is {} and centered \n {} \n with dv of {}".format(v_grid * free_params['vte'][1] , v_grid_centered, dv))
     
     #Get velocity dependent collision frequency and subsequent mfp on entire grid 
@@ -349,19 +381,16 @@ def snb_heat_flow(x, v_grid, Te, ne , Z, norms = 0):
     #Every second entry in computer indicies 0 2 etc are cell-walls 
     #Electric field currently inaccurate
     E_field = electric_field(centered_x, interp_Te, interp_ne, interp_Z[::2])
-    # plt.plot(x, E_field, "k--")
-    free_params = free_param_calc(np.array([100]), np.array([1e19]), np.array([1]))
-    true_E = np.loadtxt("/Users/shiki/DATA/E_FIELD_X_01000.txt") * free_params['E']
-    # x = np.loadtxt("/Users/shiki/DATA/GRIDS/X_GRID.txt") * free_params['lambda_mfp']
-    # plt.plot(x, true_E)
-    # plt.show()
-    E_field[:] = 0 #true_E[::2]
+    # E_field = np.interp(full_x, x, E_field)
+    E_field[:] = E_field
     #Likewise Lambda_E only needs to be defined at cell-walls 
-    lamb_E = lambda_E(lamb_star[::2], E_field, v_grid_centered)
+    lamb_E = lambda_E(lamb_star[::2, :], E_field, v_grid_centered)
+    # lamb_E[0, :] = 0
+    # lamb_E[-1, :] = 0 
     #f0 should be defined on the entire grid 
     f0_mb = f_maxwellian(interp_Te, interp_ne, v_grid_centered, dv)
     #g_1 only on cell-walls 
-    g_1_mb = g_1_maxwellian(lamb_star[::2], f0_mb, x_centered, interp_Te)
+    g_1_mb = g_1_maxwellian(lamb_star[::2, :], f0_mb, x_centered, interp_Te)
      #Lambda_E, g_1 needs to be cell-wall and rest cell-centereed
     delta_f0 = get_delta_f(g_1_mb, nu_ei[1::2, :], Z, lamb_E, v_grid_centered, full_x) 
     #integrate to get corrections
@@ -374,7 +403,7 @@ def snb_heat_flow(x, v_grid, Te, ne , Z, norms = 0):
     # if any((abs(q - q_sh) / q_sh)[1:-1] * 100 > 1.5):
     #     sys.exit(0)
 
-    q_snb = q - dq
+    q_snb = q + dq
 
     return q, q_sh, q_snb
 
@@ -468,15 +497,23 @@ def epperlein_short(nx, L, Z_ = 37.25, ne_ = 1e27, Te_ = 100., perturb = 1e-3, s
     return(initial_coord, x_centered, Te, ne, Z, Ar)
 
 nx = 100
-nv = 50
+nv = 150
 #klambda 0.0075
-coord, centered_x, Te, ne, Z, Ar = epperlein_short(nx, 393.93740248643060431 * 2.81400056, Z_= 1, ne_ = 1e19, sin = False)
-v_grid = np.linspace(0, 10, nv + 1)
+coord, centered_x, Te, ne, Z, Ar = epperlein_short(nx, 2*393.393740248643060431 * 2.81400056, Z_= 1, ne_ = 1e19, sin = True)
+# coord = np.loadtxt("/Users/shiki/DATA/HKC_RELATED/init_data/easier_brodrick/coord.txt")
+# Te = np.loadtxt("/Users/shiki/DATA/HKC_RELATED/init_data/easier_brodrick/electron_temperature.txt")*1e-3
+# density = np.loadtxt("/Users/shiki/DATA/HKC_RELATED/init_data/easier_brodrick/density.txt") * 1e-3
+# Z = np.loadtxt("/Users/shiki/DATA/HKC_RELATED/init_data/easier_brodrick/Z.txt")
+# Ar = np.loadtxt("/Users/shiki/DATA/HKC_RELATED/init_data/easier_brodrick/Ar.txt")
+# ne = (density * Ar * mp) /Z
+# centered_x = np.array([(coord[i+1] + coord[i]) /2 for i in range(len(coord) -1)])
+free_params = free_param_calc(np.array([100]), np.array([1e19]) ,np.array([1]))
+v_grid = np.linspace(0, 30, nv + 1) * free_params['vte'][0]
 
 q, q_sh, q_snb = snb_heat_flow(coord, v_grid, Te *(e/kb), ne, Z, Ar)
 plt.plot(coord, q_sh, 'k-', label = "Spitzer")
 plt.plot(coord, q, 'rx', label = "Apprixmated Spitzer")
 plt.plot(coord, q_snb, label = "SNB")
-# plt.plot(q_snb/q_sh)
+# plt.plot(q_snb[1:-1]/q_sh[1:-1])
 plt.legend()
 plt.show()

@@ -308,7 +308,7 @@ class Coupler:
             
             #First pass in Leap frog ... run in default mode with specified flux limiter and 
             #save to a different folder 
-            if self.init.yaml_file['Mode']['Couple_leap_frog'] and cycle_no != cycles - 1:
+            if self.init.yaml_file['Mode']['Couple_leap_frog']:
                 self.logger.info("Setting Leap Frog Fluid Output Path")
                 fluid_obj.init.yaml_file['Paths']['Out_Path'] = io_obj.fluid_leap_frog_path 
                 fluid_obj._fluid_output_path = io_obj.fluid_leap_frog_path
@@ -328,7 +328,7 @@ class Coupler:
             self.logger.info("End Fluid")
 
             #Breaks here ... Last cycle allowed to run hydro step
-
+            #REF prob wrong
             if cycle_no == cycles - 1 and not self.init.yaml_file['Mode']['Couple_leap_frog']:
                 if self.init.yaml_file['Misc']['Zip']:
                     io_obj.zipAndDelete()        

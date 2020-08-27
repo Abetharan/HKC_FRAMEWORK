@@ -50,6 +50,9 @@ def interpolateThermo(x, x_centered, Te, ne, Z, boundary_condition, normalised_v
     sol_kit_inter_ne = np.interp(sol_kit_grid, sol_kit_x_centered_grid, sol_kit_ne)
     sol_kit_inter_te = np.interp(sol_kit_grid, sol_kit_x_centered_grid, sol_kit_te)
     sol_kit_inter_z =  np.interp(sol_kit_grid, sol_kit_x_centered_grid, sol_kit_z)
+    #Extend grid to cell-wall via interpolating using periodic bounds i.e. 
+    #end cell-centre and first cell centre, distance from cell wall assumed to be the same
+    #thus == 0.5
     if boundary_condition == 'periodic':
         sol_kit_inter_te[0] = 0.5 * (sol_kit_inter_te[1] + sol_kit_inter_te[-1])
         sol_kit_inter_ne[0] = 0.5 * (sol_kit_inter_ne[1] + sol_kit_inter_ne[-1])
@@ -182,13 +185,13 @@ def getLambdaStar(Te, ne, Z, v_grid):
         lambda_star[:, j] = (v / nue_ei[:, j]) * zeta 
     return nue_ei, lambda_star
     
-def lambda_star(nue_ei, v_grid, Z):
-    lambda_star = np.zeros((len(nue_ei), len(v_grid)))
-    for i, local_nue in enumerate(nue_ei):
-        zeta = (Z[i] + 0.24) / (Z[i] + 4.2)
-        for j, v in enumerate(v_grid):
-            lambda_star[i, j] = zeta * (v/local_nue)
-    return(lambda_star)
+# def lambda_star(nue_ei, v_grid, Z):
+#     lambda_star = np.zeros((len(nue_ei), len(v_grid)))
+    # for i, local_nue in enumerate(nue_ei):
+    #     zeta = (Z[i] + 0.24) / (Z[i] + 4.2)
+        # for j, v in enumerate(v_grid):
+        #     lambda_star[i, j] = zeta * (v/local_nue)
+    # return(lambda_star)
 
 def electric_field(x, Te, ne, Z, boundary_condition):
     """
@@ -283,27 +286,22 @@ def g_1_maxwellian(lambda_star, f_0_maxwellian, x, Te, boundary_condition):
     Checked: 13/08/2020
     """
     nx, nv = np.shape(lambda_star)
-    if boundary_condition == "periodic":
-        start = 0
-        g_1 = np.zeros((nx ,nv))
-    else:
-        start = 0
-        g_1 = np.zeros((nx ,nv))
-
-    for i in range(start, nx):
+    g_1 = np.zeros((nx ,nv))
+    for i in range(0, nx):
         if boundary_condition == "periodic" and i == 0:
             dx = 2 * x[0]
             gradient = (Te[1] - Te[-1])/ dx
             temperature_correction = gradient/Te[0]
         elif boundary_condition == "periodic":
             dx = x[i] - x[i - 1]
-            gradient = (Te[i*2 + 1] - Te[i*2 - 2])/ dx
+            gradient = (Te[i*2 + 1] - Te[i*2 - 1])/ dx
             temperature_correction = (gradient/Te[i*2])
         else:
             dx = x[i + 1] - x[i]
             gradient = (Te[i*2 + 2] - Te[i*2])/ dx
             temperature_correction = (gradient/Te[i*2 + 1])
 
+        # f_0_maxwellian[0] = 0.5 * (f_0_maxwellian[1, :] +  f_0_maxwellian[-1, :])
         for v in range(nv):
             if boundary_condition == "periodic":
                 g_1[i, v] = -1 * lambda_star[i, v] * f_0_maxwellian[2*i, v] * temperature_correction
@@ -338,6 +336,7 @@ def solve_df0(g_1, nue_ei, Z, lambda_E, v_grid, dx, boundary_condition):
         C = np.zeros(nx) # off diagonal n + 1
         S = np.zeros(nx) #Source 
         for i in range(nx):
+            S_has_been_solved = False
             if boundary_condition == "periodic":
                 if i < nx -1:
                     dx_k = dx[2*i]
@@ -349,10 +348,12 @@ def solve_df0(g_1, nue_ei, Z, lambda_E, v_grid, dx, boundary_condition):
                     dx_k_1 = dx[-1]
                     dx_k_1_2 = dx[2*i + 1]
                     dx_k_diff = dx_k + dx_k_1
-                    A[i] = lambda_E[i - 1, j]/(3*dx_k_diff*dx_k)
+                    A[i] = lambda_E[i, j]/(3*dx_k_diff*dx_k)
                     B[i] = -1 * (lambda_E[0, j]/(3*dx_k_diff*dx_k_1) + lambda_E[i, j]/(3*dx_k_diff*dx_k) + (r * nue_ei[i, j])/(v*Z[i]))
                     C[i] = lambda_E[0, j]/(3*dx_k_diff*dx_k)
                     S[i] = (g_1[0, j] - g_1[i, j]) / (3*dx_k_1_2)
+                    if S[i] == 0:
+                        S_has_been_solved = True
 
             if boundary_condition == "reflective":
                 if i < nx - 1 and i > 0:
@@ -362,15 +363,15 @@ def solve_df0(g_1, nue_ei, Z, lambda_E, v_grid, dx, boundary_condition):
                     dx_k_diff = dx_k + dx_k_1
 
                 elif i == 0:
-                    dx_k_1_2 = dx[0]
-                    dx_k = dx[0]
-                    dx_k_1 = dx[1]
+                    dx_k_1_2 = dx[0] #2 * (x[1] - x[0])
+                    dx_k = dx[0] # Extrapolating x[1] - x[0] ends up == dx_k_1_2
+                    dx_k_1 = dx[1] # k = 1, (3/2 - 1/2) x[2]  - x[0]
                     dx_k_diff = dx_k + dx_k_1
                     A[i] = None #0 #lambda_E[i - 1]/(3*dx_k_diff*dx_k)
                     B[i] = -1 * (lambda_E[i, j]/(3*dx_k_diff*dx_k) + (r * nue_ei[i, j])/(v*Z[i]))
                     C[i] = lambda_E[i, j]/(3*dx_k_diff*dx_k)
                     S[i] = g_1[i, j] / (3*dx_k_1_2)
-                else:
+                if i == nx - 1:
                     dx_k = dx[-2]
                     dx_k_1 = dx[-1]
                     dx_k_1_2 = dx[-1]
@@ -379,9 +380,9 @@ def solve_df0(g_1, nue_ei, Z, lambda_E, v_grid, dx, boundary_condition):
                     B[i] = -1 * (lambda_E[i - 1, j]/(3*dx_k_diff*dx_k) + (r * nue_ei[i,j])/(v*Z[i]))
                     C[i] = None #lambda_E[i]/(3*dx_k_diff*dx_k)
                     S[i] = -1*g_1[i - 1, j] / (3*dx_k_1_2)
+                    if S[i] == 0:
+                        S_has_been_solved = True
                     
-            
-            
             if A[i] == 0:
                 if boundary_condition == "periodic":
                     A[i] = lambda_E[i, j]/(3*dx_k_diff*dx_k)  
@@ -399,7 +400,7 @@ def solve_df0(g_1, nue_ei, Z, lambda_E, v_grid, dx, boundary_condition):
                 else:
                     C[i] = lambda_E[i, j]/(3*dx_k_diff*dx_k)
             
-            if S[i] == 0:
+            if S[i] == 0 and not S_has_been_solved:
                 if boundary_condition == "periodic":
                     S[i] = forward_difference(g_1[i + 1, j] , g_1[i, j], dx_k_1_2, 1/3) 
                 else:
@@ -412,107 +413,6 @@ def solve_df0(g_1, nue_ei, Z, lambda_E, v_grid, dx, boundary_condition):
 
         d = solve(mat, S)
         delta_f0[:, j] = d
-    return delta_f0
-
-def get_delta_f(g_1, nue_ei, Z, lambda_E, v_grid, x, boundary_condition):
-    """
-    Purpose: Calculates delta_f_0 
-    Args:
-        g_1: modified SNB f_1 maxwellian, shape (nx + 1/-1, nv)
-        nue_ei: Collision Frequency, shape nx
-        Z: Ionization, shape nx 
-        Lambda_E: SNB modified collision mfp shape (nx + 1, nv) 
-        v_grid: Velocity grid/groups, shape (nv)
-        x: full X grid has length,  2*nx + 1
-    Returns:
-        delta_f_0
-    Checked: 13/08/2020
-    """
-    nx, nv = np.shape(g_1)
-    delta_f0 = np.zeros((nx + 1, nv))
-    r = 2
-    for j, v in enumerate(v_grid):
-        A = np.zeros(nx + 1)
-        B = np.zeros(nx + 1)
-        C = np.zeros(nx + 1)
-        S = np.zeros(nx + 1)
-        for i in range(0, nx + 1):
-            if i == 0 or i == nx:
-                dx_k = 2 * (x[1] - x[0]) #extrapolate grid unformly
-            else:
-                dx_k = x[2 * i + 1] - x[2 * i - 1]
-
-            if 2 *i + 3 > len(x) - 1:
-                dx_k_1 = 2 * (x[-1] - x[-2]) #extrapolate grid unformly beyond grid 
-            else:
-                dx_k_1 = x[2 * i + 3] - x[2 * i + 1]
-
-            if i == 0:
-                x__1_2 = 0 - (x[1] - x[0])
-                dx_k_1_2 = x[2 * i + 3] - x__1_2
-            if 2 *i + 3 > len(x) - 1:
-                x_k_n_1_2 = x[-1] + (x[-1] - x[-2]) 
-                dx_k_1_2 = x_k_n_1_2 - x[2 * i - 1] 
-            else:
-                dx_k_1_2 = x[2 * i + 3] - x[2 * i - 1]
-
-            if boundary_condition == "reflective" and i == 0:
-                dx_1_2 = 2 * (x[1] - x[0])
-                S[i] =(g_1[i, j]) / (3 * (dx_1_2))
-                A[i] = 0#lambda_E[i, j] / (3 * dx_k * dx_k_1_2) #Coefficient for k - 1/2
-
-                B[i] = -1*((lambda_E[i, j] / (3 * dx_k_1*dx_k_1_2) + #Coefficient for k + 1/2
-                    ((r * nue_ei[i,j]) / (v * Z[i]))))
-                    
-                C[i] = lambda_E[i, j] / (3 * dx_k_1*dx_k_1_2) #Coefficient for k + 3/2
-            elif boundary_condition == "reflective" and i == nx :
-                dx_1_2 = 2 * (x[-1] - x[-2])
-                S[i] = (-1 * g_1[i - 1, j]) / (3 * dx_1_2)
-                A[i] = lambda_E[i - 1, j] / (3 * dx_k * dx_k_1_2) #Coefficient for k - 1/2
-
-                B[i] = -1*( #Coefficient for k + 1/2
-                    lambda_E[i - 1, j] / (3 * dx_k*dx_k_1_2) + 
-                    ((r * nue_ei[i,j]) / (v * Z[i])))
-                    
-                C[i] = 0#lambda_E[i + 1, j] / (3 * dx_k_1*dx_k_1_2) #Coefficient for k + 3/2
-            elif boundary_condition == "periodic" and i == 0:
-                dx_1_2 = (x[2 * i + 2] - x[2 * i])
-                S[i] =(g_1[i + 1, j] + g_1[i, j]) / (3 * (dx_1_2))
-                A[i] = lambda_E[i, j] / (3 * dx_k * dx_k_1_2) #Coefficient for k - 1/2 which in periodic boundary conditions corresponds to last entry
-
-                B[i] = -1*((lambda_E[i + 1, j] / (3 * dx_k_1*dx_k_1_2) + #Coefficient for k + 1/2
-                    lambda_E[i, j] / (3 * dx_k*dx_k_1_2) + 
-                    ((r * nue_ei[i,j]) / (v * Z[i]))))
-                    
-                C[i] = lambda_E[i + 1, j] / (3 * dx_k_1*dx_k_1_2) #Coefficient for k + 3/2
-            elif boundary_condition == "periodic" and i == nx - 1:
-                dx_1_2 = 2 * (x[-1] - x[-2])
-                S[i] = (g_1[0, j] - g_1[-1, j]) / (3 * dx_1_2)
-                A[i] = lambda_E[i, j] / (3 * dx_k * dx_k_1_2) #Coefficient for k - 1/2
-
-                B[i] = -1*((lambda_E[0, j] / (3 * dx_k_1*dx_k_1_2) + #Coefficient for k + 1/2 in periodic boundary conditions lambda at k = 1/2, n required
-                    lambda_E[i, j] / (3 * dx_k*dx_k_1_2) + 
-                    ((r * nue_ei[i,j]) / (v * Z[i]))))
-                    
-                C[i] = lambda_E[0, j] / (3 * dx_k_1*dx_k_1_2) #Coefficient for k + 3/2 which in periodic boundary conditions corresponds to first entry 
-            else:
-                S[i] = (g_1[i, j] - g_1[i - 1, j]) / (3 * (x[2 * i + 2] - x[2 * i]))
-                A[i] = lambda_E[i - 1, j] / (3 * dx_k * dx_k_1_2) #Coefficient for k - 1/2
-
-                B[i] = -1*((lambda_E[i, j] / (3 * dx_k_1*dx_k_1_2) + #Coefficient for k + 1/2
-                    lambda_E[i - 1, j] / (3 * dx_k*dx_k_1_2) + 
-                    ((r * nue_ei[i,j]) / (v * Z[i]))))
-                    
-                C[i] = lambda_E[i, j] / (3 * dx_k_1*dx_k_1_2) #Coefficient for k + 3/2
-            
-        mat = createMatrix(A, B, C)
-        if boundary_condition == "periodic":
-            mat[i, -1] = A[i]
-            mat[i, 0] = C[i]
-
-        d = solve(mat, S)
-        delta_f0[:, j] = d
-
     return delta_f0
 
 def integrate(delta_f0, lambda_E, v_grid, v_grid_width, x_grid, boundary_condition):
@@ -541,6 +441,8 @@ def integrate(delta_f0, lambda_E, v_grid, v_grid_width, x_grid, boundary_conditi
         if boundary_condition == "periodic":
             if i == 0:
                 grad_delta_f0 = ((delta_f0[i, :] - delta_f0[-1, :]) / dx[0]) #Spatial derivative
+            else:
+                grad_delta_f0 = ((delta_f0[i, :] - delta_f0[i - 1, :]) / dx[i - 1]) #Spatial derivative
         else:
             grad_delta_f0 = ((delta_f0[i + 1, :] - delta_f0[i, :]) / dx[i]) #Spatial derivative
         #Integrate
@@ -626,15 +528,14 @@ def snb_heat_flow(x, v_grid, Te, ne , Z, boundary_condition, norms = 0):
     #if this passes, correpsonds to f0_mb, g_1, nue_ei, lamb_star is correctly calculated
     # if any((abs(q - q_sh) / q_sh)[1:-1] * 100 > 1.5):
     #     sys.exit(0)
-
-    q_snb = q + dq
+    # q_snb = np.insert(q_snb, 0 ,0)
+    # q_snb = np.append(q_snb, 0)
+    
     
     if boundary_condition =="periodic":
-        return full_x[::2], q, q_sh, q_snb
+        return full_x[::2], q, q_sh, q + dq
     else:
-        return full_x[1::2], q, q_sh, q_snb
-
-
+        return full_x[1::2], q, q_sh, q + dq
 
 def spitzer_harm_heat(x, Te, ne, Z):
     def lambda_ei(T_norm , n_norm, Z_norm, return_arg = False):
@@ -708,7 +609,15 @@ def epperlein_short(nx, L, Z_ = 37.25, ne_ = 1e27, Te_ = 100., perturb = 1e-3, s
 
     x_l = 0
     x_u = L
-    initial_coord = np.linspace(x_l, x_u, nx+1, dtype=np.float64)
+    initial_coord = np.zeros(nx + 1)
+    v_grid_dv = 0.607
+    for i in range(1, nx + 1):
+        v_grid_dv *= 1.07
+        initial_coord[i] = initial_coord[i - 1] + v_grid_dv
+    # initial_coord1 = np.linspace(x_l, 0.8*x_u, math.ceil((nx + 1)*0.6), dtype=np.float64)
+    # initial_coord2 = np.linspace(0.8*x_u, x_u, int((nx+1) *0.4), dtype=np.float64)
+    # initial_coord = np.concatenate((initial_coord1,initial_coord2))
+    initial_coord = np.linspace(x_l, x_u, nx +1)
     x_centered = np.array([(initial_coord[i] + initial_coord[i+1]) /2 for i in range(len(initial_coord) -1)], dtype=np.float64)
     Z = np.zeros(nx, dtype = np.float64) + Z_
     Ar = np.zeros(nx, dtype = np.float64) + 2
@@ -725,24 +634,73 @@ def epperlein_short(nx, L, Z_ = 37.25, ne_ = 1e27, Te_ = 100., perturb = 1e-3, s
 
     return(initial_coord, x_centered, Te, ne, Z, Ar)
 
-nx = 100
-nv = 150
-#klambda 0.0075
-coord, centered_x, Te, ne, Z, Ar = epperlein_short(nx, 393.3393740248643060431 * 2.81400056, Z_= 1, ne_ = 1e19, sin = True)
-# coord = np.loadtxt("/Users/shiki/DATA/HKC_RELATED/init_data/easier_brodrick/coord.txt")
-# Te = np.loadtxt("/Users/shiki/DATA/HKC_RELATED/init_data/easier_brodrick/electron_temperature.txt")*1e-3
-# density = np.loadtxt("/Users/shiki/DATA/HKC_RELATED/init_data/easier_brodrick/density.txt") * 1e-3
-# Z = np.loadtxt("/Users/shiki/DATA/HKC_RELATED/init_data/easier_brodrick/Z.txt")
-# Ar = np.loadtxt("/Users/shiki/DATA/HKC_RELATED/init_data/easier_brodrick/Ar.txt")
-# ne = (density * Ar * mp) /Z
-# centered_x = np.array([(coord[i+1] + coord[i]) /2 for i in range(len(coord) -1)])
-free_params = free_param_calc(np.array([100]), np.array([1e19]) ,np.array([1]))
-v_grid = np.linspace(0, 7, nv + 1) * free_params['vte'][0]
+def test_finite_difference_scheme(x, x_centered, v_grid, Te, ne, Z, boundary_condition, dt = 1e-15):
+    C_v = np.zeros(len(Te)) + 100
+    Te_intemediate = np.zeros(len(Te))
+    Te_new_time = np.zeros(len(Te))
+    spitzer_heat = spitzer_harm_heat(x_centered, Te, ne, Z)
+    dx = np.diff(x)
+    for i in range(len(Te)):    
+        thermal_conduction = (spitzer_heat[i + 1] - spitzer_heat[i]) / dx[i]
+        Te_intemediate[i] = Te[i] - (dt/C_v[i]) * thermal_conduction
+    
+    new_spitzer = spitzer_harm_heat(x_centered, Te_intemediate, ne, Z)
+    x_nl, q, q_sh, q_snb = snb_heat_flow(x, v_grid, Te_intemediate, ne, Z, boundary_condition)
+    
+    if boundary_condition == "reflective":
+        q_snb = np.insert(q_snb, 0 ,0)
+        q_snb = np.append(q_snb, 0)
+    else:
+        q_snb = np.append(q_snb, 0)
 
-x, q, q_sh, q_snb = snb_heat_flow(coord, v_grid, Te *(e/kb), ne, Z, "reflective")
-plt.plot(coord, q_sh, 'k-', label = "Spitzer")
-plt.plot(x, q, 'rx', label = "Apprixmated Spitzer")
+    for i in range(len(Te)):    
+        spitzer_thermal_conduction = (new_spitzer[i + 1] - new_spitzer[i]) / dx[i]
+        nl_thermal_conduction =(q_snb[i + 1] - q_snb[i]) / dx[i]
+        Te_new_time[i] = Te[i] - (dt/C_v[i]) * (-1 * nl_thermal_conduction + spitzer_thermal_conduction)
+
+    plt.figure(2) 
+    plt.plot(x, q_snb, label = "snb")
+    plt.plot(x, spitzer_heat, label = "spitzer")
+    plt.plot(x_nl, q, label = "g_1")
+    plt.legend()
+    plt.figure(1)
+    plt.plot(x_centered, Te_intemediate)
+    plt.plot(x_centered, Te_new_time)
+    plt.legend()
+    plt.show()
+
+
+
+
+
+nx = 100
+nv = 100
+coord, centered_x, Te, ne, Z, Ar = epperlein_short(nx, 2*3.933393740248643060431 * 2.81400056, Z_= 1, ne_ = 1e19, sin = True)
+# coordd = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_Z_interp', skiprows=1)[:, 0] 
+# Z = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_Z_interp', skiprows=1)[:, 1] 
+# Te = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_5ps_TekeV_interp', skiprows=1)[:, 1] * 1E3 
+# ne = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_ne1e20cm3_interp', skiprows=1)[:, 1] * (1e20 * 1e6)
+# snb_brodrick = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_5ps_separatedsnbWcm2', skiprows=1)[:, 1]
+# coord = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_5ps_separatedsnbWcm2', skiprows=1)[:, 0]*1e-6
+# plt.plot(coord, snb_brodrick * 1e4, label = 'true')
+
+centered_x = np.array([(coord[i+1] + coord[i]) /2 for i in range(len(coord) -1)])
+free_params = free_param_calc(np.array([270]), np.array([1e27]) ,np.array([36.5]))
+
+v_grid = np.zeros(nv + 1)
+v_grid_dv = 0.0307
+for i in range(1, nv + 1):
+    v_grid_dv *= 1.04
+    v_grid[i] = v_grid[i - 1] + v_grid_dv
+# v_grid = np.linspace(0, 30, nv + 1) * free_params['vte'][0]
+v_grid *=free_params['vte'][0] 
+boundary_condition = "reflective"
+# test_finite_difference_scheme(coord, centered_x, v_grid, Te * (e/kb), ne, Z, boundary_condition, dt = 1e-15)
+
+x, q, q_sh, q_snb = snb_heat_flow(coord, v_grid, Te* (e/kb), ne, Z, "periodic")
+plt.plot(coord[1:-1], q_sh[1:-1], 'k-', label = "Spitzer")
+plt.plot(x, q, 'r-', label = "Apprixmated Spitzer")
 plt.plot(x, q_snb, label = "SNB")
-# plt.plot(q_snb/q)
+ # plt.plot(q_snb/q_sh[:-1])
 plt.legend()
 plt.show()
