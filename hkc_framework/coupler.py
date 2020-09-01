@@ -279,7 +279,7 @@ class Coupler:
                 
                 #For coupling without the bells and whilstls.
                 if self.init.yaml_file['Mode']['Start_from_kinetic'] and not (self.init.yaml_file['Mode']['Couple_leap_frog']
-                or self.init.yaml_file['Mode']['Coupler_operator_split']):
+                or self.init.yaml_file['Mode']['Couple_operator_split']):
                     if(self.init.yaml_file['Mode']['Couple_adaptive']):
                         #Configurations already done above
                         pass
