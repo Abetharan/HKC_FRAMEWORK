@@ -297,7 +297,7 @@ class Coupler:
                 if (self.init.yaml_file['Mode']['Couple_divq'] or 
                     self.init.yaml_file['Mode']['Couple_multi']):
 
-                    fluid_obj.init.yaml_file = self.original_f_init
+                    fluid_obj.init.yaml_file = copy.deepcopy(self.original_f_init)#self.original_f_init
                     if self.init.yaml_file['Mode']['Couple_divq']:
                         self.logger.info("Engage Coupling if MODE: Div.q")
                     elif self.init.yaml_file['Mode']['Couple_multi']:
@@ -328,6 +328,9 @@ class Coupler:
             #save to a different folder 
             if self.init.yaml_file['Mode']['Couple_leap_frog'] or self.init.yaml_file['Mode']['Couple_operator_split']:
                 self.logger.info("Setting Intermediate Fluid Output Path")
+                
+                if self.init.yaml_file['Mode']['Couple_operator_split']:
+                    fluid_obj.init.yaml_file['TimeParameters']['t_max'] = self.init.yaml_file['Coupling_params']['t_fluid_operator'] # REF THIS IS THE TIME MODIFICATION TO OPERATOR-SPLIT
                 fluid_obj.init.yaml_file['Paths']['Out_Path'] = io_obj.intermediate_fluid_outpath 
                 fluid_obj._fluid_output_path = io_obj.intermediate_fluid_outpath
             else:
@@ -469,7 +472,7 @@ class Coupler:
                 if self.init.yaml_file['Mode']['Couple_leap_frog'] or self.init.yaml_file['Mode']['Couple_operator_split']: 
                     fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = self.init.yaml_file['Mode']['Couple_multi']
 
-            #Leap Frog Step if turned on 
+            #Leap Frog Step/Operator-Split if turned on 
             if self.init.yaml_file['Mode']['Couple_leap_frog'] or self.init.yaml_file['Mode']['Couple_operator_split']:
 
                 if self.init.yaml_file['Mode']['Couple_operator_split']:
@@ -496,6 +499,9 @@ class Coupler:
                 
                 if self.init.yaml_file['Mode']['Couple_operator_split']:
                     self.logger.info("Progress Fluid Step from Operator-Split Corrections")
+                    t_original =  self.original_f_init['TimeParameters']['t_max']
+                    fluid_obj.init.yaml_file['TimeParameters']['t_max'] = t_original
+
                 else:
                     self.logger.info("Progress Fluid Step from Leap Frogged Heat-Flow")
                 self.logger.info("Fluid input path {}".format(fluid_obj.init.yaml_file['Paths']['Init_Path']))
