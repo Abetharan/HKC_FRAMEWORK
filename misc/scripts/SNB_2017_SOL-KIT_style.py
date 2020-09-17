@@ -513,8 +513,17 @@ def snb_heat_flow(x, v_grid, Te, ne , Z, boundary_condition, norms = 0):
         f0_mb = f_maxwellian(interp_Te, interp_ne, v_grid_centered, dv, boundary_condition)
         #g_1 only on cell-walls 
         g_1_mb = g_1_maxwellian(lamb_star[1::2, :], f0_mb, x_centered, interp_Te, boundary_condition)
+
         delta_f0 = solve_df0(g_1_mb, nu_ei[::2, :], Z, lamb_E, v_grid_centered, dxc, boundary_condition) 
-        
+        fig = plt.figure()
+        x_mesh, v_mesh = np.meshgrid(x_centered, v_grid_centered/free_params['vte'][0])
+
+        # ax = fig.add_subplot(111, projection='3d')
+        # ax.plot_surface(x_mesh, v_mesh, delta_f0)
+        # ax.set_xlabel('x/m')
+        # ax.set_ylabel('v/v_th')
+        # ax.set_zlabel('g_1')
+        # plt.show()
     #integrate to get corrections
     q = integrate_g1(g_1_mb, v_grid_centered, dv) #Check if g_1 corresponds to spitzer-harm as it should.
     # plt.plot(q)
@@ -555,7 +564,9 @@ def spitzer_harm_heat(x, Te, ne, Z):
         return coulomb_logs
 
     coulomb_log = np.array(lambda_ei(Te * (kb/e), ne , Z))
-    kappaE = 1.843076667547614E-10 * pow(Te, 2.5) * pow(coulomb_log, -1) *  pow(Z, -1)
+
+    # kappaE = 1.843076667547614E-10 * pow(Te, 2.5) * pow(coulomb_log, -1) *  pow(Z, -1)
+    kappaE =  13.6*((Z+0.24)/(Z+4.24))*5.759614586E-11* pow(Te, 2.5) * pow(coulomb_log, -1) *  pow(Z, -1)
     nx = len(Te)
     HeatFlowE = np.zeros(nx + 1, dtype=np.float64)
     gradTe = np.zeros(nx + 1)
@@ -620,19 +631,19 @@ def epperlein_short(nx, L, Z_ = 37.25, ne_ = 1e27, Te_ = 100., perturb = 1e-3, s
     initial_coord = np.linspace(x_l, x_u, nx +1)
     x_centered = np.array([(initial_coord[i] + initial_coord[i+1]) /2 for i in range(len(initial_coord) -1)], dtype=np.float64)
     Z = np.zeros(nx, dtype = np.float64) + Z_
-    Ar = np.zeros(nx, dtype = np.float64) + 2
+    Ar = np.zeros(nx, dtype = np.float64) + 4
     
     ne = np.zeros(nx, dtype = np.float64) + ne_
     
     ##Relevant for periodic systems .. fluid cannot be
     if sin: 
-        Te = np.zeros(nx, dtype=np.float64) + Te_  + perturb * Te_  * np.sin((2*np.pi * x_centered) / np.max(x_centered), dtype=np.float64)
+        Te = np.zeros(nx + 1, dtype=np.float64) + Te_  + perturb * Te_  * np.sin((2*np.pi * initial_coord) / np.max(initial_coord), dtype=np.float64)
     else:
     ##Reflective
-        Te = np.zeros(nx, dtype=np.float64) + Te_  + perturb * Te_  * np.cos((np.pi * x_centered) / np.max(x_centered), dtype=np.float64)
+        Te = np.zeros(nx + 1, dtype=np.float64) + Te_  + perturb * Te_  * np.cos((np.pi * initial_coord) / np.max(initial_coord), dtype=np.float64)
+    Te_centered = np.array([(Te[i] + Te[i+1]) /2 for i in range(len(Te) -1)], dtype=np.float64) 
 
-
-    return(initial_coord, x_centered, Te, ne, Z, Ar)
+    return(initial_coord, x_centered, Te_centered, ne, Z, Ar)
 
 def test_finite_difference_scheme(x, x_centered, v_grid, Te, ne, Z, boundary_condition, dt = 1e-15):
     C_v = np.zeros(len(Te)) + 100
@@ -675,7 +686,12 @@ def test_finite_difference_scheme(x, x_centered, v_grid, Te, ne, Z, boundary_con
 
 nx = 100
 nv = 100
-coord, centered_x, Te, ne, Z, Ar = epperlein_short(nx, 2*3.933393740248643060431 * 2.81400056, Z_= 1, ne_ = 1e19, sin = True)
+free_params = free_param_calc(np.array([100]), np.array([1e19]) ,np.array([30])) #2,81
+coord, centered_x, Te, ne, Z, Ar = epperlein_short(nx, 2933.20969947 , Z_= 36, ne_ = 1e19, sin = True)
+# coord = np.loadtxt('/Users/shiki/DATA/spitzer_checks/OUTPUT/GRIDS/X_GRID.txt')
+# Z = np.zeros(len(coord)) + 36.5
+# Te = np.loadtxt('/Users/shiki/DATA/spitzer_checks/OUTPUT/TEMPERATURE/TEMPERATURE_00000.txt')
+# ne = np.zeros(len(coord)) + 1e19
 # coordd = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_Z_interp', skiprows=1)[:, 0] 
 # Z = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_Z_interp', skiprows=1)[:, 1] 
 # Te = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_5ps_TekeV_interp', skiprows=1)[:, 1] * 1E3 
@@ -686,6 +702,7 @@ coord, centered_x, Te, ne, Z, Ar = epperlein_short(nx, 2*3.933393740248643060431
 
 centered_x = np.array([(coord[i+1] + coord[i]) /2 for i in range(len(coord) -1)])
 free_params = free_param_calc(np.array([270]), np.array([1e27]) ,np.array([36.5]))
+free_params = free_param_calc(np.array([100]), np.array([1e19]) ,np.array([36.5]))
 
 v_grid = np.zeros(nv + 1)
 v_grid_dv = 0.0307
@@ -695,12 +712,13 @@ for i in range(1, nv + 1):
 # v_grid = np.linspace(0, 30, nv + 1) * free_params['vte'][0]
 v_grid *=free_params['vte'][0] 
 boundary_condition = "reflective"
+boundary_condition = "periodic"
 # test_finite_difference_scheme(coord, centered_x, v_grid, Te * (e/kb), ne, Z, boundary_condition, dt = 1e-15)
 
-x, q, q_sh, q_snb = snb_heat_flow(coord, v_grid, Te* (e/kb), ne, Z, "periodic")
-plt.plot(coord[1:-1], q_sh[1:-1], 'k-', label = "Spitzer")
-plt.plot(x, q, 'r-', label = "Apprixmated Spitzer")
-plt.plot(x, q_snb, label = "SNB")
+x, q, q_sh, q_snb = snb_heat_flow(coord, v_grid, Te* (e/kb), ne, Z, boundary_condition)
+plt.plot(coord[1:-1]*1e3, q_sh[1:-1]*1e-6, 'k-', label = "Spitzer")
+# plt.plot(x, q, 'r-', label = "Apprixmated Spitzer")
+# plt.plot(x, q_snb, label = "SNB")
  # plt.plot(q_snb/q_sh[:-1])
 plt.legend()
 plt.show()

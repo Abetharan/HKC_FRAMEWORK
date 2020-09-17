@@ -1,5 +1,5 @@
 BoundaryConditions:
-  Hydro_Right_Boundary: r  
+  Hydro_Right_Boundary: f  
   Rad_Left_Boundary: v
   Rad_Right_Boundary: v 
   Rad_Dirichlet_Left: 0
@@ -57,7 +57,7 @@ Paths:
   Init_Path: 
   Out_Path: 
 Switches:
-  AdapativeTimeStep: false
+  AdapativeTimeStep: true
   AdiabaticMode: false
   ConstantCoulombLog: false
   CoupleDivQ: false
@@ -67,15 +67,15 @@ Switches:
   FullyIonized: true
   HeatConduction: true
   IdealGas: true
-  InvBrem: true
+  InvBrem: false
   IsothermalMode: false
   LoadInLaserProfile: false
   MultiMaterial: false
   PdVWork: true
   RadDiffusion: false
-  RadFreeFree: false
-  RadPdVWork: false
-  RadiationTransport: false
+  RadFreeFree: true
+  RadPdVWork: true
+  RadiationTransport: true
   SingleTemperature: false
   Velocity: true
   Viscosity: true
@@ -86,8 +86,8 @@ TimeParameters:
   RadLimit: 0.1
   VolLimit: 0.05
   cfl: 0.85
-  dt: 1.0e-15
+  dt: 1.0e-20
   dt_max: 1.0e-10
-  dt_min: 1.0e-19
+  dt_min: 1.0e-21
   steps: 0
-  t_max: 1.0e-12
+  t_max: 1.0e-10

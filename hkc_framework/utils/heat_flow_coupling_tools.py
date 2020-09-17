@@ -53,7 +53,8 @@ class HeatFlowCouplingTools:
             # self.coulomb_log.append(coulomb)
 # 
         # self.coulomb_log = np.array(self.coulomb_log)
-        kappaE = 1.843076667547614E-10 * pow(self.electron_temperature, 2.5) * pow(self.coulomb_log, -1) *  pow(self.zbar, -1)
+        #kappaE = 1.843076667547614E-10 * pow(self.electron_temperature, 2.5) * pow(self.coulomb_log, -1) *  pow(self.zbar, -1)
+        kappaE =  13.6*((self.zbar+0.24)/(self.zbar+4.24))*5.759614586E-11* pow(self.electron_temperature, 2.5) * pow(self.coulomb_log, -1) *  pow(self.zbar, -1)
         nx = len(self.electron_temperature)
         HeatFlowE = np.zeros(nx + 1)
 
