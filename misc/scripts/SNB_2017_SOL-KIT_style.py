@@ -515,9 +515,8 @@ def snb_heat_flow(x, v_grid, Te, ne , Z, boundary_condition, norms = 0):
         g_1_mb = g_1_maxwellian(lamb_star[1::2, :], f0_mb, x_centered, interp_Te, boundary_condition)
 
         delta_f0 = solve_df0(g_1_mb, nu_ei[::2, :], Z, lamb_E, v_grid_centered, dxc, boundary_condition) 
-        fig = plt.figure()
-        x_mesh, v_mesh = np.meshgrid(x_centered, v_grid_centered/free_params['vte'][0])
-
+        # fig = plt.figure()
+        # x_mesh, v_mesh = np.meshgrid(x_centered, v_grid_centered/free_params['vte'][0])
         # ax = fig.add_subplot(111, projection='3d')
         # ax.plot_surface(x_mesh, v_mesh, delta_f0)
         # ax.set_xlabel('x/m')
@@ -684,41 +683,51 @@ def test_finite_difference_scheme(x, x_centered, v_grid, Te, ne, Z, boundary_con
 
 
 
-nx = 100
+nx = 10
 nv = 100
-free_params = free_param_calc(np.array([100]), np.array([1e19]) ,np.array([30])) #2,81
-coord, centered_x, Te, ne, Z, Ar = epperlein_short(nx, 2933.20969947 , Z_= 36, ne_ = 1e19, sin = True)
-# coord = np.loadtxt('/Users/shiki/DATA/spitzer_checks/OUTPUT/GRIDS/X_GRID.txt')
-# Z = np.zeros(len(coord)) + 36.5
-# Te = np.loadtxt('/Users/shiki/DATA/spitzer_checks/OUTPUT/TEMPERATURE/TEMPERATURE_00000.txt')
-# ne = np.zeros(len(coord)) + 1e19
-# coordd = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_Z_interp', skiprows=1)[:, 0] 
-# Z = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_Z_interp', skiprows=1)[:, 1] 
-# Te = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_5ps_TekeV_interp', skiprows=1)[:, 1] * 1E3 
-# ne = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_ne1e20cm3_interp', skiprows=1)[:, 1] * (1e20 * 1e6)
-# snb_brodrick = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_5ps_separatedsnbWcm2', skiprows=1)[:, 1]
-# coord = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_5ps_separatedsnbWcm2', skiprows=1)[:, 0]*1e-6
-# plt.plot(coord, snb_brodrick * 1e4, label = 'true')
 
-centered_x = np.array([(coord[i+1] + coord[i]) /2 for i in range(len(coord) -1)])
-free_params = free_param_calc(np.array([270]), np.array([1e27]) ,np.array([36.5]))
-free_params = free_param_calc(np.array([100]), np.array([1e19]) ,np.array([36.5]))
+# klambda_dist = [393.7402486430605, 147.65259324114768, 73.82629662057384, 39.37402486430605, 14.765259324114767, 7.382629662057384, 3.9374024864306043, 1.4765259324114768]
+klambda_dist = [393.7402486430605, 147.65259324114768, 73.82629662057384, 39.37402486430605]
+klambda = [0.0075,0.02, 0.04, 0.075]
+sh_q = []
+sh_analytical = []
+for k, dist in enumerate(klambda_dist):
+    coord, centered_x, Te, ne, Z, Ar = epperlein_short(nx, dist*2.81 , Z_= 1, ne_ = 1e19, sin = False)
+    # coord = np.loadtxt('/Users/shiki/DATA/spitzer_checks/OUTPUT/GRIDS/X_GRID.txt')
+    # Z = np.zeros(len(coord)) + 36.5
+    # Te = np.loadtxt('/Users/shiki/DATA/spitzer_checks/OUTPUT/TEMPERATURE/TEMPERATURE_00000.txt')
+    # ne = np.zeros(len(coord)) + 1e19
+    # coordd = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_Z_interp', skiprows=1)[:, 0] 
+    # Z = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_Z_interp', skiprows=1)[:, 1] 
+    # Te = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_5ps_TekeV_interp', skiprows=1)[:, 1] * 1E3 
+    # ne = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_ne1e20cm3_interp', skiprows=1)[:, 1] * (1e20 * 1e6)
+    # snb_brodrick = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_5ps_separatedsnbWcm2', skiprows=1)[:, 1]
+    # coord = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_5ps_separatedsnbWcm2', skiprows=1)[:, 0]*1e-6
+    # plt.plot(coord, snb_brodrick * 1e4, label = 'true')
 
-v_grid = np.zeros(nv + 1)
-v_grid_dv = 0.0307
-for i in range(1, nv + 1):
-    v_grid_dv *= 1.04
-    v_grid[i] = v_grid[i - 1] + v_grid_dv
-# v_grid = np.linspace(0, 30, nv + 1) * free_params['vte'][0]
-v_grid *=free_params['vte'][0] 
-boundary_condition = "reflective"
-boundary_condition = "periodic"
-# test_finite_difference_scheme(coord, centered_x, v_grid, Te * (e/kb), ne, Z, boundary_condition, dt = 1e-15)
+    centered_x = np.array([(coord[i+1] + coord[i]) /2 for i in range(len(coord) -1)])
+    free_params = free_param_calc(np.array([100]), np.array([1e19]) ,np.array([1]))
 
-x, q, q_sh, q_snb = snb_heat_flow(coord, v_grid, Te* (e/kb), ne, Z, boundary_condition)
-plt.plot(coord[1:-1]*1e3, q_sh[1:-1]*1e-6, 'k-', label = "Spitzer")
-# plt.plot(x, q, 'r-', label = "Apprixmated Spitzer")
-# plt.plot(x, q_snb, label = "SNB")
- # plt.plot(q_snb/q_sh[:-1])
-plt.legend()
-plt.show()
+    v_grid = np.zeros(nv + 1)
+    v_grid_dv = 0.0307
+    for j in range(1, nv + 1):
+        v_grid_dv *= 1.04
+        v_grid[j] = v_grid[j - 1] + v_grid_dv
+    # v_grid = np.linspace(0, 30, nv + 1) * free_params['vte'][0]
+    v_grid *=free_params['vte'][0] 
+    boundary_condition = "reflective"
+    # boundary_condition = "periodic"
+    # test_finite_difference_scheme(coord, centered_x, v_grid, Te * (e/kb), ne, Z, boundary_condition, dt = 1e-15)
+
+    x, q, q_sh, q_snb = snb_heat_flow(coord, v_grid, Te* (e/kb), ne, Z, boundary_condition)
+    sh_q.append(np.average(abs(q_snb/q_sh[1:-1])))
+    q_analy = q_sh *(1 - 233.26 * 1 * klambda[k]**2)
+    sh_analytical.append(np.average(abs(q_analy[1:-1]/q_sh[1:-1])))
+    plt.plot(coord[1:-1], q_sh[1:-1], 'k-', label = "Spitzer")
+    plt.plot(x, q, 'r-', label = "Apprixmated Spitzer")
+    plt.plot(x, q_snb, label = "SNB")
+#     # plt.plot(q_snb/q_sh[1:-1])
+    plt.legend()
+    plt.show()
+
+# plt.plot(klambda, sh_q, 'k-')
