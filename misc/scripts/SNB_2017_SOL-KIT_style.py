@@ -87,34 +87,6 @@ def getDifferenceX(x, boundary_condition):
     dxc[-1] = 2 * (x[-1] - x[-2])
     return dxc
 
-def interpolateDistribution(full_x, dxc, f_0, f_1, E_field, boundary_condition):
-    interpolated_f_0 = np.zeros(np.shape(f_0)) + f_0
-    interpolated_f_1 = np.zeros(np.shape(f_1)) + f_1
-    nx, nv = np.shape(f_0)
-    interpolated_E_field = np.zeros(nx) + E_field
-    for i in range(1, nx - 1):
-        a_minus = (full_x[i + 1] - full_x[i]) / dxc[i]
-        a_plus = (full_x[i] - full_x[i - 1]) / dxc[i]
-        for v in range(nv):
-            if i % 2 == 0:
-                interpolated_f_0[i, v] = a_minus * f_0[i - 1, v] + a_plus * f_0[i + 1, v]
-            elif i % 2 == 1:
-                interpolated_f_1[i, v] = a_minus * f_1[i - 1, v] + a_plus * f_1[i + 1, v]
-                interpolated_E_field[i] = a_minus * E_field[i - 1] + a_plus * E_field[i + 1]
-
-    for i in range(nv):
-        if boundary_condition == "periodic":
-            interpolated_f_0[-1, i] = 0.5 * (f_0[0,i] + f_0[-2, i])
-            interpolated_f_1[0, i] = 0.5 * (f_1[1,i] + f_1[-1,i])
-            interpolated_E_field[0, i] = 0.5 * (E_field[1, i] + E_field[-1, i])
-        else:
-            interpolated_f_1[0, i]= 0.5 * f_1[1,i]
-            interpolated_f_1[-1, i] = 0.5 * f_1[-2, i]
-            interpolated_E_field[0] = 0.5 * (E_field[1])
-            interpolated_E_field[-1] = 0.5 * (E_field[-2])
-
-    return(interpolated_f_0, interpolated_f_1)
-
 def lambda_ei(T_norm = 10, n_norm = 0.25E20, Z_norm = 1.0, return_arg = False):
     coulomb_logs = []
     for T,n,Z in zip(T_norm, n_norm, Z_norm):
@@ -164,34 +136,76 @@ def free_param_calc(Te, ne, Z):
     param_dict['E'] = e_0
     return(param_dict)
 
-def getLambdaStar(Te, ne, Z, v_grid):
+
+
+def lambda_E(lambda_star, E, e_grid):
     """
-    Purpose: Calculates velocity dependent collision frequency
-             and mfp
+    Purpose: Phemenlogical corrections to mfp via addition of E-field
     Args:
-        Te = Temperature
-        ne = Numbe r density 
-        Z = ionization
-        v_grid = centered grid
-    Returns: nue_ei, lambda_star
+        Lambda_star = velocity dependent mfp 
+        E = E-field
+        v_grid = centered v grid 
+    Returns:
+        lambda_E = corrected mfp.
     """
-    coulomb_log = lambda_ei(T_norm = Te * (kb/e), n_norm = ne, Z_norm = Z)
-    gamma_ee_0 = e ** 4 / pow((4 * math.pi * me * epsilon_0), 2)
-    nue_ei = np.zeros((len(Te), len(v_grid)))
-    lambda_star = np.zeros((len(Te), len(v_grid)))
-    for j,v in enumerate(v_grid):
-        nue_ei[:, j] = (4 * np.pi * Z *ne*gamma_ee_0 *coulomb_log) / (pow(v,3)) 
-        zeta = (Z + 0.24) / (Z + 4.2)
-        lambda_star[:, j] = (v / nue_ei[:, j]) * zeta 
-    return nue_ei, lambda_star
+    lambda_E = np.zeros(np.shape(lambda_star))
+    a = 1.0
+    for i, e_field in enumerate(E):
+        for j, energy in enumerate(e_grid):
+            k = 1/(a * lambda_star[i, j]) + abs((e * e_field) / (kb * energy))
+            lambda_E[i, j] = 1/k
+
+    return(lambda_E)
+
+def getLambStar(Te, ne, Z, beta):
+    nx,ng = np.shape(beta)
+    vt_bx = np.sqrt(1.38e-23*Te/9.11e-31);
+    log_lam_ei = lambda_ei(T_norm = Te * (kb/e), n_norm = ne, Z_norm = Z)
+
+    Y = 4*np.pi*(1.6e-19**2/(4 * np.pi * 8.85e-12 * 9.11e-31))**2;
+    tau_ei_bx = vt_bx**3/(Y* Z * ne * log_lam_ei);
+
+    lambda_ei_bx = vt_bx*tau_ei_bx
+    zeta = (Z + 0.24) / (Z + 4.2) # Brodrick
+    # lambda_e_bx = np.sqrt(Z)*lambda_ei_bx
+    lambda_e_bx = zeta * lambda_ei_bx
+    lambda_g_bx = np.zeros((nx,ng))
+    lambda_g_c =  np.zeros((nx,ng))
+
+    for i in range(ng):
+        lambda_g_bx[:,i] = 2*pow(beta[:,i], 2)*lambda_e_bx #Defined everywhere in space,  energy centered 
+    return lambda_g_bx
+def getBeta(energy_grid, Te):
+    beta = np.zeros((len(Te),len(energy_grid)))
+    dbeta = np.zeros((len(Te),len(energy_grid) - 1)) 
+    for i in range(len(Te)):
+        beta[i, :] = energy_grid / Te[i]
+        for j in range(len(energy_grid) - 1):
+            dbeta[i, j] = (energy_grid[j + 1] - energy_grid[j]) /  Te[i]
+    return beta, dbeta
+
+# def getLambdaStar(Te, ne, Z, v_grid):
+#     """
+#     Purpose: Calculates velocity dependent collision frequency
+#              and mfp
+#     Args:
+#         Te = Temperature
+#         ne = Numbe r density 
+#         Z = ionization
+#         v_grid = centered grid
+#     Returns: nue_ei, lambda_star
+    # """
+    # coulomb_log = lambda_ei(T_norm = Te * (kb/e), n_norm = ne, Z_norm = Z)
+    # gamma_ee_0 = e ** 4 / pow((4 * math.pi * me * epsilon_0), 2)
+    # nue_ei = np.zeros((len(Te), len(v_grid)))
+    # lambda_star = np.zeros((len(Te), len(v_grid)))
+    # for j,v in enumerate(v_grid):
+    #     nue_ei[:, j] = (4 * np.pi * Z *ne*gamma_ee_0 *coulomb_log) / (pow(v,3)) 
+    #     # zeta = Z / (2 * pow((Z+1), 0.5)) #Schurtz
+    #     zeta = (Z + 0.24) / (Z + 4.2)
+    #     lambda_star[:, j] = ((v* zeta)  / nue_ei[:, j]) 
+    # return nue_ei, lambda_star
     
-# def lambda_star(nue_ei, v_grid, Z):
-#     lambda_star = np.zeros((len(nue_ei), len(v_grid)))
-    # for i, local_nue in enumerate(nue_ei):
-    #     zeta = (Z[i] + 0.24) / (Z[i] + 4.2)
-        # for j, v in enumerate(v_grid):
-        #     lambda_star[i, j] = zeta * (v/local_nue)
-    # return(lambda_star)
 
 def electric_field(x, Te, ne, Z, boundary_condition):
     """
@@ -209,43 +223,49 @@ def electric_field(x, Te, ne, Z, boundary_condition):
         E = np.zeros(n)
     else:
         E = np.zeros(n - 1)
-        n -=1
+        n -= 1
     #gamma_ee_0 = e  / pow((4 * math.pi* epsilon_0), 0.5)
     
     for i in range(0, n):
-        if boundary_condition == "periodic" and i == 0:
-            dx = 2 * x[i]
-            gamma =  1 + ((3 * (Z[i] + 0.477)) / (2*(Z[i] + 2.15)))
-            E[i] = (-1 * (kb/e) * Te[0] * 
-                        (((ne[1] - ne[-1]) / (n * dx)) +
-                        gamma * ((Te[1] - Te[-1]) /(Te[0] * dx))))
-        else:
-            dx = x[i] - x[i - 1]
-            gamma =  1 + ((3 * (Z[i] + 0.477)) / (2*(Z[i] + 2.15)))
+        gamma =  1 + ((3 * (Z[i - 1] + 0.477)) / (2*(Z[i - 1] + 2.15)))
+        if boundary_condition == 'reflective':
+            dx = x[i + 1] - x[i]
             E[i] = (-1 * (kb/e) * Te[i*2] * 
-                        (((ne[i*2 + 1] - ne[i*2 - 1]) / (ne[i*2] * dx)) +
-                        gamma * ((Te[i*2 + 1] - Te[i*2 - 1]) /(Te[i*2] * dx))))
+                        (((ne[i*2 + 2] - ne[i*2]) / (ne[2*i + 1] * dx)) +
+                        gamma * ((Te[i*2 + 2] - Te[i*2]) /(Te[2*i + 1] * dx))))
+        else:
+            if i == 0: 
+                dx = 2 * x[i]
+                E[i] = (-1 * (kb/e) * Te[0] * 
+                            (((ne[1] - ne[-1]) / (ne[0] * dx)) +
+                            gamma * ((Te[1] - Te[-1]) /(Te[0] * dx))))
+            else: 
+                dx = x[i] - x[i - 1]
+                E[i] = (-1 * (kb/e) * Te[i*2] * 
+                            (((ne[i*2 + 1] - ne[i*2 - 1]) / (ne[i*2] * dx)) +
+                            gamma * ((Te[i*2 + 1] - Te[i*2 - 1]) /(Te[i*2] * dx))))
     return(E)
 
-def lambda_E(lambda_star, E, v_grid):
-    """
-    Purpose: Phemenlogical corrections to mfp via addition of E-field
-    Args:
-        Lambda_star = velocity dependent mfp 
-        E = E-field
-        v_grid = centered v grid 
-    Returns:
-        lambda_E = corrected mfp.
-    """
-    lambda_E = np.zeros(np.shape(lambda_star))
-    for i, e_field in enumerate(E):
-        for j, v in enumerate(v_grid):
-            k = 1/(lambda_star[i, j]) + abs((e * e_field) / (0.5 * me * pow(v, 2))) 
-            if 1/(1/(lambda_star[i, j])) - lambda_star[i,j] > 1e-9:
-                print("Da fuq {}".format(abs((e * e_field) / (0.5 * me * pow(v, 2)))))
-            lambda_E[i, j] = 1/k
+# def lambda_E(lambda_star, E, v_grid):
+#     """
+#     Purpose: Phemenlogical corrections to mfp via addition of E-field
+#     Args:
+#         Lambda_star = velocity dependent mfp 
+#         E = E-field
+#         v_grid = centered v grid 
+#     Returns:
+#         lambda_E = corrected mfp.
+#     """
+#     lambda_E = np.zeros(np.shape(lambda_star))
+#     a =1
+#     for i, e_field in enumerate(E):
+#         for j, v in enumerate(v_grid):
+#             k = 1/(a * lambda_star[i, j]) + abs((e * e_field) / (0.5 * me * pow(v, 2))) 
+#             if 1/(1/(lambda_star[i, j])) - lambda_star[i,j] > 1e-9:
+    #             print("Da fuq {}".format(abs((e * e_field) / (0.5 * me * pow(v, 2)))))
+    #         lambda_E[i, j] = 1/k
 
-    return(lambda_E)
+    # return(lambda_E)
 
 def f_maxwellian(Te, ne, v_grid, v_grid_width, boundary_condition):
     """
@@ -306,7 +326,7 @@ def g_1_maxwellian(lambda_star, f_0_maxwellian, x, Te, boundary_condition):
             if boundary_condition == "periodic":
                 g_1[i, v] = -1 * lambda_star[i, v] * f_0_maxwellian[2*i, v] * temperature_correction
             else:
-                g_1[i, v] = -1 * lambda_star[i, v] * f_0_maxwellian[2*i + 1, v] * temperature_correction
+                g_1[i, v] = -1* lambda_star[i, v] * f_0_maxwellian[2*i + 1, v] * temperature_correction
     return(g_1)
 
 def forward_difference(f_3_2, f_1_2, dx, A = None):
@@ -314,6 +334,7 @@ def forward_difference(f_3_2, f_1_2, dx, A = None):
         return (f_3_2 - f_1_2)/dx
     else:
         return A * ((f_3_2 - f_1_2) / dx)
+
 def solve_df0(g_1, nue_ei, Z, lambda_E, v_grid, dx, boundary_condition):
     """
     Purpose: Fill Implicit matrix 
@@ -338,7 +359,7 @@ def solve_df0(g_1, nue_ei, Z, lambda_E, v_grid, dx, boundary_condition):
         for i in range(nx):
             S_has_been_solved = False
             if boundary_condition == "periodic":
-                if i < nx -1:
+                if i < nx -1: #NOTE CHECK THE DX_S_SD_SDA_ PROB WRONG
                     dx_k = dx[2*i]
                     dx_k_1 = dx[2*i + 2]
                     dx_k_1_2 = dx[2*i + 1]
@@ -368,7 +389,7 @@ def solve_df0(g_1, nue_ei, Z, lambda_E, v_grid, dx, boundary_condition):
                     dx_k_1 = dx[1] # k = 1, (3/2 - 1/2) x[2]  - x[0]
                     dx_k_diff = dx_k + dx_k_1
                     A[i] = None #0 #lambda_E[i - 1]/(3*dx_k_diff*dx_k)
-                    B[i] = -1 * (lambda_E[i, j]/(3*dx_k_diff*dx_k) + (r * nue_ei[i, j])/(v*Z[i]))
+                    B[i] = -1 * (lambda_E[i, j]/(3*dx_k_diff*dx_k_1) + (r * nue_ei[i, j])/(v*Z[i]))
                     C[i] = lambda_E[i, j]/(3*dx_k_diff*dx_k)
                     S[i] = g_1[i, j] / (3*dx_k_1_2)
                 if i == nx - 1:
@@ -411,6 +432,64 @@ def solve_df0(g_1, nue_ei, Z, lambda_E, v_grid, dx, boundary_condition):
             mat[0, -1] = A[0]
             mat[-1, 0] = C[-1]
 
+        d = solve(mat, S)
+        delta_f0[:, j] = d
+    return delta_f0
+
+def reflective_solve_df0(g_1,  Z, lambda_E, x, x_centered, dx, lambda_star):
+    """
+    Purpose: Fill Implicit matrix 
+    Args:
+        g_1: modified SNB f_1 maxwellian, shape (nx(-1), nv)
+        nue_ei: Collision Frequency, shape (nx, nv)
+        Z: Ionization, shape nx 
+        Lambda_E: SNB modified collision mfp shape (nx(-1), nv) 
+        v_grid: Velocity grid/groups, shape (nv)
+        x: full X grid has length,  2*nx(-1)
+    Returns:
+        matrix to be solved.
+    """ 
+    nx, nv = np.shape(lambda_star)
+    delta_f0 = np.zeros((nx, nv))
+    r = 2 # tunable parameter
+    for j in range(nv):
+    # for j, v in enumerate(v_grid):
+        A = np.zeros(nx) #off diagonal n -1
+        B = np.zeros(nx) # leading diagonal
+        C = np.zeros(nx) # off diagonal n + 1
+        S = np.zeros(nx) #Source 
+        for i in range(nx):
+            if i < nx - 1 and i > 0:
+                dx_k = x_centered[i] - x_centered[i - 1] #dx[2*i - 1]
+                dx_k_1 = x_centered[i + 1] - x_centered[i] #dx[2*i + 1]
+                dx_k_1_2 = x[i + 1] - x[i]#dx[2*i]
+                dx_k_diff = dx_k + dx_k_1
+                A[i] = lambda_E[i - 1, j]/(dx_k_diff*dx_k)
+                B[i] = -1 * (lambda_E[i, j]/(dx_k_diff*dx_k_1) + lambda_E[i - 1, j]/(dx_k_diff*dx_k) + (3 * r)/(lambda_star[i,j]*Z[i]))
+
+                C[i] = lambda_E[i, j]/(dx_k_diff*dx_k)
+        
+                S[i] = forward_difference(g_1[i, j], g_1[i - 1, j], dx_k_1_2) 
+
+            elif i == 0:
+                dx_k_1_2 = 2 * (x[1] - x_centered[0])#dx[0] #2 * (x[1] - x[0])
+                dx_k = 2 * (x[1] - x_centered[0])#dx[0] # Extrapolating x[1] - x[0] ends up == dx_k_1_2
+                dx_k_1 = x_centered[1] - x_centered[0] #dx[1] # k = 1, (3/2 - 1/2) x[2]  - x[0]
+                dx_k_diff = dx_k + dx_k_1
+                A[i] = None #0 #lambda_E[i - 1]/(3*dx_k_diff*dx_k)
+                B[i] = -1 * (lambda_E[i, j]/(dx_k_diff*dx_k_1) + (3 * r)/(lambda_star[i,j]*Z[i]))
+                C[i] = lambda_E[i, j]/(dx_k_diff*dx_k)
+                S[i] = g_1[i, j] / (dx_k_1_2)
+            elif i == nx - 1:
+                dx_k = x_centered[-1] -x_centered[-2]#dx[-2]
+                dx_k_1 = 2 * (x[-1] - x_centered[-1]) #- x[-2])#dx[-1]
+                dx_k_1_2 = (x[-1] - x[-2]) #dx[-1]
+                dx_k_diff = dx_k + dx_k_1
+                A[i] = lambda_E[i - 1, j]/(dx_k_diff*dx_k)
+                B[i] = -1 * (lambda_E[i - 1, j]/(dx_k_diff*dx_k) + (3 * r)/(lambda_star[i,j]*Z[i]))
+                C[i] = None #lambda_E[i]/(3*dx_k_diff*dx_k)
+                S[i] = -1*g_1[i - 1, j] / (dx_k_1_2)
+        mat = createMatrix(A, B, C)
         d = solve(mat, S)
         delta_f0[:, j] = d
     return delta_f0
@@ -466,7 +545,7 @@ def integrate_g1(g_1, v_grid, v_grid_width):
         q[i] = ((2 * np.pi * me)/3) * heat_flow
     return q 
 
-def snb_heat_flow(x, v_grid, Te, ne , Z, boundary_condition, norms = 0):
+def snb_heat_flow(x, v_grid, Te, ne , Z, e_grid_wall, boundary_condition, norms = 0):
     """
     Purpose: Calculates SNB-Heat flow
     Args: 
@@ -489,17 +568,21 @@ def snb_heat_flow(x, v_grid, Te, ne , Z, boundary_condition, norms = 0):
     dv = np.diff(v_grid) 
     # print("Wall velocity grid is {} and centered \n {} \n with dv of {}".format(v_grid * free_params['vte'][1] , v_grid_centered, dv))
     
+    e_grid_centre = np.array([(e_grid_wall[i+1] + e_grid_wall[i])/ 2 for i in range(len(e_grid_wall) - 1)])
+
+    beta, _ = getBeta(e_grid_centre, interp_Te)
+    _, dbeta = getBeta(e_grid_wall, interp_Te)
+
+    # lamb_star = getLambStar(interp_Te, interp_ne, interp_Z, beta)
     #Get velocity dependent collision frequency and subsequent mfp on entire grid 
     nu_ei, lamb_star = getLambdaStar(interp_Te, interp_ne, interp_Z, v_grid_centered)
 
-    #Electric field only needs to be defined at cell- walls 
-    #Every second entry in computer indicies 0 2 etc are cell-walls 
-    #Electric field currently inaccurate
    
     if boundary_condition =="periodic":
         E_field = electric_field(centered_x, interp_Te, interp_ne, interp_Z[::2], boundary_condition)
         #Likewise Lambda_E only needs to be defined at cell-walls 
         lamb_E = lambda_E(lamb_star[::2, :], E_field, v_grid_centered)
+
         #f0 should be defined on the entire grid 
         f0_mb = f_maxwellian(interp_Te, interp_ne, v_grid_centered, dv, boundary_condition)
         #g_1 only on cell-walls 
@@ -509,12 +592,14 @@ def snb_heat_flow(x, v_grid, Te, ne , Z, boundary_condition, norms = 0):
         E_field = electric_field(centered_x, interp_Te, interp_ne, interp_Z[1::2], boundary_condition)
         #Likewise Lambda_E only needs to be defined at cell-walls 
         lamb_E = lambda_E(lamb_star[1::2, :], E_field, v_grid_centered)
+        # lamb_E = lambda_E(lamb_star[1::2], E_field, e_grid_centre)
+        
         #f0 should be defined on the entire grid 
         f0_mb = f_maxwellian(interp_Te, interp_ne, v_grid_centered, dv, boundary_condition)
         #g_1 only on cell-walls 
         g_1_mb = g_1_maxwellian(lamb_star[1::2, :], f0_mb, x_centered, interp_Te, boundary_condition)
-
-        delta_f0 = solve_df0(g_1_mb, nu_ei[::2, :], Z, lamb_E, v_grid_centered, dxc, boundary_condition) 
+        # delta_f0_kk = solve_df0(g_1_mb, nu_ei[::2, :], Z, lamb_E, v_grid_centered, dxc, boundary_condition) 
+        delta_f0 = reflective_solve_df0(g_1_mb, Z, lamb_E, x, x_centered, dxc, lamb_star[::2]) 
         # fig = plt.figure()
         # x_mesh, v_mesh = np.meshgrid(x_centered, v_grid_centered/free_params['vte'][0])
         # ax = fig.add_subplot(111, projection='3d')
@@ -543,7 +628,7 @@ def snb_heat_flow(x, v_grid, Te, ne , Z, boundary_condition, norms = 0):
     if boundary_condition =="periodic":
         return full_x[::2], q, q_sh, q + dq
     else:
-        return full_x[1::2], q, q_sh, q + dq
+        return full_x[1::2], q, q_sh, q_sh[1:-1] + dq
 
 def spitzer_harm_heat(x, Te, ne, Z):
     def lambda_ei(T_norm , n_norm, Z_norm, return_arg = False):
@@ -630,7 +715,7 @@ def epperlein_short(nx, L, Z_ = 37.25, ne_ = 1e27, Te_ = 100., perturb = 1e-3, s
     initial_coord = np.linspace(x_l, x_u, nx +1)
     x_centered = np.array([(initial_coord[i] + initial_coord[i+1]) /2 for i in range(len(initial_coord) -1)], dtype=np.float64)
     Z = np.zeros(nx, dtype = np.float64) + Z_
-    Ar = np.zeros(nx, dtype = np.float64) + 4
+    Ar = np.zeros(nx, dtype = np.float64) + 2
     
     ne = np.zeros(nx, dtype = np.float64) + ne_
     
@@ -683,27 +768,22 @@ def test_finite_difference_scheme(x, x_centered, v_grid, Te, ne, Z, boundary_con
 
 
 
-nx = 10
+nx = 100
 nv = 100
-
-# klambda_dist = [393.7402486430605, 147.65259324114768, 73.82629662057384, 39.37402486430605, 14.765259324114767, 7.382629662057384, 3.9374024864306043, 1.4765259324114768]
-klambda_dist = [393.7402486430605, 147.65259324114768, 73.82629662057384, 39.37402486430605]
-klambda = [0.0075,0.02, 0.04, 0.075]
+klambda_dist = [393.7402486430605, 147.65259324114768, 73.82629662057384, 39.37402486430605, 14.765259324114767, 7.382629662057384, 3.9374024864306043, 1.4765259324114768]
+# klambda_dist = [393.7402486430605, 147.65259324114768, 73.82629662057384, 39.37402486430605]
+# klambda = [0.0075,0.02, 0.04, 0.075]
+klambda = [0.0075,0.02, 0.04, 0.075, 0.2, 0.4, 0.75, 2]
 sh_q = []
 sh_analytical = []
 for k, dist in enumerate(klambda_dist):
     coord, centered_x, Te, ne, Z, Ar = epperlein_short(nx, dist*2.81 , Z_= 1, ne_ = 1e19, sin = False)
-    # coord = np.loadtxt('/Users/shiki/DATA/spitzer_checks/OUTPUT/GRIDS/X_GRID.txt')
-    # Z = np.zeros(len(coord)) + 36.5
-    # Te = np.loadtxt('/Users/shiki/DATA/spitzer_checks/OUTPUT/TEMPERATURE/TEMPERATURE_00000.txt')
-    # ne = np.zeros(len(coord)) + 1e19
-    # coordd = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_Z_interp', skiprows=1)[:, 0] 
     # Z = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_Z_interp', skiprows=1)[:, 1] 
     # Te = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_5ps_TekeV_interp', skiprows=1)[:, 1] * 1E3 
     # ne = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_ne1e20cm3_interp', skiprows=1)[:, 1] * (1e20 * 1e6)
     # snb_brodrick = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_5ps_separatedsnbWcm2', skiprows=1)[:, 1]
     # coord = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_5ps_separatedsnbWcm2', skiprows=1)[:, 0]*1e-6
-    # plt.plot(coord, snb_brodrick * 1e4, label = 'true')
+    # plt.plot(coord, snb_brodrick, label = 'true')
 
     centered_x = np.array([(coord[i+1] + coord[i]) /2 for i in range(len(coord) -1)])
     free_params = free_param_calc(np.array([100]), np.array([1e19]) ,np.array([1]))
@@ -711,23 +791,34 @@ for k, dist in enumerate(klambda_dist):
     v_grid = np.zeros(nv + 1)
     v_grid_dv = 0.0307
     for j in range(1, nv + 1):
-        v_grid_dv *= 1.04
+        v_grid_dv *= 1.03
         v_grid[j] = v_grid[j - 1] + v_grid_dv
     # v_grid = np.linspace(0, 30, nv + 1) * free_params['vte'][0]
     v_grid *=free_params['vte'][0] 
     boundary_condition = "reflective"
+    E_max = np.max(Te)* (e/kb) * 20
+    e_grid = np.linspace(1e-10, E_max, nv + 1)
+    e_grid[0] = 0  
     # boundary_condition = "periodic"
     # test_finite_difference_scheme(coord, centered_x, v_grid, Te * (e/kb), ne, Z, boundary_condition, dt = 1e-15)
 
-    x, q, q_sh, q_snb = snb_heat_flow(coord, v_grid, Te* (e/kb), ne, Z, boundary_condition)
-    sh_q.append(np.average(abs(q_snb/q_sh[1:-1])))
-    q_analy = q_sh *(1 - 233.26 * 1 * klambda[k]**2)
-    sh_analytical.append(np.average(abs(q_analy[1:-1]/q_sh[1:-1])))
+    x, q, q_sh, q_snb = snb_heat_flow(coord, v_grid, Te* (e/kb), ne, Z, e_grid, boundary_condition)
+    # sh_q.append(np.average(q_snb/q_sh[1:-1]))
+    # q_analy = q_sh *(1 - 233.26 * 1 * klambda[k]**2)
+    # sh_analytical.append(np.average(abs(q_analy[1:-1]/q_sh[1:-1])))
     plt.plot(coord[1:-1], q_sh[1:-1], 'k-', label = "Spitzer")
     plt.plot(x, q, 'r-', label = "Apprixmated Spitzer")
     plt.plot(x, q_snb, label = "SNB")
-#     # plt.plot(q_snb/q_sh[1:-1])
+    # plt.plot(q_snb/q_sh[1:-1])
     plt.legend()
     plt.show()
 
-# plt.plot(klambda, sh_q, 'k-')
+# klambda_br =  np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/linearised_z1_snbr2', skiprows=1)[:, 0] 
+# q_q_sh_brodrick = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/linearised_z1_snbr2', skiprows=1)[:, 1]
+# plt.loglog(klambda_br[:60], q_q_sh_brodrick[:60], label = 'Brodrick')
+# plt.loglog(klambda, sh_q, label = 'Differential')
+# plt.loglog(klambda, [0.9844659248906396, 0.9091351225942057, 0.7428268440712429, 0.4626754551062602, -0.1393126410125691, -0.5253178395865703, -0.7695270698325918, -0.9762159611758378], label = 'Intergral Form')
+# plt.xlabel('klambda')
+# plt.ylabel('q/q_sh')
+# plt.legend()
+# plt.show()
