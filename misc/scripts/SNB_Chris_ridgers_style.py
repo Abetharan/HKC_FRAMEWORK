@@ -217,7 +217,7 @@ def spitzer_harm_heat(x, Te, ne, Z):
     coulomb_log = np.array(lambda_ei(Te * (kb/e), ne , Z))
     # coulomb_log[:] = 2.1484
     # kappaE = 1.843076667547614E-10 * pow(Te, 2.5) * pow(coulomb_log, -1) *  pow(Z, -1)
-    kappaE =  13.6*((Z+0.24)/(Z+4.24))*5.759614586E-11* pow(Te, 2.5) * pow(coulomb_log, -1) *  pow(Z, -1)
+    kappaE =  13.6*((Z+0.24)/(Z+4.2))*5.759614586E-11* pow(Te, 2.5) * pow(coulomb_log, -1) *  pow(Z, -1)
     nx = len(Te)
     HeatFlowE = np.zeros(nx + 1, dtype=np.float64)
     gradTe = np.zeros(nx + 1)
@@ -260,7 +260,7 @@ def getSource(q_sh, beta, dbeta):
             U_g[i, e] = (q_sh[i] / 24) * dbeta[i, e] * pow(beta[i, e], 4) * np.exp(-1*beta[i, e])
     return U_g
      
-def getH(dx_wall, dx_centered, lambda_star, lambda_E, U, r):
+def getH(dx_wall, dx_centered, lambda_star, lambda_E, U, r, Z):
     nx, nv = np.shape(lambda_star)
     H = np.zeros((nx, nv))
     r = np.zeros(nx) + r#  tunable parameter
@@ -298,7 +298,7 @@ def getDqnl(H, lambda_E, dx_wall):
     nx, nv = np.shape(H)
     q_nl = np.zeros(nx - 1)
     for i in range(0, nx - 1):
-        heat_flow = 0
+        heat_flow = 0        
         grad_delta_f0 = ((H[i + 1, :] - H[i, :]) / dx_wall[i])
         for v in range(nv):
             heat_flow += lambda_E[i, v] * grad_delta_f0[v] 
@@ -336,7 +336,7 @@ def snb_heat_flow(x, e_grid_wall, Te, ne , Z, r):
     
     q_sh = spitzer_harm_heat(x_centered, Te, ne, Z) # local 
     U = getSource(q_sh, beta[1::2, :], dbeta[1::2, :])
-    H = getH(dx_wall, dx_centered, lambda_star[::2], lamb_E, U, r)
+    H = getH(dx_wall, dx_centered, lambda_star[::2], lamb_E, U, r, Z)
     q_nl = getDqnl(H, lamb_E, dx_wall)
     
     q_snb = q_sh  - q_nl
@@ -383,7 +383,7 @@ def epperlein_short(nx, L, Z_ = 37.25, ne_ = 1e27, Te_ = 100., perturb = 1e-3, s
 
 
 nx = 64 
-nv = 100
+nv = 70
 #klambda_dist = [393.7402486430605, 147.65259324114768, 73.82629662057384, 39.37402486430605, 14.765259324114767, 7.382629662057384, 3.9374024864306043, 1.4765259324114768, 0.7382629662057384, 0.49217531080382554]
 # klambda_dist = [393.7402486430605, 147.65259324114768, 73.82629662057384, 39.37402486430605, 14.765259324114767, 7.382629662057384, 3.9374024864306043, 1.4765259324114768]
 # klambda = [0.0075,0.02, 0.04, 0.075, 0.2, 0.4, 0.75, 2]
@@ -397,11 +397,12 @@ for i in range(len(klambda_dist)):#2.81 Z = 1, 1.492 Z = 8
     # centered_x = np.array([(coord[i+1] + coord[i]) /2 for i in range(len(coord) -1)])
 
     Z = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_Z_interp', skiprows=1)[:, 1] 
-    Te = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_5ps_TekeV_interp', skiprows=1)[:, 1] * 1E3 
+    Te = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_5ps_TekeV_interp', skiprows=1)[:, 1] * 1E3 *(e/kb)
     ne = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_ne1e20cm3_interp', skiprows=1)[:, 1] * (1e20 * 1e6)
     snb_brodrick = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_5ps_separatedsnbWcm2', skiprows=1)[:, 1]
     impact_brodrick = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_5ps_IMPACTWcm2', skiprows=1)[:, 1]
     coord = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_5ps_separatedsnbWcm2', skiprows=1)[:, 0]*1e-6
+    Hykict_snb = np.loadtxt('/Users/shiki/DATA/HyKiCT_OUTPUT/ELECTRON_HEAT_FLOW_X/ELECTRON_HEAT_FLOW_X_0.txt') *-1e-4
     # # v_grid = np.zeros(nv + 1)
     #v_grid_dv = 0.0207
     #v_max = np.sqrt(2 * (200 * e * np.max(Te)) / me)
@@ -409,20 +410,21 @@ for i in range(len(klambda_dist)):#2.81 Z = 1, 1.492 Z = 8
     # for i in range(1, nv + 1):
         # v_grid_dv *= 1.02
         # v_grid[i] = v_grid[i - 1] + v_grid_dv
-    E_max = np.max(Te)* (e/kb) * 13
-    e_grid = np.linspace(1e-10, E_max, nv + 1)
-    e_grid[0] = 0  
+    E_max = np.max(Te)* 20
+    e_grid = np.linspace(0, E_max, nv + 1)
+    # e_grid[0] = 0  
     # v_grid *=  np.sqrt((Te[0] * e)/me)
     x0 = [2]
-    q_sh, q_snb = snb_heat_flow(coord, e_grid, Te* (e/kb), ne, Z, -8.53980408e-07)
+    q_sh, q_snb = snb_heat_flow(coord, e_grid, Te, ne, Z, 2)
     # res_lsq = least_squares(fitfunc, x0, args =(coord, e_grid, Te* (e/kb), ne, Z, impact_brodrick))
     # print(res_lsq.x)
     # print(q_snb)
     # sh_q.append(np.average(q_snb/q_sh))
-    # # plt.plot(coord[1:-1], q_sh, 'k-', label = "Spitzer")
+    # plt.plot(coord[1:-1], q_sh*1e-4, 'k-', label = "Spitzer")
     plt.plot(coord, snb_brodrick, label = 'brodrick')
     plt.plot(coord[1:-1], impact_brodrick, label = 'impact')
     plt.plot(coord[1:-1], q_snb*1e-4, label = "SNB")
+    plt.plot(coord, Hykict_snb, label = "hykict SNB")
     # plt.plot(coord[1:-1], (1e-4*q_snb[1:-1]) / impact_brodrick)
     plt.legend()
     plt.show()

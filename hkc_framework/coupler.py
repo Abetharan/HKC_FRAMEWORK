@@ -387,6 +387,9 @@ class Coupler:
                                 hfct_obj.zbar)
             self.logger.info("HFCT Spitzer Calculation")
             hfct_obj.spitzerHarmHeatFlow()
+            if not self.init.yaml_file['Coupling_params']['Spitzer_heat_flow']:
+                hfct_obj.snb = True
+                hfct_obj.snb_heat_flow(fluid_obj.init.yaml_file['FixedParameters']['ng'],fluid_obj.init.yaml_file['FixedParameters']['MaxE'], 2)
          
             #############
             #Kinetic Step
@@ -425,7 +428,11 @@ class Coupler:
             self.logger.info("Initialize Kinetic")
             kin_obj.initFromHydro(fluid_x_grid, fluid_x_centered_grid, 
                                 fluid_Te, fluid_ne, fluid_Z)
-            kin_obj.sh_heat_flow = hfct_obj.spitzer_harm_heat
+            
+            if self.init.yaml_file['Coupling_params']['Spitzer_heat_flow']:
+                kin_obj.sh_heat_flow = hfct_obj.spitzer_harm_heat
+            else:
+                kin_obj.sh_heat_flow = hfct_obj.q_snb
             self.logger.info("Start Kinetic")
             kin_obj.Run()
             self.logger.info("End Kinetic")
