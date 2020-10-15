@@ -77,9 +77,9 @@ Switches:
   RadDiffusion: false
   RadFreeFree: true
   RadPdVWork: true
-  RadiationTransport: true
+  RadiationTransport: false
   SingleTemperature: false
-  SNBHeatFlow: False
+  SNBHeatFlow: true
   Velocity: true
   Viscosity: true
 TimeParameters:
@@ -89,8 +89,8 @@ TimeParameters:
   RadLimit: 0.1
   VolLimit: 0.05
   cfl: 0.85
-  dt: 1.0e-20
+  dt: 1.0e-18
   dt_max: 1.0e-10
   dt_min: 1.0e-21
   steps: 0
-  t_max: 1.0e-10
+  t_max: 2.0e-18

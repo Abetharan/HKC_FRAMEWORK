@@ -1,5 +1,5 @@
 Paths:
-  Run_name: Conv_test
+  Run_name: snb_Conv_test
   Base_dir: /Users/shiki/DATA/HKC_RELATED/ 
   K_src_dir: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./SOL-KiT/
   F_src_dir: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./HyKiCT/build/apps/
@@ -20,7 +20,7 @@ Mode:
   Couple_divq: false
   Couple_multi: true
   Couple_adaptive: false 
-  Couple_leap_frog: true
+  Couple_leap_frog: false
   Couple_operator_split: false
   Start_from_kinetic: false
   Load_f1: true
