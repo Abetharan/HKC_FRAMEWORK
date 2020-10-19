@@ -383,18 +383,18 @@ def epperlein_short(nx, L, Z_ = 37.25, ne_ = 1e27, Te_ = 100., perturb = 1e-3, s
 
 
 nx = 64 
-nv = 70
+nv = 20 
 #klambda_dist = [393.7402486430605, 147.65259324114768, 73.82629662057384, 39.37402486430605, 14.765259324114767, 7.382629662057384, 3.9374024864306043, 1.4765259324114768, 0.7382629662057384, 0.49217531080382554]
 # klambda_dist = [393.7402486430605, 147.65259324114768, 73.82629662057384, 39.37402486430605, 14.765259324114767, 7.382629662057384, 3.9374024864306043, 1.4765259324114768]
 # klambda = [0.0075,0.02, 0.04, 0.075, 0.2, 0.4, 0.75, 2]
 #klambda = [0.0075,0.02, 0.04, 0.075, 0.2, 0.4, 0.75, 2, 4, 6]
-klambdas = np.geomspace(7.699668410015750308e-03, 2.170061402318336332e+04, 100)
+klambdas = np.geomspace(7.699668410015750308e-03, 2.170061402318336332e+04, 20)
 klambda_dist = kf.find_domain_length(klambdas, wavenumber = 0.5)
 sh_q = []
 for i in range(len(klambda_dist)):#2.81 Z = 1, 1.492 Z = 8
-    # coord, centered_x, Te, ne, Z, Ar = epperlein_short(nx, klambda_dist[i]*1.492 , Z_= 8, ne_ = 1e19, sin = False)
+    coord, centered_x, Te, ne, Z, Ar = epperlein_short(nx, klambda_dist[i]*2.81 , Z_= 1, ne_ = 1e19, sin = False)
 
-    # centered_x = np.array([(coord[i+1] + coord[i]) /2 for i in range(len(coord) -1)])
+    centered_x = np.array([(coord[i+1] + coord[i]) /2 for i in range(len(coord) -1)])
 
     Z = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_Z_interp', skiprows=1)[:, 1] 
     Te = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_5ps_TekeV_interp', skiprows=1)[:, 1] * 1E3 *(e/kb)
@@ -410,31 +410,32 @@ for i in range(len(klambda_dist)):#2.81 Z = 1, 1.492 Z = 8
     # for i in range(1, nv + 1):
         # v_grid_dv *= 1.02
         # v_grid[i] = v_grid[i - 1] + v_grid_dv
-    E_max = np.max(Te)* 20
+    # Te *= (e/kb)
+    E_max = np.max(Te)* 12
     e_grid = np.linspace(0, E_max, nv + 1)
     # e_grid[0] = 0  
     # v_grid *=  np.sqrt((Te[0] * e)/me)
-    x0 = [2]
+    # x0 = [2]
     q_sh, q_snb = snb_heat_flow(coord, e_grid, Te, ne, Z, 2)
-    # res_lsq = least_squares(fitfunc, x0, args =(coord, e_grid, Te* (e/kb), ne, Z, impact_brodrick))
-    # print(res_lsq.x)
+    # # res_lsq = least_squares(fitfunc, x0, args =(coord, e_grid, Te* (e/kb), ne, Z, impact_brodrick))
+    # # print(res_lsq.x)
     # print(q_snb)
-    # sh_q.append(np.average(q_snb/q_sh))
+    sh_q.append(np.average(q_snb/q_sh))
     # plt.plot(coord[1:-1], q_sh*1e-4, 'k-', label = "Spitzer")
     plt.plot(coord, snb_brodrick, label = 'brodrick')
     plt.plot(coord[1:-1], impact_brodrick, label = 'impact')
     plt.plot(coord[1:-1], q_snb*1e-4, label = "SNB")
     plt.plot(coord, Hykict_snb, label = "hykict SNB")
-    # plt.plot(coord[1:-1], (1e-4*q_snb[1:-1]) / impact_brodrick)
+    # plt.plot(coord[1:-1], (1e-4*q_snb[1:-1]) / impact_brodric)
     plt.legend()
     plt.show()
 
-# klambda_br =  np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/linearised_z8_snbr2', skiprows=1)[:, 0] 
-# q_q_sh_brodrick = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/linearised_z8_snbr2', skiprows=1)[:, 1]
-# plt.loglog(klambda_br, q_q_sh_brodrick, label = "Brodrick 2017")
-# plt.loglog(klambdas, sh_q, '--', label = "Me")
-# plt.xlabel('Klambda')
-# plt.ylabel('q/q_sh')
-# plt.legend()
+klambda_br =  np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/linearised_z1_snbr2', skiprows=1)[:, 0] 
+q_q_sh_brodrick = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/linearised_z1_snbr2', skiprows=1)[:, 1]
+plt.loglog(klambda_br, q_q_sh_brodrick, label = "Brodrick 2017")
+plt.loglog(klambdas, sh_q, '--', label = "Me")
+plt.xlabel('Klambda')
+plt.ylabel('q/q_sh')
+plt.legend()
 # # plt.savefig('/Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./HKC_FRAMEWORK/Documentation/brodrick_vs_me_linearised_z1_snbr2.pdf')
-# plt.show()
+plt.show()

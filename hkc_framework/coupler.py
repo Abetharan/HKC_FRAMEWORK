@@ -380,14 +380,14 @@ class Coupler:
             hfct_obj.cell_wall_coord = fluid_x_grid
             hfct_obj.cell_centered_coord = fluid_x_centered_grid
             hfct_obj.mass = fluid_mass
-
+            
             #Calculate spitzer harm from last step fluid quants
             hfct_obj.lambda_ei(hfct_obj.electron_temperature * (BOLTZMANN_CONSTANT/ELEMENTARY_CHARGE), 
                                 hfct_obj.electron_number_density,
                                 hfct_obj.zbar)
             self.logger.info("HFCT Spitzer Calculation")
             hfct_obj.spitzerHarmHeatFlow()
-            if not self.init.yaml_file['Mode']['Spitzer_heat_flow']:
+            if fluid_obj.init.yaml_file['Switches']['SNBHeatFlow']:
                 hfct_obj.snb = True
                 hfct_obj.snb_heat_flow(fluid_obj.init.yaml_file['FixedParameters']['ng'],fluid_obj.init.yaml_file['FixedParameters']['MaxE'], 2)
          
@@ -429,7 +429,7 @@ class Coupler:
             kin_obj.initFromHydro(fluid_x_grid, fluid_x_centered_grid, 
                                 fluid_Te, fluid_ne, fluid_Z)
             
-            if self.init.yaml_file['Mode']['Spitzer_heat_flow']:
+            if not fluid_obj.init.yaml_file['Switches']['SNBHeatFlow']:
                 kin_obj.sh_heat_flow = hfct_obj.spitzer_harm_heat
             else:
                 kin_obj.sh_heat_flow = hfct_obj.q_snb
