@@ -14,13 +14,14 @@ Coupling_params:
   Cycles: 3
   Eta: 0.1E-2
   hdf5_output_freq: 2
-  t_fluid_operator: 0.1E-15
+  t_fluid_operator: 0.1E-10
 Mode:
   Couple_divq: false
-  Couple_multi: true
+  Couple_multi: false
+  Couple_subtract : true
   Couple_adaptive: false
   Couple_leap_frog: false
-  Couple_operator_split: true
+  Couple_operator_split: false
   Start_from_kinetic: true
   Load_f1: true
   Start_coupled: false #Takes precedence over start from kinetic, assumes relevant quanties exist. Does not work with leap-frog

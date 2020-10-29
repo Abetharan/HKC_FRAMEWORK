@@ -8,7 +8,7 @@ BoundaryConditions:
   Rad_Source_Left: 0
 FixedParameters:
   nx: 100
-  ng: 70
+  ng: 20
   MaxE: 20
   FixedEnergyDensityValue: 0
   FixedOpacityValue: 0
@@ -59,12 +59,13 @@ Paths:
   Init_Path: 
   Out_Path: 
 Switches:
-  AdapativeTimeStep: true
+  AdapativeTimeStep: false
   AdiabaticMode: false
   ConstantCoulombLog: false
   CoupleDivQ: false
   CoupleMulti: false
   CoupleOperatorSplit: false
+  CoupleSubtract: false
   Exchange: false
   FullyIonized: true
   HeatConduction: true
@@ -89,8 +90,8 @@ TimeParameters:
   RadLimit: 0.1
   VolLimit: 0.05
   cfl: 0.85
-  dt: 1.0e-18
+  dt: 5.0e-13
   dt_max: 1.0e-10
   dt_min: 1.0e-21
-  steps: 0
-  t_max: 2.0e-18
+  steps: 00
+  t_max: 1.0E-12

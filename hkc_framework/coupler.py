@@ -171,6 +171,7 @@ class Coupler:
 
         fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = self.init.yaml_file['Mode']['Couple_divq']
         fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = self.init.yaml_file['Mode']['Couple_multi']
+        fluid_obj.init.yaml_file['Switches']['CoupleSubtract'] = self.init.yaml_file['Mode']['Couple_subtract']
         #Store original fluid yaml
         self.original_f_init = copy.deepcopy(fluid_obj.init.yaml_file)
         #modify original to represent run mode
@@ -183,6 +184,7 @@ class Coupler:
 
             fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = False
             fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = False
+            fluid_obj.init.yaml_file['Switches']['CoupleSubtract'] = False
 
             if self.init.yaml_file['Mode']['Couple_adaptive'] and (self.init.yaml_file['Mode']['Couple_operator_split'] 
             or self.init.yaml_file['Mode']['Couple_leap_frog']): 
@@ -203,6 +205,7 @@ class Coupler:
             self.init.yaml_file['Mode']['Couple_operator_split']):
             fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = False
             fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = False
+            fluid_obj.init.yaml_file['Switches']['CoupleSubtract'] = False
 
         #Allows to run coupled immediately 
         #Assumes the necessary files exists in the init folder
@@ -285,23 +288,29 @@ class Coupler:
                         pass
                     else:
                         if (self.init.yaml_file['Mode']['Couple_divq'] or 
-                            self.init.yaml_file['Mode']['Couple_multi']):
+                            self.init.yaml_file['Mode']['Couple_multi'] or 
+                            self.init.yaml_file['Mode']['Couple_subtract']):
 
                             fluid_obj.init.yaml_file = self.original_f_init
                             if self.init.yaml_file['Mode']['Couple_divq']:
                                 self.logger.info("Engage Coupling if MODE: Div.q")
                             elif self.init.yaml_file['Mode']['Couple_multi']:
                                 self.logger.info("Engage Coupling if MODE: Multi")
+                            elif self.init.yaml_file['Mode']['Couple_subtract']:
+                                self.logger.info("Engage Coupling if MODE: Subtract")
 
                 
                 if (self.init.yaml_file['Mode']['Couple_divq'] or 
-                    self.init.yaml_file['Mode']['Couple_multi']):
+                    self.init.yaml_file['Mode']['Couple_multi'] or 
+                    self.init.yaml_file['Mode']['Couple_subtract']):
 
                     fluid_obj.init.yaml_file = copy.deepcopy(self.original_f_init)#self.original_f_init
                     if self.init.yaml_file['Mode']['Couple_divq']:
                         self.logger.info("Engage Coupling if MODE: Div.q")
                     elif self.init.yaml_file['Mode']['Couple_multi']:
                         self.logger.info("Engage Coupling if MODE: Multi")
+                    elif self.init.yaml_file['Mode']['Couple_subtract']:
+                        self.logger.info("Engage Coupling if MODE: Subtract")
                         
                 if self.init.yaml_file['Mode']['Couple_leap_frog'] or self.init.yaml_file['Mode']['Couple_operator_split']:
                     if self.init.yaml_file['Mode']['Couple_leap_frog']:   
@@ -311,6 +320,7 @@ class Coupler:
                     # fluid_obj.init.yaml_file = self.original_f_init
                     fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = False
                     fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = False 
+                    fluid_obj.init.yaml_file['Switches']['CoupleSubtract'] = False 
             ###########
             #Fluid Step
             ###########
@@ -453,7 +463,7 @@ class Coupler:
                 qe = hfct_obj.divQHeatFlow()
                 if self.init.yaml_file['Mode']['Couple_leap_frog'] or self.init.yaml_file['Mode']['Couple_operator_split'] : 
                     fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = True
-            else:
+            elif self.init.yaml_file['Mode']['Couple_multi']:
                 #qe here is q_vfp/q_sh
                 self.logger.info("Calculate Multipliers")
                 (qe, pre_heat_start_index, pre_heat_last_index,
@@ -478,6 +488,16 @@ class Coupler:
                         fluid_obj.init.yaml_file['FixedParameters']['Frontheat_LastIndex'] = front_heat_last_index.item()
                 if self.init.yaml_file['Mode']['Couple_leap_frog'] or self.init.yaml_file['Mode']['Couple_operator_split']: 
                     fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = self.init.yaml_file['Mode']['Couple_multi']
+
+            elif self.init.yaml_file['Mode']['Couple_subtract']:
+
+                self.logger.info("Calculate subtaction factor dq")
+                qe = hfct_obj.getSubtractDq()
+                if self.init.yaml_file['Mode']['Couple_leap_frog'] or self.init.yaml_file['Mode']['Couple_operator_split'] : 
+                    fluid_obj.init.yaml_file['Switches']['CoupleSubtract'] = True
+
+
+
 
             #Leap Frog Step/Operator-Split if turned on 
             if self.init.yaml_file['Mode']['Couple_leap_frog'] or self.init.yaml_file['Mode']['Couple_operator_split']:

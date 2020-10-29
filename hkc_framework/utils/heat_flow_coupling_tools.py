@@ -456,6 +456,12 @@ class HeatFlowCouplingTools:
         self.q_snb = np.append(self.q_snb, 0)
         self.q_snb = np.insert(self.q_snb, 0 ,0)
 
+    def getSubtractDq(self):
+        if self.snb:
+            return self.vfp_heat - self.q_snb
+        else:
+            return self.vfp_heat - self.spitzer_harm_heat
+
 
 # hfct_obj = HeatFlowCouplingTools()
 # Z = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_Z_interp', skiprows=1)[:, 1] 
