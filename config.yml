@@ -2,7 +2,7 @@ Paths:
   Run_name: snb_Conv_test
   Base_dir: /Users/shiki/DATA/HKC_RELATED/ 
   K_src_dir: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./SOL-KiT/
-  F_src_dir: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./HyKiCT/build/apps/
+  F_src_dir: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./HyKiCT/debug/apps/
   Init_path:  /Users/shiki/DATA/HKC_RELATED/init_data/step_problem_100_nx
   F_config_path: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./HKC_FRAMEWORK/hkc_framework/couple_hykict/config.yml 
   K_config_path: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D.//HKC_FRAMEWORK/hkc_framework/couple_sol_kit/config.yml

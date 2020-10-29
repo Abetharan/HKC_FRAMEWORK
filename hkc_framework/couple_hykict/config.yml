@@ -80,7 +80,7 @@ Switches:
   RadPdVWork: true
   RadiationTransport: false
   SingleTemperature: false
-  SNBHeatFlow: true
+  SNBHeatFlow: false 
   Velocity: true
   Viscosity: true
 TimeParameters:
@@ -93,5 +93,5 @@ TimeParameters:
   dt: 5.0e-13
   dt_max: 1.0e-10
   dt_min: 1.0e-21
-  steps: 00
+  steps: 10
   t_max: 1.0E-12
