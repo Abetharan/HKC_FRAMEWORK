@@ -35,6 +35,9 @@ class Coupler:
     def __init__(self, init_file_path):
         self.yml_init_file_path = init_file_path
         self.pre_heat_present = False
+        self.kinetic_time_taken = []
+        self.fluid_time_taken = []
+        self.cycle_time_taken = []
     def startprint(self, fluid_code, kinetic_code):
 
         ShowText = ('COUPLING ' + fluid_code + '-' 
@@ -91,6 +94,10 @@ class Coupler:
         pre_heat_fit_params = None
         front_heat_fit_params = None
         start_cycle = 0
+        kinetic_time_path = os.path.join(RUN_PATH, 'Kinetic_CPU_time.txt')
+        fluid_time_path = os.path.join(RUN_PATH, 'Fluid_CPU_time.txt')
+        cycle_time_path = os.path.join(RUN_PATH, 'Cycle_CPU_time.txt')
+
 
         if self.init.yaml_file['Misc']['Continue']:
             #Continue in this framework is designed such that
@@ -327,6 +334,7 @@ class Coupler:
             #In this example running HyKiCT
             self.prettyPrint(' RUNNING ' + self.init.yaml_file['Codes']['Fluid_code'], color = True)
             self.logger.info("Setting Fluid Parameters")
+            tfluid_start = time.time()
             #Set Paths that change
             fluid_obj.init.yaml_file['Paths']['Init_Path'] = io_obj.fluid_input_path
             fluid_obj.init.yaml_file['Paths']['Laser_Profile_Path'] = os.path.join(io_obj.fluid_input_path, "laser_profile.txt")
@@ -370,15 +378,19 @@ class Coupler:
                     io_obj.hdf5_file.close()
                 np.savetxt(continue_step_path, np.array([cycle_no]), fmt = '%i')
                 t1 = time.time()
+                self.cycle_time_taken.append(t1-t0)
                 self.logger.info('CPU TIME FOR CYCLE {} IS {} '.format(cycle_no, t1-t0))
                 self.logger.info("Terminating Coupling")
-         
+                np.savetxt(fluid_time_path, np.array([self.fluid_time_taken]))
+                np.savetxt(cycle_time_path, np.array([self.cycle_time_taken]))
                 break 
 
             self.logger.info("Get Last Fluid Quants")
             (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
             fluid_Z, _, fluid_mass) = fluid_obj.getLastStepQuants()
          
+            tfluid_end = time.time()
+            self.fluid_time_taken.append(tfluid_end - tfluid_start)
             ####################
             #Init coupling tools
             ####################
@@ -408,6 +420,8 @@ class Coupler:
             #self.init all load in files form hydro
             #RUN
             #Move files if neccessary
+
+            tkin_start = time.time()
             self.prettyPrint(' RUNNING ' + self.init.yaml_file['Codes']['Kinetic_code'], color = True)
             self.logger.info("Setting Kinetic Parameters")
             if cycle_no == 0 or self.first_pass:
@@ -452,6 +466,8 @@ class Coupler:
             self.logger.info("Move files Kinetic")
             kin_obj.moveFiles()
           
+            tkin_end = time.time()
+            self.kinetic_time_taken.append(tkin_end - tkin_start)
             ##############
             #Coupling Step
             ##############
@@ -548,10 +564,14 @@ class Coupler:
                         kin_obj.storeToHdf5(io_obj.hdf5_file, cycle_no)
                         io_obj.hdf5_file.close()
                     np.savetxt(continue_step_path, np.array([cycle_no]), fmt = '%i')
-                    self.logger.info("Terminating Coupling")
+                    # self.logger.info("Terminating Coupling")
                     t1 = time.time()
+                    self.cycle_time_taken.append(t1 - t0)
                     self.logger.info('CPU TIME FOR CYCLE {} IS {} '.format(cycle_no, t1-t0))
                     self.logger.info("Terminating Coupling")
+                    np.savetxt(kinetic_time_path, np.array([self.kinetic_time_taken]))
+                    np.savetxt(fluid_time_path, np.array([self.fluid_time_taken]))
+                    np.savetxt(cycle_time_path, np.array([self.cycle_time_taken]))
                     break 
 
             #Finish by fluid init next set of files 
@@ -575,9 +595,15 @@ class Coupler:
                 io_obj.zipAndDelete()        
             #update continue file
             t1 = time.time()
+            self.cycle_time_taken.append(t1 - t0)
             self.logger.info('CPU TIME FOR CYCLE {} IS {} '.format(cycle_no, t1-t0))
             np.savetxt(continue_step_path, np.array([cycle_no]), fmt = '%i')
             self.first_pass = False
+
+            np.savetxt(kinetic_time_path, np.array([self.kinetic_time_taken]))
+            np.savetxt(fluid_time_path, np.array([self.fluid_time_taken]))
+            np.savetxt(cycle_time_path, np.array([self.cycle_time_taken]))
+
             
         if self.init.yaml_file['Misc']['HDF5']:
             self.logger.info("Delete All Folders")
