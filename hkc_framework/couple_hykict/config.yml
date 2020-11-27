@@ -1,29 +1,30 @@
 BoundaryConditions:
   Hydro_Right_Boundary: f  
-  Rad_Left_Boundary: v
-  Rad_Right_Boundary: v 
+  Rad_Left_Boundary: r
+  Rad_Right_Boundary: r 
   Rad_Dirichlet_Left: 0
   Rad_Dirichlet_Right: 0
   Rad_Source_Right: 0
   Rad_Source_Left: 0
 FixedParameters:
-  nx: 100
+  nx: 92
   ng: 20
-  MaxE: 20
-  FixedEnergyDensityValue: 0
+  MaxE: 12
   FixedOpacityValue: 0
   Frontheat_LastIndex: 0
   Frontheat_StartIndex: 0
-  Output_Frequency: 10000
+  Output_Frequency: 1
   Preheat_LastIndex: 0
   Preheat_StartIndex: 0
 LaserParams:
-  Time_Bin: 0.1e-12 #Only relevant if load in laser profile is used. 
-  Duration: 0.1e-8 #Always relevant
-  Constant_Power: 0.1e11 #If load in laser profile is true this is ignored.
-  Wavelength: 0.100e-8
+  Time_Bin: 1.0e-14 #Only relevant if load in laser profile is used. 
+  Duration: 2.0e-9 #Always relevant
+  Constant_Power: 1.0E20 #If load in laser profile is true this is ignored.
+  Wavelength: 0.351E-6 #0.351E-6 for gold
+  Angle: 0
 Limiters:
-  heatflxlm: 0.05
+  heatflxlmE: 0.15
+  heatflxlmI: 0.15
   prrm: 1.0
   radabm: 1.0
   radbrm: 1.0
@@ -31,33 +32,36 @@ Limiters:
   raddfm: 1.0
   radesm: 1.0
   radflxlm: 1.0
+  larsen: 4.0
 Output:
   Coordinates: true
   CreateOutputFolder: false
-  Exchange: false
+  Exchange: true 
   HeatFlow: true
   InternalEnergy: false
   InverseBrem: true
   MassDensity: true
   NumberDensity: true
-  PlasmaParameters: false
-  Pressure: false
+  PlasmaParameters: true 
+  Pressure: true 
   RadDiffusion: false
-  RadEnergyDensity: false
+  RadEnergyDensity: true
   RadFreeFree: false
   RadPressure: false
-  RadTemperature: false
+  RadTemperature: true
   Temperature: true
   ThermalConduction: true
-  Velocity: true
+  Velocity: true 
   Viscosity: false
   Zbar: true
 Paths:
-  FEOS_Path_1: ''
-  FEOS_Path_2: ''
-  Laser_Profile_Path: ""
-  Init_Path: 
-  Out_Path: 
+  FEOS_Path_1: /Users/shiki/DATA/feos_tables/Cu/Cu
+  FEOS_Path_2: /Users/shiki/DATA/feos_tables/He/He
+  Opacity_Path_1: /Users/shiki/DATA/feos_tables/Cu/
+  Opacity_Path_2: /Users/shiki/DATA/feos_tables/He/
+  Laser_Profile_Path: /Users/shiki/DATA/HKC_RELATED/init_data/copper_hohlraum/laser_profile.txt
+  Init_Path: /Users/shiki/DATA/HKC_RELATED/init_data/copper_hohlraum/
+  Out_Path: /Users/shiki/DATA/
 Switches:
   AdapativeTimeStep: false
   AdiabaticMode: false
@@ -66,32 +70,36 @@ Switches:
   CoupleMulti: false
   CoupleOperatorSplit: false
   CoupleSubtract: false
-  Exchange: false
-  FullyIonized: true
+  Exchange: true
+  FullyIonized: true 
   HeatConduction: true
   IdealGas: true
-  InvBrem: false
+  InvBrem: true
+  ImplicitHeatConduction: false
   IsothermalMode: false
-  LoadInLaserProfile: false
+  LoadInLaserProfile: false 
   MultiMaterial: false
-  PdVWork: true
-  RadDiffusion: false
+  RadDiffusion: true
   RadFreeFree: true
-  RadPdVWork: true
-  RadiationTransport: false
-  SingleTemperature: false
-  SNBHeatFlow: false 
+  RadPdVWork: false
+  RadiationTransport: true 
+  SingleTemperature: false 
+  SNBHeatFlow: false
   Velocity: true
   Viscosity: true
+  EoSTables: false
+  IonizationTables: false 
+  OpacityTables: false 
 TimeParameters:
-  ElectronLimit: 0.05
-  IonLimit: 0.05
-  PVLimit: 0.05
-  RadLimit: 0.1
-  VolLimit: 0.05
+  ElectronLimit: 0.5
+  IonLimit: 0.5
+  PVLimit: 0.5
+  RadLimit: 0.5
+  VolLimit: 0.5
   cfl: 0.85
-  dt: 5.0e-13
-  dt_max: 1.0e-10
-  dt_min: 1.0e-21
-  steps: 10
-  t_max: 1.0E-12
+  dt: 1.0e-16 #5.608e-11
+  dt_max: 1.0e-14
+  dt_min: 5.0e-16
+  steps: 200
+  t_max: 0
+  AdapativeMethod: 1 #0 is BUCKY, >0 HYADES

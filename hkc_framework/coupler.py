@@ -303,6 +303,11 @@ class Coupler:
                                 self.logger.info("Engage Coupling if MODE: Div.q")
                             elif self.init.yaml_file['Mode']['Couple_multi']:
                                 self.logger.info("Engage Coupling if MODE: Multi")
+                                fluid_obj.init.yaml_file['FixedParameters']['Preheat_StartIndex'] = pre_heat_start_index.item()
+                                fluid_obj.init.yaml_file['FixedParameters']['Preheat_LastIndex'] = pre_heat_last_index.item()
+                                fluid_obj.init.yaml_file['FixedParameters']['Frontheat_StartIndex'] = front_heat_start_index.item()
+                                fluid_obj.init.yaml_file['FixedParameters']['Frontheat_LastIndex'] = front_heat_last_index.item()
+
                             elif self.init.yaml_file['Mode']['Couple_subtract']:
                                 self.logger.info("Engage Coupling if MODE: Subtract")
 
@@ -402,7 +407,6 @@ class Coupler:
             hfct_obj.cell_wall_coord = fluid_x_grid
             hfct_obj.cell_centered_coord = fluid_x_centered_grid
             hfct_obj.mass = fluid_mass
-            
             #Calculate spitzer harm from last step fluid quants
             hfct_obj.lambda_ei(hfct_obj.electron_temperature * (BOLTZMANN_CONSTANT/ELEMENTARY_CHARGE), 
                                 hfct_obj.electron_number_density,
@@ -450,6 +454,8 @@ class Coupler:
                         kin_obj.previous_kinetic_output_path = os.path.join(self.init.yaml_file['Paths']['Init_path'], "kinetic_restart")
 
             self.logger.info("Initialize Kinetic")
+            # fluid_ne[:75] = fluid_ne[74] 
+            # fluid_Z[:75] = fluid_Z[74] 
             kin_obj.initFromHydro(fluid_x_grid, fluid_x_centered_grid, 
                                 fluid_Te, fluid_ne, fluid_Z)
             
