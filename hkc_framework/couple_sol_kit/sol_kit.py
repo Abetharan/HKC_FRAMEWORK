@@ -37,7 +37,7 @@ BOHR_RADIUS = constants.value("Bohr radius")
 
 class SOL_KIT(Kinetic):
     
-    def __init__(self,run_path, k_src_dir, kinetic_input_path, kinetic_output_path,
+    def __init__(self,run_path,  k_src_dir, kinetic_input_path, kinetic_output_path,
                 k_config_yml_file_path, convergence_monitoring = False, cx1 = False):
         
         # config_yml_file_path = os.path.join(
@@ -56,8 +56,8 @@ class SOL_KIT(Kinetic):
         
         #paths
         self._run_path = run_path
-        self._kinetic_output_path = kinetic_output_path
         self._kinetic_input_path = kinetic_input_path
+        self._kinetic_output_path = kinetic_output_path
         self._kinetic_src_dir = k_src_dir
         self.cycle_dump_path = ""
         self.previous_kinetic_output_path = ""
@@ -78,7 +78,7 @@ class SOL_KIT(Kinetic):
         self._norm_ne = float(self.init.yaml_file['Norms']['Ne'])
 
         self.copyAndCreateSOL_KiT()
-        self.setFiles()
+        # self.setFiles()
         self.normalisation()
 
         self.sh_heat_flow = 0
@@ -99,7 +99,9 @@ class SOL_KIT(Kinetic):
                                  self._run_path)
         else:
             Kinetic.__init__(self, cmd)
-
+        self.convergence_tolerance = self.init.yaml_file["Params"]['Convergence']
+        self.number_of_files_before_kill = self.init.yaml_file["Params"]['Files_allowed'] 
+        self.status_path = os.path.join(self._sol_kit_output_path, "STATUS.txt")
     def convergance_test(self, path):
         
         """  

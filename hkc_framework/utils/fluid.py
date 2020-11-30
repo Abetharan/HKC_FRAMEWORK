@@ -1,7 +1,10 @@
 import atexit
 import io
 import logging
+import numpy as np 
 import os
+import pathlib
+import signal
 import subprocess
 import sys
 class Fluid():
@@ -15,13 +18,12 @@ class Fluid():
        
         filename = path + '/fluid.log'
         with io.open(filename, 'wb') as writer:
-            atexit.register(self.clean_up)
             self.__process = subprocess.Popen(cmd, stdout=writer, stderr = subprocess.PIPE)
             _,err = self.__process.communicate()
 
             if err:
-                self.logger.warning("Fluid code failed see log")
-                if not os.path.exists("HyKiCT"):
-                    self.logger.debug("Fluid NO LONGER EXISTS")
-                    sys.exit(1)
+                path_obj = pathlib.Path(path)
+                root_path = path_obj.parent
+                np.savetxt(os.path.join(root_path, "status.txt"), np.array([1], dtype=np.int), fmt = '%1.1i')
+                sys.exit(1)
        

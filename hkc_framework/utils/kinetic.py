@@ -8,27 +8,24 @@ import sys
 import threading
 import time
 import numpy as np 
+import pathlib
 class Kinetic():
     def __init__(self, cmd, convergence_monitoring = False, convergence_func = None,
                     thread_log_path = None):
         self.log_path = thread_log_path
         self.cycle = 0
         self.cycle_dump_path = ""
+        self.status_path = ""
         self.convergence_func = convergence_func
         self.monitor_convergence = convergence_monitoring
         self.nx = 0
         self.cmd = cmd
         self.converged = False
         self.search_tolerance = 1e-16
+        self.convergence_tolerance = 0
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.DEBUG)
-
-        # fh = logging.FileHandler(os.path.join(self.log_path, 'Conv.log'))
-        # fh.setLevel(logging.DEBUG)
-        # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        # fh.setFormatter(formatter)
-        # self.logger.addHandler(fh)
-
+        self.number_of_files_before_kill = 1
     def convergenceTest(self):
         """
         Purpose: Convergence Test being run to monitor heat flow convergence
@@ -41,8 +38,8 @@ class Kinetic():
             return 0
         if np.shape(self.convergence_variable_stack)[0] >= 2:
             comparison_value_index = np.where(self.convergence_variable_stack[1,:] > self.search_tolerance)
-            self.logger.info("COMPARISON VALUES")
-            self.logger.info(comparison_value_index)
+            # self.logger.info("COMPARISON VALUES")
+            # self.logger.info(comparison_value_index)
             if len(comparison_value_index[0]) <= 1:
                 convergance = np.zeros(self.nx)
             elif len(np.shape(comparison_value_index)) > 1:
@@ -65,7 +62,7 @@ class Kinetic():
         else:
             convergance = 0
 
-        if np.nanmax(convergance) < 1e-9 and np.nanmax(convergance) != 0:
+        if np.nanmax(convergance) < self.convergence_tolerance and np.nanmax(convergance) != 0:
             self.converged = True
 
         return convergance
@@ -127,11 +124,14 @@ class Kinetic():
                 self.logger.info("Convergence: ")
                 self.logger.info(np.nanmax(convergance))
 
-                if self.converged:
+                if self.converged and file_counter > self.number_of_files_before_kill:
                     self.logger.info("Converged ....Exiting")
+                    self.clean_up_proc()
                     self.clean_up()
                     stop_event.set()
                     #Update file counter
+                elif self.converged and not file_counter > self.number_of_files_before_kill:
+                    self.converged = False
                 file_counter = new_file_counter
                 self.logger.info(file_counter)
         
@@ -144,7 +144,6 @@ class Kinetic():
             for handler in self.logger.handlers:
                 handler.close()
                 self.logger.removeHandler(handler)
-            self.__process.terminate()
             # logging.shutdown()
         except OSError:
             pass #ignore the error.  The OSError doesn't seem to be documented(?)
@@ -154,7 +153,14 @@ class Kinetic():
                 #hopefully someone that knows more about this than I do can 
                 #comment.
         self.__pid = self.__process.pid
-    
+    def clean_up_proc(self):
+        while True:
+            if os.path.exists(self.status_path):
+                if os.access(self.status_path, os.W_OK):
+                    np.savetxt(self.status_path, np.array([0], dtype=np.int32)) 
+                    break
+                else:
+                    time.sleep(1e-4) 
     def Execute(self,  kinetic_heat_flow_output_folder_path):
         """  
         Purpose: Launch the command relevant to kinetic code specified, if maintain 
@@ -171,6 +177,8 @@ class Kinetic():
         """
 
         if self.monitor_convergence:
+            self.logger.info("Convergence Tolerance Value is")
+            self.logger.info(self.convergence_tolerance)
             stop_event = threading.Event()
             monitor = threading.Thread(name = "Convergence_Monitoring", 
             target=self.convergenceMonitoring, args = 
@@ -183,14 +191,29 @@ class Kinetic():
         #run command provided
             atexit.register(self.clean_up)
             self.__process = subprocess.Popen(self.cmd, stdout=writer, stderr = subprocess.PIPE)
-
+        
+        #stdout stderr
         _, err = self.__process.communicate()
+        #Checks for exception via self.__process.poll 
+        #If exception safely exit thread. Using stop event.
         if self.__process.poll() is not None and self.monitor_convergence:
             stop_event.set()
-
+        
         if err and not self.converged:
-            self.logger.warning("Kinetic code failed see log")
-            if not os.path.exists("SOL-KiT"):
-                self.logger.debug("SOL KIT NO LONGER EXISTS")
-            sys.exit(0)
-        self.converged = False
+            #Err is denoted as 1
+            #Read status file created by SOL-KiT 
+            err = 0
+            if os.path.exists(self.status_path):
+                if(os.access(self.status_path, os.R_OK)):
+                    err = np.genfromtxt(self.status_path, skip_footer=2)
+            if bool(err):
+                self.logger.warning("Kinetic code failed see log")
+                self.logger.debug("HAS IT CONVERGED:")
+                self.logger.debug(self.converged)
+                if not os.path.exists("SOL-KiT"):
+                    self.logger.debug("SOL KIT NO LONGER EXISTS")
+                path_obj = pathlib.Path(self.cycle_dump_path)
+                root_path = path_obj.parent
+                np.savetxt(os.path.join(root_path, "status.txt"), np.array([1], dtype=np.int), fmt = '%1.1i')
+                sys.exit(0)
+            self.converged = False

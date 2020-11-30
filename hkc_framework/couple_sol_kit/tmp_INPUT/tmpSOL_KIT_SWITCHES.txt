@@ -2,11 +2,13 @@
                            MAXWELL_SWITCH =              T     Evolve E-field using Maxwell's equations (Ampere-Maxwell's law)
                              X_ADV_SWITCH =              T     Include spatial advection
                              E_ADV_SWITCH =              T     Include velocity space advection due to E-field
+                   LANGDON_CURRENT_SWITCH =              F     Use Langdon definition of current and conservative Ohmic heating differencing
 
  Collisional and radiative switches:
                          COLL_EE_0_SWITCH =              $EE0     Include e-e collisions for f_0^0
                          COLL_EE_L_SWITCH =              $EEL     Include e-e collisions for  f_{l>0}^m
                          DIAG_EE_L_SWITCH =              $TRI     Use only tridiagonal matrix elements in e-e collisions for f_{l>0}^m
+                         COLL_EI_0_SWITCH =              F     Include e-i collision operator for f_0^0
                          COLL_EI_L_SWITCH =              $EIL     Include pitch-angle scattering with ions
                       COLL_EN_EL_0_SWITCH =              F     Include e-n elastic scattering for f_0^0
                       COLL_EN_EL_L_SWITCH =              F     Include e-n elastic scattering for  f_{l>0}^m
@@ -26,15 +28,18 @@
                      NEUTRAL_TRACK_SWITCH =              F     Track neutral state densities
                  NEUTRAL_DIFFUSION_SWITCH =              F     Turn on effective neutral diffusions
                          RECYCLING_SWITCH =              F     Turn on neutral recycling at divertor
+                     PARALLEL_E_TEMP_BOHM =              F     Use parallel electron temperature to compute Bohm speed
              FAST_DETAILED_BALANCE_SWITCH =              F     Update detailed balance cross-sections only once every timestep using previous timestep data
 
  Heating and sink switches:
                            HEATING_SWITCH =              F     Turn on effective heating term
+                        F2_HEATING_SWITCH =              F     Turn on heating term for f_2
                        PLASMA_SINK_SWITCH =              F     Turn on plasma sink at divertor
 
  Output switches:
                            OUTPUT_DENSITY =              $OD     Output electron density
                               OUTPUT_TEMP =              $OT     Output electron temperature
+                          OUTPUT_ION_TEMP =              F     Output ion temperature
                           OUTPUT_FLOW_VEL =              $OV     Output electron flow velocity
                          OUTPUT_HEAT_FLOW =              T     Output electron conduction heat flux
                            OUTPUT_E_FIELD =              $OE     Output E-field
@@ -53,6 +58,7 @@
                        NEUTRAL_CLOUD_INIT =              F     Initialize neutrals as uniform cloud at divertor
                    DENSITY_FROM_FILE_INIT =              T     Load electron/ion density from file
                TEMPERATURE_FROM_FILE_INIT =              T     Load electron temperature from file
+           ION_TEMPERATURE_FROM_FILE_INIT =              F     Load ion temperature from file
        NEUTRAL_GROUND_DENS_FROM_FILE_INIT =              F     Load neutral ground state density from file
                    ION_VEL_FROM_FILE_INIT =              F     Load ion velocity from file
                         LOCAL_INIT_SWITCH =              $IMPACT_MODE     Initialize l=1 harmonic and E-field as local values (works for periodic boundaries as well)
@@ -69,9 +75,11 @@
                       ION_CONT_OFF_SWITCH =              F     Turn off ion continuity equation and force n_i = n_e
                 ION_CONV_UPWINDING_SWITCH =              F     Use first order upwinding for ion convection term
                          SIMPLE_CX_SWITCH =              F     Include simple (cold ion, cold neutral, constant cross-section) charge exchange
-                       ION_EL_TEMP_SWITCH =              F     Turn on ion pressure gradient term with T_i = T_e
+                        THERMAL_CX_SWITCH =              F     Thermal charge exchange for ion temperature and momentum equations
+                      ION_PRESSURE_SWITCH =              F     Turn on ion pressure gradient term (with T_i = T_e if ion temperature equation is off)
                   NO_EXTRAPOLATION_SWITCH =              F     Turn off extrapolation for Bohm criterion
                  SONIC_OUTFLOW_DIV_SWITCH =              F     Fix divertor outflow to ion sound speed in last cell
+                      ION_TEMP_EQN_SWITCH =              F     Turn on ion temperature equation
 
  Particle source switches:
                        PART_SOURCE_SWITCH =              F     Turn on upstream particle source

@@ -1,5 +1,14 @@
 import math
-import numpy as np 
+import numpy as np
+from scipy import linalg
+from scipy import constants
+kb = constants.value("Boltzmann constant")
+me = constants.value("electron mass")
+mp = constants.value("proton mass")
+e = constants.value("elementary charge")
+epsilon_0 = 8.854188E-12    # Vacuum dielectric constant
+planck_h = constants.value("Planck constant")
+bohr_radi = constants.value("Bohr radius")
 class HeatFlowCouplingTools:
     """
     A set of utility tools that is to be used in the calculation of 
@@ -24,8 +33,9 @@ class HeatFlowCouplingTools:
         self.vfp_heat = np.array([])
         self.q_vfp_q_sh_multipliers = np.array([])
         self.search_tolerance = 1e-9
+        self.snb = False
 
-    def lambda_ei(self, T_norm , n_norm, Z_norm, return_arg = False):
+    def lambda_ei(self, T_norm , n_norm, Z_norm, return_arg = False, return_array = False):
         coulomb_logs = []
         T_norm = T_norm
 
@@ -39,8 +49,10 @@ class HeatFlowCouplingTools:
                 return result
             else:
                 coulomb_logs.append(result)
-
-        self.coulomb_log = np.array(coulomb_logs)
+        if return_array:
+            return coulomb_logs
+        else:
+            self.coulomb_log = np.array(coulomb_logs)
 
     def spitzerHarmHeatFlow(self):
         """
@@ -53,7 +65,8 @@ class HeatFlowCouplingTools:
             # self.coulomb_log.append(coulomb)
 # 
         # self.coulomb_log = np.array(self.coulomb_log)
-        kappaE = 1.843076667547614E-10 * pow(self.electron_temperature, 2.5) * pow(self.coulomb_log, -1) *  pow(self.zbar, -1)
+        #kappaE = 1.843076667547614E-10 * pow(self.electron_temperature, 2.5) * pow(self.coulomb_log, -1) *  pow(self.zbar, -1)
+        kappaE =  13.6*((self.zbar+0.24)/(self.zbar+4.24))*5.759614586E-11* pow(self.electron_temperature, 2.5) * pow(self.coulomb_log, -1) *  pow(self.zbar, -1)
         nx = len(self.electron_temperature)
         HeatFlowE = np.zeros(nx + 1)
 
@@ -179,7 +192,10 @@ class HeatFlowCouplingTools:
         pre_heat_fit_params = None
         ##Test for pre-heat via looking at NaN outputs expected from q/q_sh
         #if nans
-        self.q_vfp_q_sh_multipliers = np.array(self.vfp_heat/self.spitzer_harm_heat)
+        if self.snb:
+            self.q_vfp_q_sh_multipliers = np.array(self.vfp_heat/self.q_snb)
+        else:
+            self.q_vfp_q_sh_multipliers = np.array(self.vfp_heat/self.spitzer_harm_heat)
         self.q_vfp_q_sh_multipliers[0] = 0
         self.q_vfp_q_sh_multipliers[-1] = 0
         #Detect if there is Front heat
@@ -198,3 +214,281 @@ class HeatFlowCouplingTools:
         return(self.q_vfp_q_sh_multipliers, pre_heat_start_index, 
                 pre_heat_last_index, pre_heat_fit_params, 
                 front_heat_start_index, front_heat_last_index, front_heat_fit_params)
+
+    def interpolateThermo(self, boundary_condition, normalised_values):
+        # NOrmalise SI to Impact norms
+        sol_kit_x_grid = self.cell_wall_coord# / normalised_values["lambda_mfp"]
+        sol_kit_x_centered_grid = self.cell_centered_coord# / normalised_values["lambda_mfp"]
+        length_of_sol_kit_grid = len(sol_kit_x_centered_grid) + len(sol_kit_x_grid)
+        full_x_grid = np.zeros(length_of_sol_kit_grid)
+        j = 0
+        k = 0
+        for i in range(length_of_sol_kit_grid):
+            if i % 2 != 0:
+                full_x_grid[i] = sol_kit_x_centered_grid[j]
+                j +=1
+            else:
+                full_x_grid[i] = sol_kit_x_grid[k]
+                k +=1 
+        
+        #SOL-KiT periodic condition == .\.\.\ i.e. start with cell centre and end with cell wall
+        #SOL-KiT noflow == .\.\. i.e. start and end with cell centres
+        sol_kit_x_grid = None
+        if boundary_condition == 'periodic':
+            sol_kit_grid = full_x_grid[:-1]
+        
+        elif boundary_condition == "reflective":
+            sol_kit_grid = full_x_grid[1:-1]
+
+        # sol_kit_grid = full_x_grid
+        #Conver to SOL-KiT units
+        sol_kit_ne = self.electron_number_density #/ (normalised_values['ne'])
+        sol_kit_te = self.electron_temperature #* (kb/e)) / normalised_values['Te']
+        sol_kit_z = self.zbar
+        
+        #Require interpolation to get the centre quanties in SOL-KiT this is done via linear interpolations 
+        #here we use cubic spline to smooth quanties. 
+        self.inter_ne = np.interp(sol_kit_grid, sol_kit_x_centered_grid, sol_kit_ne)
+        self.inter_te = np.interp(sol_kit_grid, sol_kit_x_centered_grid, sol_kit_te)
+        self.inter_z =  np.interp(sol_kit_grid, sol_kit_x_centered_grid, sol_kit_z)
+        #Extend grid to cell-wall via interpolating using periodic bounds i.e. 
+        #end cell-centre and first cell centre, distance from cell wall assumed to be the same
+        #thus == 0.5
+        if boundary_condition == 'periodic':
+            self.inter_te[0] = 0.5 * (self.inter_te[1] + self.inter_te[-1])
+            self.inter_ne[0] = 0.5 * (self.inter_ne[1] + self.inter_ne[-1])
+            self.inter_z[0] = 0.5 * (self.inter_z[1] + self.inter_z[-1])
+        return(sol_kit_grid)
+
+    def electric_field(self, dx_wall):
+        """
+        Purpose: Calculate Spizter-Harm Electric Field
+        Args: 
+            x = Cell-centered grid, shape (nx)
+            Te = Full grid, shape (2 * nx + 1)
+            ne = Full grid, shape (2 * nx + 1)
+            Z = Cell-wall grid, shape (nx)
+        Returns E_field with 0 field at boundaries. 
+        Checked: 13/08/2020
+        """
+        n = len(self.zbar)
+        self.E = np.zeros(n - 1)
+        for i in range(1, n):
+            dx = dx_wall[i - 1]
+            gamma =  1 + ((3 * (self.zbar[i] + 0.477)) / (2*(self.zbar[i] + 2.15)))
+            self.E[i - 1] = (-1 * (kb/e) * self.inter_te[i*2] * 
+                    (((self.inter_ne[i*2] - self.inter_ne[i*2 - 2]) / (self.inter_ne[2*i - 1] * dx)) +
+                    gamma * ((self.inter_te[i*2] - self.inter_te[i*2 - 2]) /(self.inter_te[2*i - 1] * dx))))
+        return(self.E)
+
+
+    def lambda_E(self, lambda_star, E, e_grid):
+        """
+        Purpose: Phemenlogical corrections to mfp via addition of E-field
+        Args:
+            Lambda_star = velocity dependent mfp 
+            E = E-field
+            v_grid = centered v grid 
+        Returns:
+            lambda_E = corrected mfp.
+        """
+        lambda_E = np.zeros(np.shape(lambda_star))
+        a = 1.0
+        for i, e_field in enumerate(E):
+            for j, energy in enumerate(e_grid):
+                k = 1/(a * lambda_star[i, j]) + abs((e * e_field) / (kb * energy))
+                lambda_E[i, j] = 1/k
+
+        return(lambda_E)
+
+    def getLambStar(self, beta):
+        nx,ng = np.shape(beta)
+        vt_bx = np.sqrt(kb*self.inter_te/me)
+        log_lam_ei = self.lambda_ei(T_norm = self.inter_te * (kb/e), n_norm = self.inter_ne, Z_norm = self.inter_z, return_array = True)
+        Y = 4*np.pi*(e**2/(4 * np.pi * epsilon_0 * me))**2
+        tau_ei_bx = vt_bx**3/(Y* self.inter_z * self.inter_ne * log_lam_ei)
+
+        lambda_ei_bx = vt_bx*tau_ei_bx
+        zeta = (self.inter_z + 0.24) / (self.inter_z + 4.2) # Brodrick
+        # lambda_e_bx = np.sqrt(Z)*lambda_ei_bx
+        lambda_e_bx = zeta * lambda_ei_bx
+        lambda_g_bx = np.zeros((nx,ng))
+        lambda_g_c =  np.zeros((nx,ng))
+
+        for i in range(ng):
+            lambda_g_bx[:,i] = 2*pow(beta[:,i], 2)*lambda_e_bx #Defined everywhere in space,  energy centered 
+        return lambda_g_bx
+
+    def createMatrix(self, A, B, C):
+        """
+        Purpose: Creates a tridagional Matrix 
+        Args:
+            A = off diagonal term defined at n - 1
+            B = leading diagonal defined at n 
+            C = off diagonal term defined at n + 1
+        Returns:
+            matrix
+        Checked: 13/08/2020
+        """
+        matrix = np.zeros((len(A), len(A)))
+        for i, (a,b,c) in enumerate(zip(A,B,C)):
+            if i == 0:
+                matrix[i, 0] = b 
+                matrix[i, 1] = c
+            elif i == len(A) - 1:
+                matrix[-1, -2] = a
+                matrix[-1, -1] = b
+            elif i < len(A) - 1:
+                matrix[i, i - 1] = a 
+                matrix[i, i] = b 
+                matrix[i, i +1] = c
+
+        return matrix
+    def solve(self, A, b):
+        """
+        Purpose : Solves A*x = b 
+        Args:
+            A = Matrix (nv) 
+            b = source term
+        Returns: x 
+        """ 
+        x = linalg.solve(A, b)
+        return(x)
+
+    def getBeta(self, energy_grid, Te):
+        beta = np.zeros((len(Te),len(energy_grid)))
+        dbeta = np.zeros((len(Te),len(energy_grid) - 1)) 
+        for i in range(len(Te)):
+            beta[i, :] = energy_grid / Te[i]
+            for j in range(len(energy_grid) - 1):
+                dbeta[i, j] = (energy_grid[j + 1] - energy_grid[j]) /  Te[i]
+        return beta, dbeta
+            
+    def getSource(self, q_sh, beta, dbeta):
+        nx, ne = np.shape(beta)
+        U_g = np.zeros((nx, ne))
+        for i in range(nx):
+            for e in range(ne):
+                U_g[i, e] = (q_sh[i] / 24) * dbeta[i, e] * pow(beta[i, e], 4) * np.exp(-1*beta[i, e])
+        return U_g
+        
+    def getH(self, dx_wall, dx_centered, lambda_star, lambda_E, U, r, Z):
+        nx, nv = np.shape(lambda_star)
+        H = np.zeros((nx, nv))
+        r = np.zeros(nx) + r#  tunable parameter
+        for j in range(nv):
+            A = np.zeros(nx) #off diagonal n -1
+            B = np.zeros(nx) # leading diagonal
+            C = np.zeros(nx) # off diagonal n + 1
+            S = np.zeros(nx) #Source 
+            for i in range(nx):
+                if i == 0:
+                    dx_diff = dx_centered[i]#dx_wall[1] + dx_wall[0] #
+                    A[i] = None #0 #lambda_E[i - 1]/(3*dx_k_diff*dx_k)
+                    B[i] = 1 * (lambda_E[i, j]/(3*dx_wall[i] * dx_diff) + r[i] / (lambda_star[i, j] * Z[i]))
+                    C[i] = -1*lambda_E[i, j]/(3*dx_wall[i] * dx_diff)
+                    S[i] = -1* U[i, j] / (dx_centered[i])
+                elif i == nx - 1:           
+                    dx_diff = dx_centered[i]#dx_wall[-1] + dx_wall[-2] #
+                    A[i] = -1*lambda_E[i - 1, j]/(3*dx_wall[i - 1] * dx_diff)
+                    B[i] = 1 * (lambda_E[i - 1, j]/(3*dx_wall[i - 1] * dx_diff) + r[i] / (lambda_star[i, j] * Z[i]))
+                    C[i] = None #lambda_E[i]/(3*pow(dx_k)
+                    S[i] = 1*U[i - 1, j] / (dx_centered[-1])
+                else:
+                    dx_diff = dx_centered[i]# dx_wall[i + 1] + dx_wall[i] 
+                    A[i] = -1*lambda_E[i - 1, j]/(3*dx_wall[i - 1] * dx_diff)
+                    B[i] = 1 * (lambda_E[i, j]/(3*dx_wall[i] * dx_diff) + lambda_E[i - 1, j]/(3*dx_wall[i - 1] * dx_diff) + r[i] / (lambda_star[i, j] * Z[i]))
+                    C[i] = -1*lambda_E[i, j]/(3*dx_wall[i] * dx_diff)
+                    S[i] = -1 * (U[i, j] - U[i - 1, j]) / dx_centered[i]
+
+            mat = self.createMatrix(A, B, C)
+            d = self.solve(mat, S)
+            H[:, j] = d
+        return(H)
+
+    def getDqnl(self, H, lambda_E, dx_wall):
+        nx, nv = np.shape(H)
+        q_nl = np.zeros(nx - 1)
+        for i in range(0, nx - 1):
+            heat_flow = 0        
+            grad_delta_f0 = ((H[i + 1, :] - H[i, :]) / dx_wall[i])
+            for v in range(nv):
+                heat_flow += lambda_E[i, v] * grad_delta_f0[v] 
+            q_nl[i] = (1/3) * heat_flow
+        return q_nl 
+
+    def snb_heat_flow(self, ng, max_E, r):
+        """
+        Purpose: Calculates SNB-Heat flow
+        Args: 
+            x = cell-wall coords nx+1
+            v_grid = cell-wall velocity grid defined in terms of v_th,  nv+1
+            Te = cell-centered temperature nx 
+            ne = cell-centered density nx
+            Z = cell-centered ionisation nx 
+            Ar = cell-centered atomix mass nx
+        Returns: q_snb
+        """
+        # self.x_centered = np.array([(x[i+1] + x[i])/ 2 for i in range(len(x) - 1)])
+        full_x = self.interpolateThermo('reflective', None) 
+        dx_centered = np.diff(full_x[1::2])
+        dx_wall = np.diff(full_x[::2])
+        dx_centered = np.insert(dx_centered, 0 , 2 * (full_x[1] - full_x[0]))
+        dx_centered = np.append(dx_centered,  2 * (full_x[-1] - full_x[-2]))
+
+        E_max = np.max(self.electron_temperature) * max_E
+        e_grid_wall = np.linspace(0, E_max, ng + 1)
+        e_grid_centre = np.array([(e_grid_wall[i+1] + e_grid_wall[i])/ 2 for i in range(len(e_grid_wall) - 1)])
+
+        beta, _ = self.getBeta(e_grid_centre, self.inter_te)
+        _, dbeta = self.getBeta(e_grid_wall, self.inter_te)
+
+        E_field = self.electric_field(dx_wall)
+        lambda_star = self.getLambStar(beta)
+        lamb_E = self.lambda_E(lambda_star[1::2], E_field, e_grid_centre)
+        
+        # q_sh = spitzer_harm_heat(x_centered, Te, ne, Z) # local 
+        U = self.getSource(self.spitzer_harm_heat[1:-1], beta[1::2, :], dbeta[1::2, :])
+        H = self.getH(dx_wall, dx_centered, lambda_star[::2], lamb_E, U, r, self.zbar)
+        q_nl = self.getDqnl(H, lamb_E, dx_wall)
+        
+        self.q_snb = self.spitzer_harm_heat[1:-1]  - q_nl
+        self.q_snb = np.append(self.q_snb, 0)
+        self.q_snb = np.insert(self.q_snb, 0 ,0)
+
+    def getSubtractDq(self):
+        if self.snb:
+            return self.vfp_heat - self.q_snb
+        else:
+            return self.vfp_heat - self.spitzer_harm_heat
+
+
+# hfct_obj = HeatFlowCouplingTools()
+# Z = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_Z_interp', skiprows=1)[:, 1] 
+# Te = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_5ps_TekeV_interp', skiprows=1)[:, 1] * 1E3 *(e/kb)
+# ne = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_ne1e20cm3_interp', skiprows=1)[:, 1] * (1e20 * 1e6)
+# snb_brodrick = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_5ps_separatedsnbWcm2', skiprows=1)[:, 1]
+# impact_brodrick = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_5ps_IMPACTWcm2', skiprows=1)[:, 1]
+# coord = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_5ps_separatedsnbWcm2', skiprows=1)[:, 0]*1e-6
+# Hykict_snb = np.loadtxt('/Users/shiki/DATA/HyKiCT_OUTPUT/ELECTRON_HEAT_FLOW_X/ELECTRON_HEAT_FLOW_X_0.txt') *-1e-4
+
+# hfct_obj.electron_temperature = Te
+# hfct_obj.electron_number_density = ne
+# hfct_obj.zbar = Z
+# hfct_obj.cell_wall_coord = coord
+# hfct_obj.cell_centered_coord = np.array([(coord[i+1] + coord[i]) / 2 for i in range(len(coord) - 1)])
+
+# #Calculate spitzer harm from last step fluid quants
+# hfct_obj.lambda_ei(hfct_obj.electron_temperature * (kb/e), 
+#                 hfct_obj.electron_number_density,
+#                 hfct_obj.zbar)
+# hfct_obj.spitzerHarmHeatFlow()
+# hfct_obj.snb_heat_flow(50, 20, 2)
+# import matplotlib.pyplot as plt 
+# plt.plot(coord, snb_brodrick, label = 'brodrick')
+# plt.plot(coord[1:-1], impact_brodrick, label = 'impact')
+# plt.plot(coord, hfct_obj.q_snb*1e-4, label = "SNB")
+# plt.plot(coord, Hykict_snb, label = "hykict SNB")
+# plt.plot(coord[1:-1], (1e-4*q_snb[1:-1]) / impact_brodrick)
+# plt.legend()
+# plt.show()

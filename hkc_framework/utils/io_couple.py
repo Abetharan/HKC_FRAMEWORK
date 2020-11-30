@@ -7,6 +7,7 @@ Last Update = 25/11/19
 import atexit
 import h5py
 import os
+import signal
 import shutil
 import string
 import sys
@@ -22,24 +23,27 @@ class IO:
         self._f_src_dir = f_src_dir
         self._f_switch_path = None
         self._f_init_path = f_init_path
-        
+        self._fast_tmp_base_dir = os.environ["BASE_PATH"] 
         self.max_cycle = max_cycle        
         self._run_path = os.path.join(self._base_dir, self._run_name)
+        self._fast_run_path = self._fast_tmp_base_dir
         self.cycle_counter = cycle_counter
         self.cycle_dump_path = None
         self.fluid_input_path = None
+        self.intermediate_fluid_outpath = None
         self.fluid_output_path = None
         self.kinetic_input_path = None
         self.kinetic_output_path = None
         self.next_fluid_input_path = None
         self.__use_hdf5 = use_hdf5
         self.__overwrite_ok = overwrite
-        self.preserved_cycle_path = []
-        self.preserved_fluid_input_path = []
-        self.preserved_fluid_output_path = []  
-        self.preserved_kinetic_input_path = []
-        self.preserved_kinetic_output_path = []
-        
+        self.all_cycle_path = []
+        self.all_fluid_input_path = []
+        self.all_fluid_output_path = []  
+        self.all_kinetic_input_path = []
+        self.all_kinetic_output_path = []
+        self.intermediate_folder = False 
+
         #self.createDirectoryOfOperation(self.max_cycle)
     
         #self.nextCyclePathManager()
@@ -58,11 +62,12 @@ class IO:
         print('\n')
         self.cycle_dump_path = os.path.join(self._run_path,
                                 "".join(["CYCLE_", str(self.cycle_counter)]))
-        self.fluid_input_path = os.path.join(self.cycle_dump_path + "/FLUID_INPUT/")
-        self.fluid_output_path = os.path.join(self.cycle_dump_path + "/FLUID_OUTPUT/")
-        self.kinetic_input_path = os.path.join(self.cycle_dump_path + "/KINETIC_INPUT/")
-        self.kinetic_output_path = os.path.join(self.cycle_dump_path + "/KINETIC_OUTPUT/")
-
+        self.fluid_input_path = os.path.join(self.cycle_dump_path, "FLUID_INPUT/")
+        self.fluid_output_path = os.path.join(self.cycle_dump_path, "FLUID_OUTPUT/")
+        self.kinetic_input_path = os.path.join(self.cycle_dump_path, "KINETIC_INPUT/")
+        self.kinetic_output_path = os.path.join(self.cycle_dump_path, "KINETIC_OUTPUT/")
+        if self.intermediate_folder :
+            self.intermediate_fluid_outpath = os.path.join(self.cycle_dump_path, "INTERMEDIATE_OUTPUT")
     def createDirectoryOfOperation(self,):
         """ Purpose: Creates all folders required immediately .. reduces overhead later one 
             Args: no_cycles = no of total cycles.
@@ -81,22 +86,39 @@ class IO:
         for i in range(self.max_cycle):
             cycle_path = os.path.join(self._run_path, ("CYCLE_" + str(i)))
         
-            fluid_input_path = os.path.join(cycle_path + "/FLUID_INPUT/")
-            fluid_output_path = os.path.join(cycle_path + "/FLUID_OUTPUT/")
-            kinetic_input_path = os.path.join(cycle_path + "/KINETIC_INPUT/")
-            kinetic_output_path = os.path.join(cycle_path + "/KINETIC_OUTPUT/")
+            fluid_input_path = os.path.join(cycle_path, "FLUID_INPUT/")
+            fluid_output_path = os.path.join(cycle_path, "FLUID_OUTPUT/")
+            kinetic_input_path = os.path.join(cycle_path, "KINETIC_INPUT/")
+            kinetic_output_path = os.path.join(cycle_path, "KINETIC_OUTPUT/")
+            intermediate_fluid_outpath = os.path.join(cycle_path, "INTERMEDIATE_OUTPUT/")
+            self.all_cycle_path.append(cycle_path)
+            self.all_fluid_input_path.append(fluid_input_path)
+            self.all_fluid_output_path.append(fluid_output_path)
+            self.all_kinetic_input_path.append(kinetic_input_path)
+            self.all_kinetic_output_path.append(kinetic_output_path)
             if path_exists:
-                if (os.path.exists(fluid_input_path) and
+                if self.intermediate_folder :
+
+                    if (os.path.exists(fluid_input_path) and
+                        os.path.exists(fluid_output_path) and
+                        os.path.exists(kinetic_output_path) and
+                        os.path.exists(kinetic_output_path) and 
+                        os.path.exists(intermediate_fluid_outpath)):
+                            continue
+                        
+                elif(os.path.exists(fluid_input_path) and
                     os.path.exists(fluid_output_path) and
                     os.path.exists(kinetic_output_path) and
                     os.path.exists(kinetic_output_path)):
                     continue
+	    
             
             os.makedirs(cycle_path)
             os.makedirs(fluid_output_path)
             os.makedirs(fluid_input_path)
             os.makedirs(kinetic_input_path)
             os.makedirs(kinetic_output_path)
+            os.makedirs(intermediate_fluid_outpath)
     
     def nextCyclePathManager(self):
         """
@@ -112,24 +134,14 @@ class IO:
 
         if not os.path.exists(self.next_fluid_input_path) and not (self.max_cycle - 1  == self.cycle_counter): 
             print("NEXT FLUID PATH HAS NOT BEEN CREATED")
-            print(self.preserved_fluid_input_path)
-            sys.exit(1)
+            sys.exit(0)
         
-        self.preservePaths()
 
     def returnCurrentPaths(self):
         return(self.cycle_dump_path, self.fluid_input_path, 
         self.fluid_output_path, self.kinetic_input_path,
          self.kinetic_output_path)
     
-    def preservePaths(self):
-
-        self.preserved_cycle_path.append(self.cycle_dump_path)
-        self.preserved_fluid_input_path.append(self.fluid_input_path)
-        self.preserved_fluid_output_path.append(self.fluid_output_path)
-        self.preserved_kinetic_input_path.append(self.kinetic_input_path)
-        self.preserved_kinetic_output_path.append(self.kinetic_output_path)
-
     def deleteAll(self):
         """
         Purpose: Delete all directories created IF
@@ -145,7 +157,7 @@ class IO:
             log_cycle_paths.append(log_cy_path)            
             os.makedirs(log_cy_path)
 
-        for i, cycle_path in enumerate(self.preserved_cycle_path):
+        for i, cycle_path in enumerate(self.all_cycle_path):
             fluid_log_path = os.path.join(cycle_path, "fluid.log")
             kinetic_log_path = os.path.join(cycle_path, "kinetic.log")
             if os.path.exists(fluid_log_path):
@@ -153,20 +165,18 @@ class IO:
             if os.path.exists(kinetic_log_path):
                 shutil.move(kinetic_log_path, log_cycle_paths[i])
 
-        for cycle_path in self.preserved_cycle_path:
+        for cycle_path in self.all_cycle_path:
             shutil.rmtree(cycle_path)
         
-
     def _createHDF5(self):
         """
         Purpose: Create hdf5 file
         """
         self.hdf5_file = h5py.File(os.path.join(self._run_path,
                                  "".join([self._run_name, "_Data.hdf5"])), "a")
-        atexit.register(self._closeHDF5)
-
-    def _closeHDF5(self):
-        """
-        Purpose: close the file upon exiting program.
-        """
-        self.hdf5_file.close()
+        def _closeHDF5():
+            """
+            Purpose: close the file upon exiting program.
+            """
+            self.hdf5_file.close()
+        atexit.register(_closeHDF5)
