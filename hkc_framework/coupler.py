@@ -454,15 +454,21 @@ class Coupler:
                         kin_obj.previous_kinetic_output_path = os.path.join(self.init.yaml_file['Paths']['Init_path'], "kinetic_restart")
 
             self.logger.info("Initialize Kinetic")
-            # fluid_ne[:75] = fluid_ne[74] 
-            # fluid_Z[:75] = fluid_Z[74] 
-            kin_obj.initFromHydro(fluid_x_grid, fluid_x_centered_grid, 
-                                fluid_Te, fluid_ne, fluid_Z)
-            
             if not fluid_obj.init.yaml_file['Switches']['SNBHeatFlow']:
                 kin_obj.sh_heat_flow = hfct_obj.spitzer_harm_heat
             else:
                 kin_obj.sh_heat_flow = hfct_obj.q_snb
+
+            if self.init.yaml_file['Mode']['Limit_density']:
+                critical_density = 10 * (1114326918632954.5 / pow(fluid_obj.init.yaml_file['LaserParams']['Wavelength'], 2)) #Hard-coded limit to 10*nc
+                laser_dir = "left"#fluid_obj.laser_direction
+            else:
+                critical_density = None
+                laser_dir = None
+
+            kin_obj.initFromHydro(fluid_x_grid, fluid_x_centered_grid, 
+                                fluid_Te, fluid_ne, fluid_Z, critical_density = critical_density, laser_dir = laser_dir)
+            
             self.logger.info("Start Kinetic")
             kin_obj.Run()
             self.logger.info("End Kinetic")
@@ -482,7 +488,7 @@ class Coupler:
             if self.init.yaml_file['Mode']['Couple_divq']:
                 #qe here is div.q_vfp 
                 self.logger.info("Calculate Div.q")
-                qe = hfct_obj.divQHeatFlow()
+                qe = hfct_obj.divQHeatFlow(laser_dir)
                 if self.init.yaml_file['Mode']['Couple_leap_frog'] or self.init.yaml_file['Mode']['Couple_operator_split'] : 
                     fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = True
             elif self.init.yaml_file['Mode']['Couple_multi']:

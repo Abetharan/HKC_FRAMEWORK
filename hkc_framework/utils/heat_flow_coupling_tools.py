@@ -138,7 +138,7 @@ class HeatFlowCouplingTools:
         B = np.array(B)
         return(frontheat_start, frontheat_end, B)
 
-    def divQHeatFlow(self, step = 2):
+    def divQHeatFlow(self, step = 2,  laser_dir = None):
         """ Purpose: Find Div.Q
             Args:
                 electron_thermal_flux = SOL-KiT heat flux in SI
@@ -152,10 +152,19 @@ class HeatFlowCouplingTools:
             Returns: Div.Q
             NOTE: ONLY WORKS FOR SAME GRIDS
         """
-        nx = len(self.vfp_heat) 
+        heat_flow = self.vfp_heat
+        limit_index = len(heat_flow)
+        if laser_dir == "right":
+            heat_flow = heat_flow[0:]
+            heat_flow =  np.append(self.spitzer_harm_heat[limit_index + 1], heat_flow)
+        else:
+            heat_flow = heat_flow[:-1]
+            heat_flow = np.append(heat_flow, self.spitzer_harm_heat[limit_index - 1:])
+
+        nx = len(heat_flow) 
         HeatConductionE = np.zeros(nx - 1)
         for i, m in enumerate(self.mass):
-            HeatConductionE[i] = (-(self.vfp_heat[i + 1] - self.vfp_heat[i])) / m
+            HeatConductionE[i] = (-(heat_flow[i + 1] - heat_flow[i])) / m #- sign is there because of convention used in HyKiCT 
         return(HeatConductionE)
     
     def _detectAnamalousHeat(self):

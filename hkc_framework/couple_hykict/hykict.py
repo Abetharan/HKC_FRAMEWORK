@@ -26,6 +26,7 @@ class HyKiCT(Fluid):
         self._fluid_output_path = "" 
         self.cycle_dump_path = ""
         self._copyHyKiCT()
+        self.laser_direction = 'right'
     
     def setFiles(self):
         """ Purpose: Write out config.yml for each cycle"""

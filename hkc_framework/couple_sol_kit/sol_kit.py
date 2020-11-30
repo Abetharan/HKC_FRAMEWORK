@@ -203,7 +203,7 @@ class SOL_KIT(Kinetic):
         copy_tree(self.tmp_input_path, self._sol_kit_input_path)
         copy_tree(self.tmp_output_path, self._sol_kit_output_path)
 
-        grid = setparams.GRID(
+        self.grid = setparams.GRID(
                             nt = self.init.yaml_file['Params']['Nt'],
                             prestepnt = self.init.yaml_file['Params']['Pre_step_nt'],
                             dt = self.init.yaml_file['Params']['Dt'],
@@ -240,14 +240,14 @@ class SOL_KIT(Kinetic):
                             OUTPUT_SH_TEST= self.init.yaml_file['Output']['Sh_test'])
         
         templating(tmpfilePath= os.path.join(self._run_path, 'INPUT/tmpSOL_KIT_GRID.txt'),
-            writePath=self._sol_kit_input_path, fileName="GRID_INPUT.txt", parameters=grid)
+            writePath=self._sol_kit_input_path, fileName="GRID_INPUT.txt", parameters=self.grid)
         templating(tmpfilePath= os.path.join(self._run_path, 'INPUT/tmpSOL_KIT_NORMS.txt'),
             writePath=self._sol_kit_input_path, fileName="NORMALIZATION_INPUT.txt", parameters=norms)
         templating(tmpfilePath= os.path.join(self._run_path, 'INPUT/tmpSOL_KIT_SWITCHES.txt'),
             writePath=self._sol_kit_input_path, fileName="SWITCHES_INPUT.txt", parameters=self.switches)
         #remove tmp files
         os.rename(os.path.join(self._sol_kit_input_path, 'tmpSOL_KIT_SOLVER_PARAMS.txt'), os.path.join(self._sol_kit_input_path, 'SOLVER_PARAMS_INPUT.txt'))
-        os.remove(os.path.join(self._sol_kit_input_path, 'tmpSOL_KIT_GRID.txt'))
+        # os.remove(os.path.join(self._sol_kit_input_path, 'tmpSOL_KIT_GRID.txt'))
         os.remove(os.path.join(self._sol_kit_input_path, 'tmpSOL_KIT_NORMS.txt'))
         # os.remove(os.path.join(self._sol_kit_input_path, 'tmpSOL_KIT_SWITCHES.txt'))
 
@@ -277,7 +277,7 @@ class SOL_KIT(Kinetic):
                         if not var_txt.name.startswith('.') and var_txt.is_file():
                             os.unlink(var_txt.path)
         
-    def initFromHydro(self, f_x_grid, f_x_centered_grid, f_te, f_ne, f_z, f_laser = 0, f_rad = 0):
+    def initFromHydro(self, f_x_grid, f_x_centered_grid, f_te, f_ne, f_z, f_laser = 0, f_rad = 0, laser_dir = None, critical_density = None):
         """ Purpose: Initilise all SOL-KiT load in files from HYDRO
         Here the SOL-KiT specifics are done, SOL-KiT requires quantities to be defined at all 
         points on the grid. Whereas, the fluid quantities passed are not. 
@@ -286,6 +286,36 @@ class SOL_KIT(Kinetic):
         the specific needs of the code being coupled. Here I assume commmon 
         Lagrangian Practice i.e. quantities are not defined at all points. 
         """
+
+
+        if critical_density is not None:
+            index_to_limit = np.where(f_ne >= critical_density)[0]
+            if laser_dir == "right":
+                f_ne = f_ne[index_to_limit[-1] + 1:]
+                f_te = f_te[index_to_limit[-1] + 1:]
+                f_z = f_z[index_to_limit[-1] + 1:]
+                f_x_centered_grid = f_x_centered_grid[index_to_limit[-1] + 1:]
+                f_x_grid = f_x_grid[index_to_limit[-1] + 1:]
+                self.sh_heat_flow = self.sh_heat_flow[index_to_limit[-1] + 1:]
+            if laser_dir == "left":
+                f_ne = f_ne[:index_to_limit[-1] + 1]
+                f_te = f_te[:index_to_limit[-1] + 1]
+                f_z = f_z[:index_to_limit[-1] + 1]
+                f_x_centered_grid = f_x_centered_grid[:index_to_limit[-1] + 1]
+                f_x_grid = f_x_grid[:index_to_limit[-1] + 2]
+                self.sh_heat_flow = self.sh_heat_flow[:index_to_limit[-1] + 2]
+            self.grid['nx'] = len(f_te)
+            self.nx = 2 * len(f_te) - 1
+            templating(tmpfilePath= os.path.join(self._run_path, 'INPUT/tmpSOL_KIT_GRID.txt'),
+            writePath=self._sol_kit_input_path, fileName="GRID_INPUT.txt", parameters=self.grid)
+        else:
+            if self.grid['nx'] != len(self.sh_heat_flow) - 1:
+                self.grid['nx'] = len(self.sh_heat_flow) - 1
+                self.nx = len(self.sh_heat_flow) - 1
+                templating(tmpfilePath= os.path.join(self._run_path, 'INPUT/tmpSOL_KIT_GRID.txt'),
+                writePath=self._sol_kit_input_path, fileName="GRID_INPUT.txt", parameters=self.grid)
+
+                
 
         # for line in proc.stdout:
         # NOrmalise SI to Impact norms
