@@ -22,7 +22,7 @@ Mode:
   Couple_adaptive: false
   Couple_leap_frog: false
   Couple_operator_split: false
-  Limit_density: true #Limit density to 10x critical
+  Limit_density: false #Limit density to 10x critical
   Start_from_kinetic: true
   Load_f1: true
   Start_coupled: false #Takes precedence over start from kinetic, assumes relevant quanties exist. Does not work with leap-frog
