@@ -23,8 +23,8 @@ LaserParams:
   Wavelength: 0.351E-6 #0.351E-6 for gold
   Angle: 0
 Limiters:
-  heatflxlmE: 0.15
-  heatflxlmI: 0.15
+  heatflxlmE: 1.0
+  heatflxlmI: 1.0
   prrm: 1.0
   radabm: 1.0
   radbrm: 1.0
@@ -97,7 +97,7 @@ TimeParameters:
   RadLimit: 0.5
   VolLimit: 0.5
   cfl: 0.85
-  dt: 1.0e-16 #5.608e-11
+  dt: 1.0e-17 #5.608e-11
   dt_max: 1.0e-14
   dt_min: 5.0e-16
   steps: 200

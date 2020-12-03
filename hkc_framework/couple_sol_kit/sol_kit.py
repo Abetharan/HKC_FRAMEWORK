@@ -160,6 +160,9 @@ class SOL_KIT(Kinetic):
                                                     n_norm = [self._norm_ne],
                                                     Z_norm = [self._norm_Z],
                                                     return_arg = True)
+        if coulomb_log < 0:
+            print("NEGATIVE COULOMB LOGS")
+            sys.exit(0)
 
         time_norm = v_t ** 3 / (gamma_ei_0 * (self._norm_ne/self._norm_Z) * coulomb_log)  # Time normalization
         x_0 = v_t * time_norm               # Space normalization
@@ -298,14 +301,14 @@ class SOL_KIT(Kinetic):
                 f_x_grid = f_x_grid[index_to_limit[-1] + 1:]
                 self.sh_heat_flow = self.sh_heat_flow[index_to_limit[-1] + 1:]
             if laser_dir == "left":
-                f_ne = f_ne[:index_to_limit[-1] + 1]
-                f_te = f_te[:index_to_limit[-1] + 1]
-                f_z = f_z[:index_to_limit[-1] + 1]
-                f_x_centered_grid = f_x_centered_grid[:index_to_limit[-1] + 1]
-                f_x_grid = f_x_grid[:index_to_limit[-1] + 2]
-                self.sh_heat_flow = self.sh_heat_flow[:index_to_limit[-1] + 2]
+                f_ne = f_ne[:index_to_limit[0]]
+                f_te = f_te[:index_to_limit[0]]
+                f_z = f_z[:index_to_limit[0]]
+                f_x_centered_grid = f_x_centered_grid[:index_to_limit[0]]
+                f_x_grid = f_x_grid[:index_to_limit[0] + 1]
+                self.sh_heat_flow = self.sh_heat_flow[:index_to_limit[0] + 1]
             self.grid['nx'] = len(f_te)
-            self.nx = 2 * len(f_te) - 1
+            self.nx = len(f_te)
             templating(tmpfilePath= os.path.join(self._run_path, 'INPUT/tmpSOL_KIT_GRID.txt'),
             writePath=self._sol_kit_input_path, fileName="GRID_INPUT.txt", parameters=self.grid)
         else:

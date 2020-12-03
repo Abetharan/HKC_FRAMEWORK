@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import sys
 from scipy import linalg
 from scipy import constants
 kb = constants.value("Boltzmann constant")
@@ -44,6 +45,12 @@ class HeatFlowCouplingTools:
                 result = 23.00 - math.log(math.sqrt(n * 1.00E-6) * Z * (T) ** (-3.00/2.00))
             else:
                 result = 24.00 - math.log(math.sqrt(n * 1.00E-6) / (T))   
+            if result < 2.5:
+                result = 2.5
+            if result < 0:
+                print("NEGATIVE COULOMB LOGS")
+                sys.exit(0)
+
 
             if return_arg:
                 return result
@@ -154,12 +161,15 @@ class HeatFlowCouplingTools:
         """
         heat_flow = self.vfp_heat
         limit_index = len(heat_flow)
-        if laser_dir == "right":
-            heat_flow = heat_flow[0:]
-            heat_flow =  np.append(self.spitzer_harm_heat[limit_index + 1], heat_flow)
-        else:
-            heat_flow = heat_flow[:-1]
-            heat_flow = np.append(heat_flow, self.spitzer_harm_heat[limit_index - 1:])
+        if laser_dir is not None:
+            if laser_dir == "right":
+                len_sh = len(self.spitzer_harm_heat)
+                append_index = len_sh - limit_index + 1
+                heat_flow = heat_flow[1:]
+                heat_flow =  np.append(self.spitzer_harm_heat[:append_index], heat_flow)
+            else:
+                heat_flow = heat_flow[:-1]
+                heat_flow = np.append(heat_flow, self.spitzer_harm_heat[limit_index - 1:])
 
         nx = len(heat_flow) 
         HeatConductionE = np.zeros(nx - 1)
@@ -465,11 +475,31 @@ class HeatFlowCouplingTools:
         self.q_snb = np.append(self.q_snb, 0)
         self.q_snb = np.insert(self.q_snb, 0 ,0)
 
-    def getSubtractDq(self):
+    def getSubtractDq(self, laser_dir = None):
+        heat_flow = self.vfp_heat
+        limit_index = len(heat_flow)
+        if laser_dir is not None:
+            if laser_dir == "right":
+                len_sh = len(self.spitzer_harm_heat)
+                heat_flow = heat_flow[1:]
+                padding = len_sh - len(heat_flow)
+                heat_flow = np.pad(heat_flow, (padding,), 'constant', constant_value = (0,))
+                # heat_flow =  np.append(self.spitzer_harm_heat[:append_index], heat_flow)
+            else:
+                len_sh = len(self.spitzer_harm_heat)
+                heat_flow = heat_flow[1:]
+                padding = len_sh - len(heat_flow)
+                heat_flow = np.pad(heat_flow, (0,padding), 'constant', constant_value = (0,0))
+                # heat_flow = np.append(heat_flow, self.spitzer_harm_heat[limit_index - 1:])
+
         if self.snb:
-            return self.vfp_heat - self.q_snb
+            return heat_flow - self.q_snb
         else:
-            return self.vfp_heat - self.spitzer_harm_heat
+            return heat_flow - self.spitzer_harm_heat
+        # if self.snb:
+        #     return self.vfp_heat - self.q_snb
+        # else:
+        #     return self.vfp_heat - self.spitzer_harm_heat
 
 
 # hfct_obj = HeatFlowCouplingTools()
