@@ -74,9 +74,11 @@ class HyKiCT(Fluid):
 #legacy        # f_brem = np.loadtxt(self._fluid_output_path + "BREM/BREM_" + str(last_index) + ".txt")
         f_Z = np.loadtxt(os.path.join(self._fluid_output_path,
                "".join(["ZBAR/ZBAR_", str(last_index), ".txt"])), dtype = np.float64)
+        f_time = np.loadtxt(os.path.join(self._fluid_output_path,
+               "".join(["TIME/TIME_", str(last_index), ".txt"])), dtype = np.float64)
         mass = np.loadtxt(self._fluid_input_path + "/mass.txt")        
         
-        return(f_x_grid, f_x_centered_grid, f_v, f_ne, f_Te, f_Z, f_laser, mass)
+        return(f_x_grid, f_x_centered_grid, f_v, f_ne, f_Te, f_Z, f_laser, mass, f_time)
     
     def initHydro(self, next_fluid_input_path, qe = None, pre_params = None, front_params = None):
         """

@@ -360,6 +360,8 @@ class Coupler:
                 fluid_obj.init.yaml_file['Paths']['Out_Path'] = io_obj.fluid_output_path
                 fluid_obj._fluid_output_path = io_obj.fluid_output_path
             
+            # if cycle_no >= 1:
+
             self.logger.info("Fluid input path {}".format(fluid_obj.init.yaml_file['Paths']['Init_Path']))
             self.logger.info("Fluid output path {}".format(fluid_obj.init.yaml_file['Paths']['Out_Path']))
 
@@ -392,7 +394,7 @@ class Coupler:
 
             self.logger.info("Get Last Fluid Quants")
             (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
-            fluid_Z, _, fluid_mass) = fluid_obj.getLastStepQuants()
+            fluid_Z, _, fluid_mass, sim_time) = fluid_obj.getLastStepQuants()
          
             tfluid_end = time.time()
             self.fluid_time_taken.append(tfluid_end - tfluid_start)
