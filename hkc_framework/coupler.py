@@ -461,8 +461,8 @@ class Coupler:
 
             if self.init.yaml_file['Mode']['Limit_density']:
                 critical_density = 10 * (1114326918632954.5 / pow(fluid_obj.init.yaml_file['LaserParams']['Wavelength'], 2)) #Hard-coded limit to 10*nc
-                laser_dir = "left"#fluid_obj.laser_direction
-                # laser_dir = fluid_obj.laser_direction
+                # laser_dir = "left"#fluid_obj.laser_direction
+                laser_dir = fluid_obj.laser_direction
             else:
                 critical_density = None
                 laser_dir = None
@@ -492,12 +492,18 @@ class Coupler:
                 qe = hfct_obj.divQHeatFlow(laser_dir = laser_dir)
                 if self.init.yaml_file['Mode']['Couple_leap_frog'] or self.init.yaml_file['Mode']['Couple_operator_split'] : 
                     fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = True
+            elif self.init.yaml_file['Mode']['Couple_subtract']:
+
+                self.logger.info("Calculate subtaction factor dq")
+                qe = hfct_obj.getSubtractDq(laser_dir = laser_dir)
+                if self.init.yaml_file['Mode']['Couple_leap_frog'] or self.init.yaml_file['Mode']['Couple_operator_split'] : 
+                    fluid_obj.init.yaml_file['Switches']['CoupleSubtract'] = True
             elif self.init.yaml_file['Mode']['Couple_multi']:
                 #qe here is q_vfp/q_sh
                 self.logger.info("Calculate Multipliers")
                 (qe, pre_heat_start_index, pre_heat_last_index,
                 pre_heat_fit_params, front_heat_start_index, 
-                front_heat_last_index, front_heat_fit_params)  = hfct_obj.multiplier()
+                front_heat_last_index, front_heat_fit_params)  = hfct_obj.multiplier(laser_dir = laser_dir)
                 #If pre heat or front heat is present, in adapativbe coupling
                 #We utilise div.q coupling to get rid of these fronts.
                 #Otherwise, apply the exponential models. 
@@ -518,12 +524,6 @@ class Coupler:
                 if self.init.yaml_file['Mode']['Couple_leap_frog'] or self.init.yaml_file['Mode']['Couple_operator_split']: 
                     fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = self.init.yaml_file['Mode']['Couple_multi']
 
-            elif self.init.yaml_file['Mode']['Couple_subtract']:
-
-                self.logger.info("Calculate subtaction factor dq")
-                qe = hfct_obj.getSubtractDq()
-                if self.init.yaml_file['Mode']['Couple_leap_frog'] or self.init.yaml_file['Mode']['Couple_operator_split'] : 
-                    fluid_obj.init.yaml_file['Switches']['CoupleSubtract'] = True
 
 
 

@@ -3,22 +3,23 @@ Paths:
   Base_dir: /Users/shiki/DATA/HKC_RELATED/ 
   K_src_dir: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./SOL-KiT/
   F_src_dir: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./HyKiCT/debug/apps/
-  Init_path:  /Users/shiki/DATA/HKC_RELATED/init_data/gd_hohlraum_hydra_20_0/
+  #Init_path:  /Users/shiki/DATA/HKC_RELATED/init_data/gd_hohlraum_hydra_20_0/
+  Init_path:  /Users/shiki/DATA/HKC_RELATED/init_data/gorgon_10_steps_copper_hohlraum/
   F_config_path: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./HKC_FRAMEWORK/hkc_framework/couple_hykict/config.yml 
   K_config_path: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D.//HKC_FRAMEWORK/hkc_framework/couple_sol_kit/config.yml
 Codes:
   Kinetic_code: sol_kit
   Fluid_code: hykict
 Coupling_params:
-  Nx: 92
+  Nx: 240
   Cycles: 3
   Eta: 0.1E-2
   hdf5_output_freq: 2
   t_fluid_operator: 0.1E-10
 Mode:
   Couple_divq: false
-  Couple_multi: false 
-  Couple_subtract : true
+  Couple_multi: true 
+  Couple_subtract : false
   Couple_adaptive: false
   Couple_leap_frog: false
   Couple_operator_split: false

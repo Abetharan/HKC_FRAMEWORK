@@ -159,7 +159,10 @@ class HeatFlowCouplingTools:
             Returns: Div.Q
             NOTE: ONLY WORKS FOR SAME GRIDS
         """
+        ##Logic relevant only for Limit Density methods 
         heat_flow = self.vfp_heat
+
+        #Start limit-density
         limit_index = len(heat_flow)
         if laser_dir is not None:
             if laser_dir == "right":
@@ -170,6 +173,7 @@ class HeatFlowCouplingTools:
             else:
                 heat_flow = heat_flow[:-1]
                 heat_flow = np.append(heat_flow, self.spitzer_harm_heat[limit_index - 1:])
+        #End
 
         nx = len(heat_flow) 
         HeatConductionE = np.zeros(nx - 1)
@@ -177,16 +181,53 @@ class HeatFlowCouplingTools:
             HeatConductionE[i] = (-(heat_flow[i + 1] - heat_flow[i])) / m #- sign is there because of convention used in HyKiCT 
         return(HeatConductionE)
     
+    def getSubtractDq(self, laser_dir = None):
+        
+        ##Logic relevant only for Limit Density methods 
+        heat_flow = self.vfp_heat
+
+        #Start limit-density
+        limit_index = len(heat_flow)
+        if laser_dir is not None:
+            len_sh = len(self.spitzer_harm_heat)
+            if laser_dir == "right":
+                #Remove first term as its 0 
+                heat_flow = heat_flow[1:]
+                append_index = len_sh - limit_index + 1
+                #To retain spitzer-heat in fluid code remove the subtraction factor. 
+                self.spitzer_harm_heat[:append_index] = 0 
+                #Pad the VFP heat-flow as it wont be same shape as spitzer-harm
+                padding = len_sh - limit_index + 1
+                heat_flow = np.pad(heat_flow, (padding,0), 'constant', constant_values = (0,0))
+            else:
+                #Remove last term as its 0 
+                heat_flow = heat_flow[:-1]
+                #To retain spitzer-heat in fluid code remove the subtraction factor. 
+                self.spitzer_harm_heat[limit_index - 1:] = 0 
+                #Pad the VFP heat-flow as it wont be same shape as spitzer-harm
+                padding = len_sh - limit_index + 1
+                heat_flow = np.pad(heat_flow, (0,padding), 'constant', constant_values = (0,0))
+        #End
+
+        if self.snb:
+            return heat_flow - self.q_snb
+        else:
+            return heat_flow - self.spitzer_harm_heat
+
     def _detectAnamalousHeat(self):
         if all(self.spitzer_harm_heat == 0):
             return None, None
 
-        start_of_spitzer_harm_heat_flow_index = np.where(self.spitzer_harm_heat > 0)[0][0]
-        last_of_spitzer_harm_heat_flow_index = np.where(self.spitzer_harm_heat > 0)[0][-1]
+        start_of_spitzer_harm_heat_flow_index = np.where(abs(self.spitzer_harm_heat) > 0)[0][0]
+        last_of_spitzer_harm_heat_flow_index = np.where(abs(self.spitzer_harm_heat) > 0)[0][-1]
         front = None 
         pre = None
+        inf_multipliers = np.diff(np.where(np.isinf(self.q_vfp_q_sh_multipliers) == True)[0])
+
+        # if any(inf_multipliers <= 1):
         if(any(np.isnan(self.q_vfp_q_sh_multipliers[1:-2])) #boundaries are always nan as we have 0 inflow conditions. 
             or any(np.isinf(self.q_vfp_q_sh_multipliers))):
+        
             if any(abs(self.vfp_heat[:start_of_spitzer_harm_heat_flow_index]) > self.search_tolerance):
                 front = self.frontHeatModel
             if(any(abs(self.vfp_heat[last_of_spitzer_harm_heat_flow_index:]) > self.search_tolerance)):
@@ -196,27 +237,50 @@ class HeatFlowCouplingTools:
             self.q_vfp_q_sh_multipliers[np.isinf(self.q_vfp_q_sh_multipliers)] = 0
         return front, pre
 
-    def multiplier(self):
+    def multiplier(self, laser_dir = None):
         """ Purpose: Find multipliers and exponentially extrapolate for pre-heat
-            Args: 
-                vfp_qe : Kinetic heat flow to be transfered to fluid code.
             Returns: Multipliers
         """
                 
+        ##Limit density method 
+        ##Multipliers -> 1 for region that has been cut off 
+        ## If there is heat-flow there going to be using spitzer-harm regardless 
+        ## Models currently will work as intended. 
+        ##Maybe rework or work around anamalous heat detection function. 
         front_heat_start_index = np.int64(0) 
         front_heat_last_index = np.int64(0)
         pre_heat_start_index = np.int64(0)
         pre_heat_last_index = np.int64(0)
         front_heat_fit_params = None
         pre_heat_fit_params = None
+
+        if self.snb:
+            heat_flow = self.q_snb 
+        else:
+            heat_flow = self.spitzer_harm_heat
+
+        limit_index = len(heat_flow)
+        if laser_dir is not None:
+            len_vfp = len(self.vfp_heat)
+            if laser_dir == "right":
+                append_index = limit_index - len_vfp# + 1
+                heat_flow = heat_flow[append_index:]
+            else:
+                heat_flow = heat_flow[:limit_index+1] 
+        #End
         ##Test for pre-heat via looking at NaN outputs expected from q/q_sh
         #if nans
         if self.snb:
-            self.q_vfp_q_sh_multipliers = np.array(self.vfp_heat/self.q_snb)
+            self.q_vfp_q_sh_multipliers = np.array(self.vfp_heat/heat_flow)
         else:
-            self.q_vfp_q_sh_multipliers = np.array(self.vfp_heat/self.spitzer_harm_heat)
-        self.q_vfp_q_sh_multipliers[0] = 0
-        self.q_vfp_q_sh_multipliers[-1] = 0
+            self.q_vfp_q_sh_multipliers = np.array(self.vfp_heat/heat_flow)
+
+
+        if laser_dir is not None:
+            if laser_dir == "right":
+                self.q_vfp_q_sh_multipliers[-1] = 0
+            else:
+                self.q_vfp_q_sh_multipliers[0] = 0
         #Detect if there is Front heat
         #Detect if there is Pre-Heat
         #Modify as bounds will always be nan. 
@@ -230,6 +294,17 @@ class HeatFlowCouplingTools:
             pre_heat_last_index,
             pre_heat_fit_params) = pre()
 
+        if laser_dir is not None:
+            padding = limit_index - len_vfp
+            if laser_dir == "right":
+                self.q_vfp_q_sh_multipliers[0] = 1
+                self.q_vfp_q_sh_multipliers = np.pad(self.q_vfp_q_sh_multipliers, (padding, 0), 'constant', constant_values = (1,0))
+            else:
+                self.q_vfp_q_sh_multipliers[-1] = 1
+                self.q_vfp_q_sh_multipliers = np.pad(self.q_vfp_q_sh_multipliers, (0, padding), 'constant', constant_values = (0,1))
+
+        self.q_vfp_q_sh_multipliers[0] = 0
+        self.q_vfp_q_sh_multipliers[-1] = 0
         return(self.q_vfp_q_sh_multipliers, pre_heat_start_index, 
                 pre_heat_last_index, pre_heat_fit_params, 
                 front_heat_start_index, front_heat_last_index, front_heat_fit_params)
@@ -474,60 +549,3 @@ class HeatFlowCouplingTools:
         self.q_snb = self.spitzer_harm_heat[1:-1]  - q_nl
         self.q_snb = np.append(self.q_snb, 0)
         self.q_snb = np.insert(self.q_snb, 0 ,0)
-
-    def getSubtractDq(self, laser_dir = None):
-        heat_flow = self.vfp_heat
-        limit_index = len(heat_flow)
-        if laser_dir is not None:
-            if laser_dir == "right":
-                len_sh = len(self.spitzer_harm_heat)
-                heat_flow = heat_flow[1:]
-                padding = len_sh - len(heat_flow)
-                heat_flow = np.pad(heat_flow, (padding,), 'constant', constant_value = (0,))
-                # heat_flow =  np.append(self.spitzer_harm_heat[:append_index], heat_flow)
-            else:
-                len_sh = len(self.spitzer_harm_heat)
-                heat_flow = heat_flow[1:]
-                padding = len_sh - len(heat_flow)
-                heat_flow = np.pad(heat_flow, (0,padding), 'constant', constant_value = (0,0))
-                # heat_flow = np.append(heat_flow, self.spitzer_harm_heat[limit_index - 1:])
-
-        if self.snb:
-            return heat_flow - self.q_snb
-        else:
-            return heat_flow - self.spitzer_harm_heat
-        # if self.snb:
-        #     return self.vfp_heat - self.q_snb
-        # else:
-        #     return self.vfp_heat - self.spitzer_harm_heat
-
-
-# hfct_obj = HeatFlowCouplingTools()
-# Z = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_Z_interp', skiprows=1)[:, 1] 
-# Te = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_5ps_TekeV_interp', skiprows=1)[:, 1] * 1E3 *(e/kb)
-# ne = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_ne1e20cm3_interp', skiprows=1)[:, 1] * (1e20 * 1e6)
-# snb_brodrick = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_5ps_separatedsnbWcm2', skiprows=1)[:, 1]
-# impact_brodrick = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_5ps_IMPACTWcm2', skiprows=1)[:, 1]
-# coord = np.loadtxt('/Users/shiki/DATA/Brodrick_2017_data/gdhohlraum_xmic_5ps_separatedsnbWcm2', skiprows=1)[:, 0]*1e-6
-# Hykict_snb = np.loadtxt('/Users/shiki/DATA/HyKiCT_OUTPUT/ELECTRON_HEAT_FLOW_X/ELECTRON_HEAT_FLOW_X_0.txt') *-1e-4
-
-# hfct_obj.electron_temperature = Te
-# hfct_obj.electron_number_density = ne
-# hfct_obj.zbar = Z
-# hfct_obj.cell_wall_coord = coord
-# hfct_obj.cell_centered_coord = np.array([(coord[i+1] + coord[i]) / 2 for i in range(len(coord) - 1)])
-
-# #Calculate spitzer harm from last step fluid quants
-# hfct_obj.lambda_ei(hfct_obj.electron_temperature * (kb/e), 
-#                 hfct_obj.electron_number_density,
-#                 hfct_obj.zbar)
-# hfct_obj.spitzerHarmHeatFlow()
-# hfct_obj.snb_heat_flow(50, 20, 2)
-# import matplotlib.pyplot as plt 
-# plt.plot(coord, snb_brodrick, label = 'brodrick')
-# plt.plot(coord[1:-1], impact_brodrick, label = 'impact')
-# plt.plot(coord, hfct_obj.q_snb*1e-4, label = "SNB")
-# plt.plot(coord, Hykict_snb, label = "hykict SNB")
-# plt.plot(coord[1:-1], (1e-4*q_snb[1:-1]) / impact_brodrick)
-# plt.legend()
-# plt.show()
