@@ -463,8 +463,8 @@ class Coupler:
 
             if self.init.yaml_file['Mode']['Limit_density']:
                 critical_density = 10 * (1114326918632954.5 / pow(fluid_obj.init.yaml_file['LaserParams']['Wavelength'], 2)) #Hard-coded limit to 10*nc
-                # laser_dir = "left"#fluid_obj.laser_direction
-                laser_dir = fluid_obj.laser_direction
+                laser_dir = "left"#fluid_obj.laser_direction
+                # laser_dir = fluid_obj.laser_direction
             else:
                 critical_density = None
                 laser_dir = None
@@ -525,11 +525,6 @@ class Coupler:
                         fluid_obj.init.yaml_file['FixedParameters']['Frontheat_LastIndex'] = front_heat_last_index.item()
                 if self.init.yaml_file['Mode']['Couple_leap_frog'] or self.init.yaml_file['Mode']['Couple_operator_split']: 
                     fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = self.init.yaml_file['Mode']['Couple_multi']
-
-
-
-
-
             #Leap Frog Step/Operator-Split if turned on 
             if self.init.yaml_file['Mode']['Couple_leap_frog'] or self.init.yaml_file['Mode']['Couple_operator_split']:
 
