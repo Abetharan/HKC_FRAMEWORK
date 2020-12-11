@@ -65,14 +65,6 @@ class HeatFlowCouplingTools:
         """
         Purpose: Models Spitzer Harm heat flow 
         """
-        # self.coulomb_log = []
-        # for i in range(len(zbar)):
-        #     coulomb = self.lambda_ei(T_norm = self.electron_temperature[i] * (kb/e),
-        #                              n_norm = self.electron_number_density[i], Z_norm = self.zbar[i])
-            # self.coulomb_log.append(coulomb)
-# 
-        # self.coulomb_log = np.array(self.coulomb_log)
-        #kappaE = 1.843076667547614E-10 * pow(self.electron_temperature, 2.5) * pow(self.coulomb_log, -1) *  pow(self.zbar, -1)
         kappaE =  13.6*((self.zbar+0.24)/(self.zbar+4.24))*5.759614586E-11* pow(self.electron_temperature, 2.5) * pow(self.coulomb_log, -1) *  pow(self.zbar, -1)
         nx = len(self.electron_temperature)
         HeatFlowE = np.zeros(nx + 1)
@@ -85,65 +77,6 @@ class HeatFlowCouplingTools:
         HeatFlowE[0] = 0
         HeatFlowE[-1] = 0
         self.spitzer_harm_heat = -1 * HeatFlowE
-
-    # def preHeatModel(self):
-    #     """ 
-    #     Purpose: Model Pre-heat using an exponential fitting parameter, fit parameter
-    #                 is spat out to be used by the fluid code.
-    #     Args:
-    #     Returns:
-    #         B = Fitting paramters
-    #         preheat_start = start index for preheat
-    #         preheat_end = end index of preheat
-    #     """
-    #     preheat_start = np.where(self.q_vfp_q_sh_multipliers[~np.isinf(self.q_vfp_q_sh_multipliers)] != 0)[0][-1]
-    #     preheat_end = np.where(abs(self.vfp_heat[preheat_start:]) < self.search_tolerance)
-    #     #if search fails i.e. valid heat flow in all domain
-    #     if(len(preheat_end[0]) == 0):
-    #         preheat_end = len(self.q_vfp_q_sh_multipliers)
-    #     else:
-    #         preheat_end = preheat_end[0][0] + preheat_start
-
-    #     L = self.cell_wall_coord[preheat_end] -self.cell_wall_coord[preheat_start] 
-    #     B = []
-
-    #     for i in range(preheat_start, preheat_end):
-    #         b = (-1* (self.cell_wall_coord[i] - self.cell_wall_coord[preheat_start]) 
-    #             / (L * np.log(abs(self.vfp_heat[i])/self.vfp_heat[preheat_start])))
-    #         B.append(b)
-            
-    #     B = np.array(B)
-    #     return(preheat_start, preheat_end, B)
-
-    # def frontHeatModel(self):
-    #     """
-        # Purpose: Model heat wave from top of a bath.
-        # Args:
-        # Returns:
-        #     B = Fitting paramters
-        #     frontheat_start = start of front heat
-        #     frontheat_end = end of front 
-        #     heat
-        # """
-
-        # frontheat_start = np.where(self.q_vfp_q_sh_multipliers[~np.isinf(self.q_vfp_q_sh_multipliers)] != 0)[0][0]
-        # frontheat_end = np.where(abs(self.vfp_heat[:frontheat_start]) < self.search_tolerance)
-        # #if search fails i.e. valid heat flow in all domain
-        # if(len(frontheat_end[0]) == 0):
-        #     frontheat_end = 0
-        # else:
-        #     frontheat_end = frontheat_end[0][0]
-
-        # L = abs(self.cell_wall_coord[frontheat_end] - self.cell_wall_coord[frontheat_start])
-        # B = []
-
-        # for i in range(0, frontheat_start+1):
-        #     b = (-1* (self.cell_wall_coord[i] - self.cell_wall_coord[frontheat_start]) 
-        #         / (L * np.log(abs(self.vfp_heat[i])/self.vfp_heat[frontheat_start])))
-        #     B.append(b)
-
-        # B = np.array(B)
-        # return(frontheat_start, frontheat_end, B)
 
     def divQHeatFlow(self, step = 2,  laser_dir = None):
         """ Purpose: Find Div.Q
@@ -296,29 +229,6 @@ class HeatFlowCouplingTools:
         last_of_spitzer_harm_heat_flow_index = np.where(abs(heat_flow) > 0)[0][-1]
         front = None 
         pre = None
-        inf_multipliers = np.diff(np.where(np.isinf(self.q_vfp_q_sh_multipliers) == True)[0])
-
-        # if any(inf_multipliers <= 1):
-        if(any(np.isnan(self.q_vfp_q_sh_multipliers[1:-2])) #boundaries are always nan as we have 0 inflow conditions. 
-            or any(np.isinf(self.q_vfp_q_sh_multipliers))):
-        
-            if any(abs(self.vfp_heat[:start_of_spitzer_harm_heat_flow_index]) > self.search_tolerance):
-                front = self.frontHeatModel
-            if(any(abs(self.vfp_heat[last_of_spitzer_harm_heat_flow_index:]) > self.search_tolerance)):
-                pre = self.preHeatModel
-
-            self.q_vfp_q_sh_multipliers[np.isnan(self.q_vfp_q_sh_multipliers)] = 0
-            self.q_vfp_q_sh_multipliers[np.isinf(self.q_vfp_q_sh_multipliers)] = 0
-        return front, pre
-
-    def _detectAnamalousHeat(self, heat_flow):
-        if (all(self.spitzer_harm_heat == 0)):
-            return None, None
-
-        start_of_spitzer_harm_heat_flow_index = np.where(abs(heat_flow) > 0)[0][0]
-        last_of_spitzer_harm_heat_flow_index = np.where(abs(heat_flow) > 0)[0][-1]
-        front = None 
-        pre = None
         inf_mulitplier_index = np.where(np.isinf(self.q_vfp_q_sh_multipliers) == True)[0]
         diff_inf_index = np.diff(inf_mulitplier_index)
         if any(diff_inf_index > 1):
@@ -416,9 +326,9 @@ class HeatFlowCouplingTools:
 
         self.q_vfp_q_sh_multipliers[0] = 0
         self.q_vfp_q_sh_multipliers[-1] = 0
-        return(self.q_vfp_q_sh_multipliers, pre_heat_start_index, 
-                pre_heat_last_index, pre_heat_fit_params, 
-                front_heat_start_index, front_heat_last_index, front_heat_fit_params)
+        return(self.q_vfp_q_sh_multipliers, self.pre_heat_start_index, 
+                self.pre_heat_last_index, self.pre_heat_fit_params, 
+                self.front_heat_start_index, self.front_heat_last_index, self.front_heat_fit_params)
 
     def interpolateThermo(self, boundary_condition, normalised_values):
         # NOrmalise SI to Impact norms
