@@ -323,6 +323,13 @@ class HeatFlowCouplingTools:
             else:
                 self.q_vfp_q_sh_multipliers[-1] = 1
                 self.q_vfp_q_sh_multipliers = np.pad(self.q_vfp_q_sh_multipliers, (0, padding), 'constant', constant_values = (0,1))
+            
+            if self.front_heat_start_index > 0:
+                self.front_heat_start_index += padding
+                self.front_heat_last_index += padding
+            if self.pre_heat_start_index > 0:
+                self.pre_heat_last_index += padding
+                self.pre_heat_last_index += padding
 
         self.q_vfp_q_sh_multipliers[0] = 0
         self.q_vfp_q_sh_multipliers[-1] = 0
