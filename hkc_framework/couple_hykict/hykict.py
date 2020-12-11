@@ -95,7 +95,11 @@ class HyKiCT(Fluid):
         if qe is not None:
             np.savetxt(os.path.join(next_fluid_input_path,"qe.txt"), qe)
 
-        if pre_params is not None:
+        if pre_params is not None or front_params is not None:
+            if pre_params is None:
+                pre_params = np.array([0])
+            if front_params is None:
+                front_params = np.array([0])
             np.savetxt(os.path.join(next_fluid_input_path,"pre_heat_fit_param.txt"), pre_params)
             np.savetxt(os.path.join(next_fluid_input_path,"front_heat_fit_param.txt"), front_params)
 
