@@ -21,6 +21,7 @@ import utils as util
 from couple_sol_kit.sol_kit import SOL_KIT
 from couple_hykict.hykict import HyKiCT
 from scipy import constants
+# from couple_methods import Multiplier, DivQ, Subtrac 
 BOLTZMANN_CONSTANT = constants.value("Boltzmann constant")
 ELECTRON_MASS = constants.value("electron mass")
 PROTON_MASS = constants.value("proton mass")
@@ -463,8 +464,8 @@ class Coupler:
 
             if self.init.yaml_file['Mode']['Limit_density']:
                 critical_density = 10 * (1114326918632954.5 / pow(fluid_obj.init.yaml_file['LaserParams']['Wavelength'], 2)) #Hard-coded limit to 10*nc
-                # laser_dir = "left"#fluid_obj.laser_direction
-                laser_dir = fluid_obj.laser_direction
+                laser_dir = "left"#fluid_obj.laser_direction
+                # laser_dir = fluid_obj.laser_direction
             else:
                 critical_density = None
                 laser_dir = None
