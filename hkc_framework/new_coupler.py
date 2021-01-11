@@ -345,22 +345,15 @@ class Coupler:
                         fluid_x_grid, fluid_x_centered_grid, 
                                 fluid_Te, fluid_ne, fluid_Z)
 
-            coupling_vals = couple_obj.method(self.hfct_obj.spitzer_harm_heat, vfp_heat, 
+            couple_obj.method(self.hfct_obj.spitzer_harm_heat, vfp_heat, 
                             laser_dir = self.laser_dir, mass = fluid_mass, cell_wall_coord = fluid_x_grid,
                             q_snb = self.hfct_obj.q_snb)
             
             couple_obj.setCoupleParams(self.io_obj.next_fluid_input_path, fluid_yaml = self.fluid_obj.init.yaml_file)
 
+        # if self.init.yaml_file['Mode']['Couple_leap_frog']:
 
-
-
-
-
-
-
-
-
-
+        # elif self.init.yaml_file['Mode']['Couple_operator_split']:
 
 
 

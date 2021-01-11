@@ -1,5 +1,5 @@
 import numpy as np 
-
+import os
 
 
 class Subtract:
@@ -33,8 +33,11 @@ class Subtract:
                 padding = len_sh - limit_index + 1
                 heat_flow = np.pad(heat_flow, (0,padding), 'constant', constant_values = (0,0))
         #End
-
+        
         if q_snb is not None:
-            return heat_flow - q_snb
+            self.subtract_factor = heat_flow - q_snb
         else:
-            return heat_flow - sh_heat_flow
+            self.subtract_factor = heat_flow - sh_heat_flow
+
+    def setCoupleParams(self, save_path, **kwargs):
+        np.savetxt(os.path.join(save_path,"qe.txt"), self.subtract_factor)

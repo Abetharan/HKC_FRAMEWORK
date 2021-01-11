@@ -1,5 +1,5 @@
 import numpy as np 
-
+import os
 
 class Multiplier: 
 
@@ -198,22 +198,14 @@ class Multiplier:
         self.q_vfp_q_sh_multipliers[0] = 0
         self.q_vfp_q_sh_multipliers[-1] = 0
 
-        return(self.q_vfp_q_sh_multipliers, self.pre_heat_fit_params, 
-                 self.front_heat_fit_params,
-                self.front_heat_start_index, 
-                self.front_heat_last_index,
-                self.pre_heat_start_index,
-                self.pre_heat_last_index)
-
     def setCoupleParams(self, save_path, **kwargs):
 
-        kwargs['fluid_yaml']['FixedParameters']['Preheat_StartIndex'] = pre_heat_start_index.item()
-        kwargs['fluid_yaml']['FixedParameters']['Preheat_LastIndex'] = pre_heat_last_index.item()
-        kwargs['fluid_yaml']['FixedParameters']['Frontheat_StartIndex'] = front_heat_start_index.item()
-        kwargs['fluid_yaml']['FixedParameters']['Frontheat_LastIndex'] = front_heat_last_index.item()
-        if pre_heat_last_index > 
-        if pre_heat_fit_params is not None:
-            np.savetxt(os.path.join(io_obj.fluid_input_path,"pre_heat_fit_param.txt"), pre_heat_fit_params)
-            np.savetxt(os.path.join(io_obj.fluid_input_path,"front_heat_fit_param.txt"), front_heat_fit_params)
+        kwargs['fluid_yaml']['FixedParameters']['Preheat_StartIndex'] = self.pre_heat_start_index.item()
+        kwargs['fluid_yaml']['FixedParameters']['Preheat_LastIndex'] = self.pre_heat_last_index.item()
+        kwargs['fluid_yaml']['FixedParameters']['Frontheat_StartIndex'] = self.front_heat_start_index.item()
+        kwargs['fluid_yaml']['FixedParameters']['Frontheat_LastIndex'] = self.front_heat_last_index.item()
+        if self.pre_heat_fit_params is not None or self.front_heat_fit_params is not None: 
+            np.savetxt(os.path.join(save_path,"pre_heat_fit_param.txt"), self.pre_heat_fit_params)
+            np.savetxt(os.path.join(save_path,"front_heat_fit_param.txt"), self.front_heat_fit_params)
 
         np.savetxt(os.path.join(save_path,"qe.txt"), self.q_vfp_q_sh_multipliers)
