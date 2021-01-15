@@ -206,7 +206,7 @@ class HeatFlowCouplingTools:
             frontheat_end = np.where(abs(self.vfp_heat[:frontheat_start]) < self.search_tolerance)
         #if search fails i.e. valid heat flow in all domain
         if(len(frontheat_end[0]) == 0):
-            frontheat_end = 0
+            frontheat_end = np.int64(0)
         else:
             frontheat_end = frontheat_end[0][0]
 
