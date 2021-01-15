@@ -35,6 +35,7 @@ class HeatFlowCouplingTools:
         self.q_vfp_q_sh_multipliers = np.array([])
         self.search_tolerance = 1e-9
         self.snb = False
+        self.q_snb = None
 
     def lambda_ei(self, T_norm , n_norm, Z_norm, return_arg = False, return_array = False):
         coulomb_logs = []

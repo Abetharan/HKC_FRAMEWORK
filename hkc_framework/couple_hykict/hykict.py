@@ -17,7 +17,7 @@ from utils import Input
 class HyKiCT(Fluid):
 
     def __init__(self, run_path = None, f_src_dir = None, f_input_path = None,
-                 f_config_yml_file_path = None):
+                 f_config_yml_file_path = None, nx = 0, tmax = 0, start_from_kin = True, **kwargs):
 
         self.init = Input(f_config_yml_file_path)
         self._fluid_src_dir = f_src_dir
@@ -27,10 +27,35 @@ class HyKiCT(Fluid):
         self.cycle_dump_path = ""
         self._copyHyKiCT()
         self.laser_direction = 'right'
-    
+        self.tmax = tmax 
+        self.init.yaml_file['TimeParameters']['steps'] = 0
+        self.init.yaml_file['FixedParameters']['nx'] = nx 
+        self.couple_mode = None
+        self.cycle_no = 0
+        for couple_mode, logic in kwargs.items():
+            if logic:
+                self.couple_mode = couple_mode  
+                break
+
+        if start_from_kin:
+            self.init.yaml_file['TimeParameters']['t_max'] = 0
+            self.init.yaml_file['Switches']['CoupleDivQ'] = False
+            self.init.yaml_file['Switches']['CoupleMulti'] = False 
+            self.init.yaml_file['Switches']['CoupleSubtract'] = False 
+        else:
+            self.init.yaml_file['TimeParameters']['t_max'] = self.tmax
+            self.init.yaml_file['Switches'][self.couple_mode] = True
+
+    def revertStartKinSwitches(self):
+        """
+        Purpose: Sets the expected switches to HyKiCT which were
+                changed due to Start Kinetic Mode. 
+        """
+        self.init.yaml_file['TimeParameters']['t_max'] = self.tmax
+        self.init.yaml_file['Switches'][self.couple_mode] = True
+
     def setFiles(self):
         """ Purpose: Write out config.yml for each cycle"""
-
         yaml_dump_path = os.path.join(self.cycle_dump_path, 'config.yml')
         with open(yaml_dump_path, 'w') as outfile: 
             yaml.dump(self.init.yaml_file, outfile)
@@ -92,16 +117,16 @@ class HyKiCT(Fluid):
         """ 
         largest_fluid_index = findLargestIndex(os.path.join(self._fluid_output_path, "ELECTRON_TEMPERATURE"))
         #Properitary names for HyKiCT. Looks for these files when run in coupled mode
-        if qe is not None:
-            np.savetxt(os.path.join(next_fluid_input_path,"qe.txt"), qe)
+        # if qe is not None:
+        #     np.savetxt(os.path.join(next_fluid_input_path,"qe.txt"), qe)
 
-        if pre_params is not None or front_params is not None:
-            if pre_params is None:
-                pre_params = np.array([0])
-            if front_params is None:
-                front_params = np.array([0])
-            np.savetxt(os.path.join(next_fluid_input_path,"pre_heat_fit_param.txt"), pre_params)
-            np.savetxt(os.path.join(next_fluid_input_path,"front_heat_fit_param.txt"), front_params)
+        # if pre_params is not None or front_params is not None:
+        #     if pre_params is None:
+        #         pre_params = np.array([0])
+        #     if front_params is None:
+        #         front_params = np.array([0])
+        #     np.savetxt(os.path.join(next_fluid_input_path,"pre_heat_fit_param.txt"), pre_params)
+        #     np.savetxt(os.path.join(next_fluid_input_path,"front_heat_fit_param.txt"), front_params)
 
         #Standard init files. 
         #These files should correspond to the last state of the fluid step. 

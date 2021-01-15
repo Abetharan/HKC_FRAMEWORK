@@ -38,7 +38,7 @@ BOHR_RADIUS = constants.value("Bohr radius")
 class SOL_KIT(Kinetic):
     
     def __init__(self,run_path,  k_src_dir, kinetic_input_path, kinetic_output_path,
-                k_config_yml_file_path, convergence_monitoring = False, cx1 = False):
+                k_config_yml_file_path, nx, convergence_monitoring = False, cx1 = False):
         
         # config_yml_file_path = os.path.join(
         #                         pathlib.Path(__file__).parent.absolute(),
@@ -53,7 +53,7 @@ class SOL_KIT(Kinetic):
         #objects
         self.heat_flow_tools = HeatFlowCouplingTools() 
         self.init = Input(k_config_yml_file_path)
-        
+        self.init.yaml_file['Params']['Nx'] = nx
         #paths
         self._run_path = run_path
         self._kinetic_input_path = kinetic_input_path
@@ -70,7 +70,7 @@ class SOL_KIT(Kinetic):
         self.normalised_values = None
         self.cx1 = cx1
         self._np = self.init.yaml_file['Params']['Np'] 
-
+        self.nx = nx 
         self.l_max = self.init.yaml_file['Params']['L_max']
         self._norm_Te = float(self.init.yaml_file['Norms']['Te'])
         self._norm_Z = float(self.init.yaml_file['Norms']['Z'])

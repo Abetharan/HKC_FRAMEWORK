@@ -3,7 +3,7 @@ import os
 
 
 class DivQ:
-    def method(self, sh_heat_flow, vfp_heat_flow, mass, laser_dir = None, **kwargs):
+    def method(self, sh_heat_flow, vfp_heat_flow, laser_dir = None, **kwargs):
         """ Purpose: Find Div.Q
             Args:
                 electron_thermal_flux = SOL-KiT heat flux in SI

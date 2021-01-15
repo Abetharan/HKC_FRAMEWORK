@@ -8,7 +8,7 @@ BoundaryConditions:
   Rad_Source_Left: 0
 FixedParameters:
   nx: 92
-  ng: 20
+  ng: 0
   MaxE: 12
   FixedOpacityValue: 0
   Frontheat_LastIndex: 0
@@ -23,8 +23,8 @@ LaserParams:
   Wavelength: 0.351E-6 #0.351E-6 for gold
   Angle: 0
 Limiters:
-  heatflxlmE: 1.0
-  heatflxlmI: 1.0
+  heatflxlmE: 0.15
+  heatflxlmI: 0.15
   prrm: 1.0
   radabm: 1.0
   radbrm: 1.0
@@ -70,20 +70,20 @@ Switches:
   CoupleMulti: false
   CoupleOperatorSplit: false
   CoupleSubtract: false
-  Exchange: true
+  Exchange: false
   FullyIonized: true 
   HeatConduction: true
   IdealGas: true
-  InvBrem: true
+  InvBrem: false
   ImplicitHeatConduction: false
   IsothermalMode: false
   LoadInLaserProfile: false 
   MultiMaterial: false
-  RadDiffusion: true
-  RadFreeFree: true
+  RadDiffusion: false
+  RadFreeFree: false
   RadPdVWork: false
-  RadiationTransport: true 
-  SingleTemperature: false 
+  RadiationTransport: false
+  SingleTemperature: true 
   SNBHeatFlow: false
   Velocity: true
   Viscosity: true
@@ -100,7 +100,7 @@ TimeParameters:
   dt: 1.0e-17 #5.608e-11
   dt_max: 1.0e-14
   dt_min: 5.0e-16
-  steps: 20
+  steps: 0
   t_max: 0
   t_init: 0
   AdapativeMethod: 1 #0 is BUCKY, >0 HYADES
