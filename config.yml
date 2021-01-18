@@ -17,8 +17,8 @@ Coupling_params:
   t_fluid_operator: 0.1E-10
 Mode:
   Couple_divq: false
-  Couple_multi: false 
-  Couple_subtract : true
+  Couple_multi: true
+  Couple_subtract : false
   Couple_adaptive: false
   Couple_leap_frog: false
   Couple_operator_split: false
@@ -29,6 +29,6 @@ Misc:
   HDF5: false
   Convergence_monitoring: true
   Zip: false
-  Continue: false 
+  Continue: true 
   HPC: false 
   Overwrite: true

@@ -141,7 +141,20 @@ class Coupler:
         self.logger.addHandler(ch)
         atexit.register(self.cleanUpHandlers)
 
-        
+        if start_cycle > 0:
+            continue_fluid_yml_path = os.path.join(io_obj.all_cycle_path[start_cycle], 'config.yml')
+            if os.path.exists(continue_fluid_yml_path):
+               self.init.yaml_file['Paths']['F_config_path'] = continue_fluid_yml_path
+            cpu_time_path = os.path.join(RUN_PATH, 'Cycle_CPU_time.txt')
+            fluid_time_path  = os.path.join(RUN_PATH, 'Fluid_CPU_time.txt')
+            kin_time_path  = os.path.join(RUN_PATH, 'Kinetic_CPU_time.txt')
+            if os.path.exists(cpu_time_path):
+                self.cycle_time_taken = [np.loadtxt(cpu_time_path).tolist()]
+            if os.path.exists(fluid_time_path):
+                self.fluid_time_taken = [np.loadtxt(fluid_time_path).tolist()]
+            if os.path.exists(cpu_time_path):
+                self.kinetic_time_taken = [np.loadtxt(kin_time_path).tolist()]
+
         fluid_obj = HyKiCT(
                             io_obj._run_path, 
                             io_obj._f_src_dir, 
@@ -213,7 +226,7 @@ class Coupler:
             fluid_obj.init.yaml_file['Switches']['CoupleDivQ'] = False
             fluid_obj.init.yaml_file['Switches']['CoupleMulti'] = False
             fluid_obj.init.yaml_file['Switches']['CoupleSubtract'] = False
-
+        
         #Allows to run coupled immediately 
         #Assumes the necessary files exists in the init folder
         #This statements allows for adaptive coupling mode 
@@ -303,10 +316,11 @@ class Coupler:
                                 self.logger.info("Engage Coupling if MODE: Div.q")
                             elif self.init.yaml_file['Mode']['Couple_multi']:
                                 self.logger.info("Engage Coupling if MODE: Multi")
-                                fluid_obj.init.yaml_file['FixedParameters']['Preheat_StartIndex'] = pre_heat_start_index.item()
-                                fluid_obj.init.yaml_file['FixedParameters']['Preheat_LastIndex'] = pre_heat_last_index.item()
-                                fluid_obj.init.yaml_file['FixedParameters']['Frontheat_StartIndex'] = front_heat_start_index.item()
-                                fluid_obj.init.yaml_file['FixedParameters']['Frontheat_LastIndex'] = front_heat_last_index.item()
+                                if not self.first_pass: 
+                                    fluid_obj.init.yaml_file['FixedParameters']['Preheat_StartIndex'] = pre_heat_start_index.item()
+                                    fluid_obj.init.yaml_file['FixedParameters']['Preheat_LastIndex'] = pre_heat_last_index.item()
+                                    fluid_obj.init.yaml_file['FixedParameters']['Frontheat_StartIndex'] = front_heat_start_index.item()
+                                    fluid_obj.init.yaml_file['FixedParameters']['Frontheat_LastIndex'] = front_heat_last_index.item()
 
                             elif self.init.yaml_file['Mode']['Couple_subtract']:
                                 self.logger.info("Engage Coupling if MODE: Subtract")
@@ -384,6 +398,8 @@ class Coupler:
                 np.savetxt(continue_step_path, np.array([cycle_no]), fmt = '%i')
                 t1 = time.time()
                 self.cycle_time_taken.append(t1-t0)
+                tfluid_end = time.time()
+                self.fluid_time_taken.append(tfluid_end - tfluid_start)
                 self.logger.info('CPU TIME FOR CYCLE {} IS {} '.format(cycle_no, t1-t0))
                 self.logger.info("Terminating Coupling")
                 np.savetxt(fluid_time_path, np.array([self.fluid_time_taken]))
