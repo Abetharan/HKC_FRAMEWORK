@@ -21,6 +21,7 @@ class TestCoupler:
         coupler.init.yaml_file['Paths']['F_config_path'] = os.path.join(myPath, 'OrdinaryTest/hykict_config.yml')
         coupler.init.yaml_file['Paths']['K_config_path'] = os.path.join(myPath, 'OrdinaryTest/sol_config.yml')
         coupler.init.yaml_file['Paths']['Init_Path'] = os.path.join(myPath, 'OrdinaryTest/step_problem_100_nx')
+        print(coupler.init.yaml_file)
         coupler.init.yaml_file['Mode']['Couple_multi'] = True
         coupler.main()
 

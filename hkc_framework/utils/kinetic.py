@@ -18,7 +18,6 @@ class Kinetic():
         self.status_path = ""
         self.convergence_func = convergence_func
         self.monitor_convergence = convergence_monitoring
-        self.nx = 0
         self.cmd = cmd
         self.converged = False
         self.search_tolerance = 1e-16

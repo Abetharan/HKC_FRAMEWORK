@@ -130,10 +130,10 @@ class Multiplier:
         ## If there is heat-flow there going to be using spitzer-harm regardless 
         ## Models currently will work as intended. 
         ##Maybe rework or work around anamalous heat detection function. 
-        self.front_heat_start_index = np.int64(0) 
-        self.front_heat_last_index = np.int64(0)
-        self.pre_heat_start_index = np.int64(0)
-        self.pre_heat_last_index = np.int64(0)
+        self.front_heat_start_index = int(0) 
+        self.front_heat_last_index = int(0)
+        self.pre_heat_start_index = int(0)
+        self.pre_heat_last_index = int(0)
         self.front_heat_fit_params = None
         self.pre_heat_fit_params = None
 
@@ -168,7 +168,7 @@ class Multiplier:
         #Detect if there is Front heat
         #Detect if there is Pre-Heat
         #Modify as bounds will always be nan. 
-        if self.q_snb is not None:
+        if self.q_snb is None:
             front, pre = self._detectAnamalousHeat(heat_flow)
             if front is not None:
                 (self.front_heat_start_index, 
@@ -200,10 +200,10 @@ class Multiplier:
 
     def setCoupleParams(self, save_path, **kwargs):
 
-        kwargs['fluid_yaml']['FixedParameters']['Preheat_StartIndex'] = self.pre_heat_start_index.item()
-        kwargs['fluid_yaml']['FixedParameters']['Preheat_LastIndex'] = self.pre_heat_last_index.item()
-        kwargs['fluid_yaml']['FixedParameters']['Frontheat_StartIndex'] = self.front_heat_start_index.item()
-        kwargs['fluid_yaml']['FixedParameters']['Frontheat_LastIndex'] = self.front_heat_last_index.item()
+        kwargs['fluid_yaml']['FixedParameters']['Preheat_StartIndex'] = self.pre_heat_start_index
+        kwargs['fluid_yaml']['FixedParameters']['Preheat_LastIndex'] = self.pre_heat_last_index
+        kwargs['fluid_yaml']['FixedParameters']['Frontheat_StartIndex'] = self.front_heat_start_index
+        kwargs['fluid_yaml']['FixedParameters']['Frontheat_LastIndex'] = self.front_heat_last_index
         if self.pre_heat_fit_params is not None or self.front_heat_fit_params is not None: 
             np.savetxt(os.path.join(save_path,"pre_heat_fit_param.txt"), self.pre_heat_fit_params)
             np.savetxt(os.path.join(save_path,"front_heat_fit_param.txt"), self.front_heat_fit_params)
