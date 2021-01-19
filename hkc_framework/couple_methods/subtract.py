@@ -3,6 +3,8 @@ import os
 
 
 class Subtract:
+    def __init__(self):
+        self.limit_density = False
     def method(self,sh_heat_flow, vfp_heat_flow, laser_dir = None, **kwargs):
         ##Logic relevant only for Limit Density methods 
         heat_flow = vfp_heat_flow

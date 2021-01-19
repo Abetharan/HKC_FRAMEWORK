@@ -5,7 +5,8 @@ class Multiplier:
 
     def __init__(self):
         self.search_tolerance = 1e-9
-
+        self.limit_density = False
+    
     def preHeatModel(self, rough = False):
         """ 
         Purpose: Model Pre-heat using an exponential fitting parameter, fit parameter
@@ -157,9 +158,6 @@ class Multiplier:
         #     self.q_vfp_q_sh_multipliers = np.array(self.vfp_heat/heat_flow)
         # else:
         self.q_vfp_q_sh_multipliers = np.array(self.vfp_heat/heat_flow)
-        if laser_dir is None:
-            self.q_vfp_q_sh_multipliers[-1] = 0
-            self.q_vfp_q_sh_multipliers[0] = 0
 
         if laser_dir is not None:
             if laser_dir == "right":

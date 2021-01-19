@@ -3,6 +3,9 @@ import os
 
 
 class DivQ:
+    def __init__(self):
+        self.limit_density = False
+
     def method(self, sh_heat_flow, vfp_heat_flow, laser_dir = None, **kwargs):
         """ Purpose: Find Div.Q
             Args:
