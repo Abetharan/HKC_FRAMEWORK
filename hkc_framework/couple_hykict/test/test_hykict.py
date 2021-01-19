@@ -3,8 +3,8 @@ import pytest
 import os
 import sys
 myPath = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, myPath + '/..../')
-from couple_hykict.hykict import HyKiCT
+sys.path.insert(0, myPath + '/../../../')
+from hkc_framework.couple_hykict.hykict import HyKiCT
 
 class TestHyKiCT():
 
@@ -26,8 +26,7 @@ class TestHyKiCT():
         f_obj._fluid_output_path = output_path
         f_obj._fluid_input_path = input_path
          
-        (f_x_grid, f_x_centered_grid, f_v, 
-        f_ne, f_Te, f_Z, f_laser, mass) = f_obj.getLastStepQuants()
+        (f_x_grid, f_x_centered_grid, f_v, f_ne, f_Te, f_Z, f_laser, mass, f_time) = f_obj.getLastStepQuants()
 
         f_x_grid == pytest.approx(np.loadtxt(os.path.join(output_path, 'CELL_WALL_X/CELL_WALL_X_1.txt')))
         f_x_centered_grid == pytest.approx(np.loadtxt(os.path.join(output_path, 'CELL_CENTRE_X/CELL_CENTRE_X_1.txt')))
@@ -51,7 +50,7 @@ class TestHyKiCT():
         f_obj._fluid_output_path = output_path
         f_obj._fluid_input_path = input_path
 
-        f_obj.initHydroFromKinetic(tmpdir, qe, qe, qe)
+        f_obj.initHydro(tmpdir)
         true_x = np.loadtxt(os.path.join(output_path, 'CELL_WALL_X/CELL_WALL_X_1.txt'))
         true_v = np.loadtxt(os.path.join(output_path, 'VELOCITY/VELOCITY_1.txt'))
         true_density = np.loadtxt(os.path.join(output_path, 'DENSITY/DENSITY_1.txt'))
@@ -68,6 +67,6 @@ class TestHyKiCT():
         true_mass == pytest.approx(np.loadtxt(os.path.join(tmpdir, 'mass.txt')))
         true_Ar == pytest.approx(np.loadtxt(os.path.join(tmpdir, 'Ar.txt')))
         
-        qe == pytest.approx(np.loadtxt(os.path.join(tmpdir, 'qe.txt')))
-        qe == pytest.approx(np.loadtxt(os.path.join(tmpdir, 'pre_heat_fit_param.txt')))
-        qe == pytest.approx(np.loadtxt(os.path.join(tmpdir, 'front_heat_fit_param.txt')))
+        # qe == pytest.approx(np.loadtxt(os.path.join(tmpdir, 'qe.txt')))
+        # qe == pytest.approx(np.loadtxt(os.path.join(tmpdir, 'pre_heat_fit_param.txt')))
+        # qe == pytest.approx(np.loadtxt(os.path.join(tmpdir, 'front_heat_fit_param.txt')))

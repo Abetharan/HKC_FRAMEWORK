@@ -3,23 +3,32 @@ Paths:
       Out_Path: "" #leave empty handled by coupler
       FEOS_Path_1: ""
       FEOS_Path_2: ""
+      Opacity_Path_1: ""
+      Opacity_Path_2: ""
+      Laser_Profile_Path: ""
+BoundaryConditions:
+      Hydro_Right_Boundary: f
+      Rad_Left_Boundary: r
+      Rad_Right_Boundary: r 
+      Rad_Dirichlet_Left: 0
+      Rad_Dirichlet_Right: 0
+      Rad_Source_Right: 0
+      Rad_Source_Left: 0
+LaserParams:
+      Time_Bin: 1.0e-14 #Only relevant if load in laser profile is used. 
+      Duration: 2.0e-9 #Always relevant
+      Constant_Power: 1.0E20 #If load in laser profile is true this is ignored.
+      Wavelength: 0.351E-6 #0.351E-6 for gold
+      Angle: 0
 FixedParameters:
       nx: 200
-      Rad_Flux_Temperature: 0
-      Laser_Wavelength: 100e-9
-      Laser_Power: 1e12
-      Laser_Dur: 0
-      Left_Fluid_Boundary: 0
-      Right_Fluid_Boundary: 0
-      Left_Rad_Boundary: 2
-      Right_Rad_Boundary: 2
+      ng: 20
+      MaxE: 12
       Preheat_StartIndex: 0 #handled internally
       Preheat_LastIndex: 0 #handled internally
       Frontheat_StartIndex: 0 #handled internally
       Frontheat_LastIndex: 0
       Output_Frequency: 1
-      FixedOpacityValue: 0
-      FixedEnergyDensityValue: 0
 TimeParameters:
       dt: 0.1e-12
       dt_max: 0.1e-15 
@@ -27,6 +36,13 @@ TimeParameters:
       t_max: 0
       steps: 2 #2
       cfl: 0.85
+      ElectronLimit: 0.5
+      IonLimit: 0.5
+      PVLimit: 0.5
+      RadLimit: 0.5
+      VolLimit: 0.5
+      t_init: 0
+      AdapativeMethod: 1 #0 is BUCKY, >0 HYADES
 Limiters:
       heatflxlm: 1.0
       radflxlm: 1.0
@@ -37,6 +53,7 @@ Limiters:
       raddfm: 1.0
       radesm: 1.0
 Switches:
+      AdapativeTimeStep: false
       Viscosity: true #Artificial Viscosity Include
       Velocity: true #Velocity
       PdVWork: true #pDv Work included in energy update
@@ -50,13 +67,21 @@ Switches:
       IdealGas: true # EoS Ideal gas
       MultiMaterial: false # Multi material
       SingleTemperature: true # Te = Ti
-      CoupleDivQ: false # Coupling between kinetic and fluid using div.q
-      CoupleMulti: true # Coupling between kinetic and fluid using q/q_sh
+      CoupleDivQ: false
+      CoupleMulti: false
+      CoupleOperatorSplit: false
+      CoupleSubtract: false
+      ImplicitHeatConduction: false
+      LoadInLaserProfile: false 
+      SNBHeatFlow: false
       AdapativeTimeStep: false #Adapative time step
       ConstantCoulombLog: false #Coulomb log kept constant which is set above
       FullyIonized: true #Fully ionized
-      AdiabaticMode: false # No heat flow
       IsothermalMode: false #Temperature constant
+      EoSTables: false
+      IonizationTables: false 
+      OpacityTables: false 
+
 Output:
       CreateOutputFolder: false #Create output folder if not specified
       Coordinates: true

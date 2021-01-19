@@ -49,7 +49,7 @@ class TestIO():
         print(os.listdir(io_obj._run_path))
         print(io_obj.max_cycle)
         assert len(os.listdir(io_obj._run_path)) == 4
-        assert len(os.listdir(io_obj.cycle_dump_path)) == 4
+        assert len(os.listdir(io_obj.cycle_dump_path)) == 5
 
 
     def test_next_cycle_manager(self, tmpdir):
@@ -67,7 +67,7 @@ class TestIO():
 
         io_obj.createDirectoryOfOperation()
         io_obj.nextCyclePathManager()
-        assert len(os.listdir(io_obj.cycle_dump_path)) == 4
+        assert len(os.listdir(io_obj.cycle_dump_path)) == 5
         assert io_obj.cycle_dump_path == os.path.join(p, 'kappa/CYCLE_0')
         assert io_obj.fluid_input_path == os.path.join(p, 'kappa/CYCLE_0/FLUID_INPUT/')
         assert io_obj.fluid_output_path == os.path.join(p, 'kappa/CYCLE_0/FLUID_OUTPUT/')
@@ -77,7 +77,7 @@ class TestIO():
 
         io_obj.cycle_counter = 1
         io_obj.nextCyclePathManager()
-        assert len(os.listdir(io_obj.cycle_dump_path)) == 4
+        assert len(os.listdir(io_obj.cycle_dump_path)) == 5
         assert io_obj.cycle_dump_path == os.path.join(p, 'kappa/CYCLE_1')
         assert io_obj.fluid_input_path == os.path.join(p, 'kappa/CYCLE_1/FLUID_INPUT/')
         assert io_obj.fluid_output_path == os.path.join(p, 'kappa/CYCLE_1/FLUID_OUTPUT/')
@@ -86,7 +86,7 @@ class TestIO():
         assert io_obj.next_fluid_input_path == os.path.join(p, 'kappa/CYCLE_2/FLUID_INPUT/')
         io_obj.cycle_counter = 2
         io_obj.nextCyclePathManager()
-        assert len(os.listdir(io_obj.cycle_dump_path)) == 4
+        assert len(os.listdir(io_obj.cycle_dump_path)) == 5
         assert io_obj.cycle_dump_path == os.path.join(p, 'kappa/CYCLE_2')
         assert io_obj.fluid_input_path == os.path.join(p, 'kappa/CYCLE_2/FLUID_INPUT/')
         assert io_obj.fluid_output_path == os.path.join(p, 'kappa/CYCLE_2/FLUID_OUTPUT/')
@@ -95,7 +95,7 @@ class TestIO():
         assert io_obj.next_fluid_input_path == os.path.join(p, 'kappa/CYCLE_3/FLUID_INPUT/')
         io_obj.cycle_counter = 3
         io_obj.nextCyclePathManager()
-        assert len(os.listdir(io_obj.cycle_dump_path)) == 4
+        assert len(os.listdir(io_obj.cycle_dump_path)) == 5
         assert io_obj.cycle_dump_path == os.path.join(p, 'kappa/CYCLE_3')
         assert io_obj.fluid_input_path == os.path.join(p, 'kappa/CYCLE_3/FLUID_INPUT/')
         assert io_obj.fluid_output_path == os.path.join(p, 'kappa/CYCLE_3/FLUID_OUTPUT/')

@@ -284,7 +284,7 @@ class Coupler:
 
         if self.init.yaml_file['Mode']['Limit_density']:
             self.critical_density = 10 * (1114326918632954.5 / pow(self.fluid_obj.init.yaml_file['LaserParams']['Wavelength'], 2)) #Hard-coded limit to 10*nc
-            self.laser_dir = 'left'#self.fluid_obj.laser_direction
+            self.laser_dir = self.fluid_obj.laser_direction
             self.couple_obj.limit_density = True
         else:
             self.critical_density = None
@@ -293,8 +293,17 @@ class Coupler:
         # else:
             #self.kin_obj = IMPACT()
         if self.init.yaml_file['Misc']['Continue'] and start_cycle > 1:
-                self.logger.info("CONTINUING FROM CYCLE")
-                self.logger.info(start_cycle)
+            self.logger.info("CONTINUING FROM CYCLE")
+            self.logger.info(start_cycle)
+            cpu_time_path = os.path.join(RUN_PATH, 'Cycle_CPU_time.txt')
+            fluid_time_path  = os.path.join(RUN_PATH, 'Fluid_CPU_time.txt')
+            kin_time_path  = os.path.join(RUN_PATH, 'Kinetic_CPU_time.txt')
+            if os.path.exists(cpu_time_path):
+                self.cycle_time_taken = [np.loadtxt(cpu_time_path).tolist()]
+            if os.path.exists(fluid_time_path):
+                self.fluid_time_taken = [np.loadtxt(fluid_time_path).tolist()]
+            if os.path.exists(cpu_time_path):
+                self.kinetic_time_taken = [np.loadtxt(kin_time_path).tolist()]
 
         self.logger.info("Initial Conditions")
         self.logger.info("Run path {}".format(RUN_PATH))

@@ -312,9 +312,9 @@ class SOL_KIT(Kinetic):
             templating(tmpfilePath= os.path.join(self._run_path, 'INPUT/tmpSOL_KIT_GRID.txt'),
             writePath=self._sol_kit_input_path, fileName="GRID_INPUT.txt", parameters=self.grid)
         else:
-            if self.grid['nx'] != str(len(self.sh_heat_flow) - 1):
-                self.grid['nx'] = len(self.sh_heat_flow) - 1
-                self.nx = len(self.sh_heat_flow) - 1
+            if self.grid['nx'] != str(len(f_te)):
+                self.grid['nx'] = str(len(f_te)) 
+                self.nx = str(len(f_te))
                 templating(tmpfilePath= os.path.join(self._run_path, 'INPUT/tmpSOL_KIT_GRID.txt'),
                 writePath=self._sol_kit_input_path, fileName="GRID_INPUT.txt", parameters=self.grid)
 

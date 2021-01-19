@@ -19,7 +19,8 @@ Params:
   Pre_step_dt: 0.001
   L_max: 1
   Output_freq: 10
-
+  Convergence: 0.05
+  Files_allowed: 1
 Boundary:
   Periodic: false
   Fixed_up: false
