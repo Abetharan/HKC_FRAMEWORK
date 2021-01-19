@@ -8,7 +8,7 @@ BoundaryConditions:
   Rad_Source_Left: 0
 FixedParameters:
   nx: 92
-  ng: 20
+  ng: 0
   MaxE: 12
   FixedOpacityValue: 0
   Frontheat_LastIndex: 0
@@ -55,7 +55,7 @@ Output:
   Viscosity: false
   Zbar: true
 Paths:
-  FEOS_Path_1: /Users/shiki/DATA/feos_tables/Cu/Cu
+  FEOS_Path_1: /Users/shiki/DATA/feos_tables/Gd/Gd
   FEOS_Path_2: /Users/shiki/DATA/feos_tables/He/He
   Opacity_Path_1: /Users/shiki/DATA/feos_tables/Cu/
   Opacity_Path_2: /Users/shiki/DATA/feos_tables/He/
@@ -71,14 +71,14 @@ Switches:
   CoupleOperatorSplit: false
   CoupleSubtract: false
   Exchange: true
-  FullyIonized: true 
+  FullyIonized: false 
   HeatConduction: true
   IdealGas: true
   InvBrem: true
   ImplicitHeatConduction: false
   IsothermalMode: false
   LoadInLaserProfile: false 
-  MultiMaterial: false
+  MultiMaterial: true
   RadDiffusion: true
   RadFreeFree: true
   RadPdVWork: false
@@ -87,9 +87,9 @@ Switches:
   SNBHeatFlow: false
   Velocity: true
   Viscosity: true
-  EoSTables: false
-  IonizationTables: false 
-  OpacityTables: false 
+  EoSTables: true
+  IonizationTables: true
+  OpacityTables: true
 TimeParameters:
   ElectronLimit: 0.5
   IonLimit: 0.5
@@ -100,7 +100,7 @@ TimeParameters:
   dt: 1.0e-17 #5.608e-11
   dt_max: 1.0e-14
   dt_min: 5.0e-16
-  steps: 200
+  steps: 2
   t_max: 0
-  t_init: 1
+  t_init: 0
   AdapativeMethod: 1 #0 is BUCKY, >0 HYADES

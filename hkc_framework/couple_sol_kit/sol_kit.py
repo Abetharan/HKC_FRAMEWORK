@@ -289,8 +289,6 @@ class SOL_KIT(Kinetic):
         the specific needs of the code being coupled. Here I assume commmon 
         Lagrangian Practice i.e. quantities are not defined at all points. 
         """
-
-
         if critical_density is not None:
             index_to_limit = np.where(f_ne >= critical_density)[0]
             if laser_dir == "right":

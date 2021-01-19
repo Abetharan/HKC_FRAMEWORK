@@ -7,18 +7,18 @@ Norms:
 
 Params:
   Nx: 0 #handled internally
-  Nv: 50
+  Nv: 100
   Np: 1
   Dt: 0.9
   Dx: 0.5
   Dv: 0.0307
   Dv_multi: 1.03
-  Nt: 50
+  Nt: 100
   Pre_step_nt: 0
   Pre_step_dt: 0.001
   L_max: 1
   Output_freq: 10
-  Convergence: 0.5
+  Convergence: 0.05
   Files_allowed: 1
 
 Boundary:
