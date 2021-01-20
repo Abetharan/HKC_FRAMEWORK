@@ -400,11 +400,12 @@ class Coupler:
             if (self.init.yaml_file['Misc']['HDF5'] and 
                 cycle_no % self.init.yaml_file['Coupling_params']['hdf5_output_freq'] == 0):
                 self.storeToHdf5(cycle_no)
+            self.logger.info('CYCLE COMPLETED UPDATING CONTINUE STEP ')
+            np.savetxt(continue_step_path, np.array([cycle_no]), fmt = '%i')
 
             t1 = time.time()
             self.cycle_time_taken.append(t1 - t0)
             self.logger.info('CPU TIME FOR CYCLE {} IS {} '.format(cycle_no, t1-t0))
-            np.savetxt(continue_step_path, np.array([cycle_no]), fmt = '%i')
             self.first_pass = False
 
             np.savetxt(kinetic_time_path, np.array([self.kinetic_time_taken]))

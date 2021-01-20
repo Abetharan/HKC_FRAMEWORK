@@ -81,7 +81,7 @@ class Multiplier:
         B = np.array(B)
         return(frontheat_start, frontheat_end, B)
 
-    def _detectAnamalousHeat(self, heat_flow):
+    def _limitDetectAnamalousHeat(self, heat_flow):
         if (all(self.spitzer_harm_heat == 0)):
             return None, None
 
@@ -112,6 +112,25 @@ class Multiplier:
                     pre = self.preHeatModel(rough = True)
                 else:
                     pre = self.preHeatModel()
+
+            self.q_vfp_q_sh_multipliers[np.isnan(self.q_vfp_q_sh_multipliers)] = 0
+            self.q_vfp_q_sh_multipliers[np.isinf(self.q_vfp_q_sh_multipliers)] = 0
+        return front, pre
+
+    def _detectAnamalousHeat(self):
+        if all(self.spitzer_harm_heat == 0):
+            return None, None
+
+        start_of_spitzer_harm_heat_flow_index = np.where(self.spitzer_harm_heat > 0)[0][0]
+        last_of_spitzer_harm_heat_flow_index = np.where(self.spitzer_harm_heat > 0)[0][-1]
+        front = None 
+        pre = None
+        if(any(np.isnan(self.q_vfp_q_sh_multipliers[1:-2])) #boundaries are always nan as we have 0 inflow conditions. 
+            or any(np.isinf(self.q_vfp_q_sh_multipliers))):
+            if any(abs(self.vfp_heat[:start_of_spitzer_harm_heat_flow_index]) > self.search_tolerance):
+                front = self.frontHeatModel()
+            if(any(abs(self.vfp_heat[last_of_spitzer_harm_heat_flow_index:]) > self.search_tolerance)):
+                pre = self.preHeatModel()
 
             self.q_vfp_q_sh_multipliers[np.isnan(self.q_vfp_q_sh_multipliers)] = 0
             self.q_vfp_q_sh_multipliers[np.isinf(self.q_vfp_q_sh_multipliers)] = 0
@@ -151,33 +170,28 @@ class Multiplier:
                 heat_flow = heat_flow[append_index:]
             else:
                 heat_flow = heat_flow[:len_vfp] 
-        #End
-        ##Test for pre-heat via looking at NaN outputs expected from q/q_sh
-        #if nans
-        # if self.snb:
-        #     self.q_vfp_q_sh_multipliers = np.array(self.vfp_heat/heat_flow)
-        # else:
         self.q_vfp_q_sh_multipliers = np.array(self.vfp_heat/heat_flow)
 
-        if laser_dir is not None:
+            
+        if laser_dir is not None and self.q_snb is None:
             if laser_dir == "right":
                 self.q_vfp_q_sh_multipliers[-1] = 0
             else:
                 self.q_vfp_q_sh_multipliers[0] = 0
-            
-        #Detect if there is Front heat
-        #Detect if there is Pre-Heat
-        #Modify as bounds will always be nan. 
-        if self.q_snb is None:
-            front, pre = self._detectAnamalousHeat(heat_flow)
-            if front is not None:
-                (self.front_heat_start_index, 
-                self.front_heat_last_index, 
-                self.front_heat_fit_params) = front
-            if pre is not None:
-                (self.pre_heat_start_index,
-                self.pre_heat_last_index,
-                self.pre_heat_fit_params) = pre
+            front, pre = self._limitDetectAnamalousHeat(heat_flow)
+        else:
+            self.q_vfp_q_sh_multipliers[0] = 0
+            self.q_vfp_q_sh_multipliers[-1] = 0
+            front, pre = self._detectAnamalousHeat()
+
+        if front is not None:
+            (self.front_heat_start_index, 
+            self.front_heat_last_index, 
+            self.front_heat_fit_params) = front
+        if pre is not None:
+            (self.pre_heat_start_index,
+            self.pre_heat_last_index,
+            self.pre_heat_fit_params) = pre
 
         if laser_dir is not None:
             padding = limit_index - len_vfp
@@ -211,108 +225,90 @@ class Multiplier:
         np.savetxt(os.path.join(save_path,"qe.txt"), self.q_vfp_q_sh_multipliers)
 
 
-    #def preHeatModel(self):
-        #""" 
-        #Purpose: Model Pre-heat using an exponential fitting parameter, fit parameter
-                    #is spat out to be used by the fluid code.
-        #Args:
-        #Returns:
-            #B = Fitting paramters
-            #preheat_start = start index for preheat
-            #preheat_end = end index of preheat
-        #"""
-        #preheat_start = np.where(self.q_vfp_q_sh_multipliers[~np.isinf(self.q_vfp_q_sh_multipliers)] != 0)[0][-1]
-        #preheat_end = np.where(abs(self.vfp_heat[preheat_start:]) < self.search_tolerance)
-        ##if search fails i.e. valid heat flow in all domain
-        #if(len(preheat_end[0]) == 0):
-            #preheat_end = len(self.q_vfp_q_sh_multipliers)
-        #else:
-            #preheat_end = preheat_end[0][0] + preheat_start
+    # def preHeatModel(self):
+    #     """ 
+    #     Purpose: Model Pre-heat using an exponential fitting parameter, fit parameter
+    #                 is spat out to be used by the fluid code.
+    #     Args:
+    #     Returns:
+    #         B = Fitting paramters
+    #         preheat_start = start index for preheat
+    #         preheat_end = end index of preheat
+    #     """
+    #     preheat_start = np.where(self.q_vfp_q_sh_multipliers[~np.isinf(self.q_vfp_q_sh_multipliers)] != 0)[0][-1]
+    #     preheat_end = np.where(abs(self.vfp_heat[preheat_start:]) < self.search_tolerance)
+    #     #if search fails i.e. valid heat flow in all domain
+    #     if(len(preheat_end[0]) == 0):
+    #         preheat_end = len(self.q_vfp_q_sh_multipliers)
+    #     else:
+    #         preheat_end = preheat_end[0][0] + preheat_start
 
-        #L = self.cell_wall_coord[preheat_end] -self.cell_wall_coord[preheat_start] 
-        #B = []
+    #     L = self.cell_wall_coord[preheat_end] -self.cell_wall_coord[preheat_start] 
+    #     B = []
 
-        #for i in range(preheat_start, preheat_end):
-            #b = (-1* (self.cell_wall_coord[i] - self.cell_wall_coord[preheat_start]) 
-                #/ (L * np.log(abs(self.vfp_heat[i])/self.vfp_heat[preheat_start])))
-            #B.append(b)
+    #     for i in range(preheat_start, preheat_end):
+    #         b = (-1* (self.cell_wall_coord[i] - self.cell_wall_coord[preheat_start]) 
+    #             / (L * np.log(abs(self.vfp_heat[i])/self.vfp_heat[preheat_start])))
+    #         B.append(b)
             
-        #B = np.array(B)
-        #return(preheat_start, preheat_end, B)
+    #     B = np.array(B)
+    #     return(preheat_start, preheat_end, B)
 
-    #def frontHeatModel(self):
-        #"""
-        #Purpose: Model heat wave from top of a bath.
-        #Args:
-        #Returns:
-            #B = Fitting paramters
-            #frontheat_start = start of front heat
-            #frontheat_end = end of front 
-            #heat
-        #"""
+    # def frontHeatModel(self):
+    #     """
+    #     Purpose: Model heat wave from top of a bath.
+    #     Args:
+    #     Returns:
+    #         B = Fitting paramters
+    #         frontheat_start = start of front heat
+    #         frontheat_end = end of front 
+    #         heat
+    #     """
 
-        #frontheat_start = np.where(self.q_vfp_q_sh_multipliers[~np.isinf(self.q_vfp_q_sh_multipliers)] != 0)[0][0]
-        #frontheat_end = np.where(abs(self.vfp_heat[:frontheat_start]) < self.search_tolerance)
-        ##if search fails i.e. valid heat flow in all domain
-        #if(len(frontheat_end[0]) == 0):
-            #frontheat_end = 0
-        #else:
-            #frontheat_end = frontheat_end[0][0]
+    #     frontheat_start = np.where(self.q_vfp_q_sh_multipliers[~np.isinf(self.q_vfp_q_sh_multipliers)] != 0)[0][0]
+    #     frontheat_end = np.where(abs(self.vfp_heat[:frontheat_start]) < self.search_tolerance)
+    #     #if search fails i.e. valid heat flow in all domain
+    #     if(len(frontheat_end[0]) == 0):
+    #         frontheat_end = 0
+    #     else:
+    #         frontheat_end = frontheat_end[0][0]
 
-        #L = abs(self.cell_wall_coord[frontheat_end] - self.cell_wall_coord[frontheat_start])
-        #B = []
+    #     L = abs(self.cell_wall_coord[frontheat_end] - self.cell_wall_coord[frontheat_start])
+    #     B = []
 
-        #for i in range(0, frontheat_start+1):
-            #b = (-1* (self.cell_wall_coord[i] - self.cell_wall_coord[frontheat_start]) 
-                #/ (L * np.log(abs(self.vfp_heat[i])/self.vfp_heat[frontheat_start])))
-            #B.append(b)
+        # for i in range(0, frontheat_start+1):
+        #     b = (-1* (self.cell_wall_coord[i] - self.cell_wall_coord[frontheat_start]) 
+        #         / (L * np.log(abs(self.vfp_heat[i])/self.vfp_heat[frontheat_start])))
+        #     B.append(b)
 
-        #B = np.array(B)
-        #return(frontheat_start, frontheat_end, B)
+        # B = np.array(B)
+        # return(frontheat_start, frontheat_end, B)
     
-    #def _detectAnamalousHeat(self):
-        #if all(self.spitzer_harm_heat == 0):
-            #return None, None
 
-        #start_of_spitzer_harm_heat_flow_index = np.where(self.spitzer_harm_heat > 0)[0][0]
-        #last_of_spitzer_harm_heat_flow_index = np.where(self.spitzer_harm_heat > 0)[0][-1]
-        #front = None 
-        #pre = None
-        #if(any(np.isnan(self.q_vfp_q_sh_multipliers[1:-2])) #boundaries are always nan as we have 0 inflow conditions. 
-            #or any(np.isinf(self.q_vfp_q_sh_multipliers))):
-            #if any(abs(self.vfp_heat[:start_of_spitzer_harm_heat_flow_index]) > self.search_tolerance):
-                #front = self.frontHeatModel
-            #if(any(abs(self.vfp_heat[last_of_spitzer_harm_heat_flow_index:]) > self.search_tolerance)):
-                #pre = self.preHeatModel
-
-            #self.q_vfp_q_sh_multipliers[np.isnan(self.q_vfp_q_sh_multipliers)] = 0
-            #self.q_vfp_q_sh_multipliers[np.isinf(self.q_vfp_q_sh_multipliers)] = 0
-        #return front, pre
-
-    #def multiplier(self):
-        #""" Purpose: Find multipliers and exponentially extrapolate for pre-heat
-            #Args: 
-                #vfp_qe : Kinetic heat flow to be transfered to fluid code.
-            #Returns: Multipliers
-        #"""
+    # def multiplier(self):
+    #     """ Purpose: Find multipliers and exponentially extrapolate for pre-heat
+        #     Args: 
+        #         vfp_qe : Kinetic heat flow to be transfered to fluid code.
+        #     Returns: Multipliers
+        # """
                 
-        #front_heat_start_index = np.int64(0) 
-        #front_heat_last_index = np.int64(0)
-        #pre_heat_start_index = np.int64(0)
-        #pre_heat_last_index = np.int64(0)
-        #front_heat_fit_params = None
-        #pre_heat_fit_params = None
-        ###Test for pre-heat via looking at NaN outputs expected from q/q_sh
-        ##if nans
-        #if self.snb:
-            #self.q_vfp_q_sh_multipliers = np.array(self.vfp_heat/self.q_snb)
-        #else:
-            #self.q_vfp_q_sh_multipliers = np.array(self.vfp_heat/self.spitzer_harm_heat)
-        #self.q_vfp_q_sh_multipliers[0] = 0
-        #self.q_vfp_q_sh_multipliers[-1] = 0
-        ##Detect if there is Front heat
-        ##Detect if there is Pre-Heat
-        ##Modify as bounds will always be nan. 
+        # front_heat_start_index = np.int64(0) 
+        # front_heat_last_index = np.int64(0)
+        # pre_heat_start_index = np.int64(0)
+        # pre_heat_last_index = np.int64(0)
+        # front_heat_fit_params = None
+        # pre_heat_fit_params = None
+        ##Test for pre-heat via looking at NaN outputs expected from q/q_sh
+        #if nans
+        # if self.snb:
+        #     self.q_vfp_q_sh_multipliers = np.array(self.vfp_heat/self.q_snb)
+        # else:
+        #     self.q_vfp_q_sh_multipliers = np.array(self.vfp_heat/self.spitzer_harm_heat)
+        # self.q_vfp_q_sh_multipliers[0] = 0
+        # self.q_vfp_q_sh_multipliers[-1] = 0
+        #Detect if there is Front heat
+        #Detect if there is Pre-Heat
+        #Modify as bounds will always be nan. 
         #front, pre = self._detectAnamalousHeat()
         #if front is not None:
             #(front_heat_start_index, 
