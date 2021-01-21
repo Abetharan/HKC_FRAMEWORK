@@ -1,7 +1,7 @@
 BoundaryConditions:
   Hydro_Right_Boundary: f  
   Rad_Left_Boundary: r
-  Rad_Right_Boundary: r 
+  Rad_Right_Boundary: d 
   Rad_Dirichlet_Left: 0
   Rad_Dirichlet_Right: 0
   Rad_Source_Right: 0
@@ -9,7 +9,7 @@ BoundaryConditions:
 FixedParameters:
   nx: 92
   ng: 20
-  MaxE: 12
+  MaxE: 0
   FixedOpacityValue: 0
   Frontheat_LastIndex: 0
   Frontheat_StartIndex: 0
@@ -32,7 +32,7 @@ Limiters:
   raddfm: 1.0
   radesm: 1.0
   radflxlm: 1.0
-  larsen: 4.0
+  larsen: 2.0
 Output:
   Coordinates: true
   CreateOutputFolder: false
@@ -55,10 +55,10 @@ Output:
   Viscosity: false
   Zbar: true
 Paths:
-  FEOS_Path_1: /Users/shiki/DATA/feos_tables/Cu/Cu
-  FEOS_Path_2: /Users/shiki/DATA/feos_tables/He/He
-  Opacity_Path_1: /Users/shiki/DATA/feos_tables/Cu/
-  Opacity_Path_2: /Users/shiki/DATA/feos_tables/He/
+  FEOS_Path_2: /Users/shiki/DATA/feos_tables/Gd/Gd
+  FEOS_Path_1: /Users/shiki/DATA/feos_tables/He/He
+  Opacity_Path_2: /Users/shiki/DATA/feos_tables/Cu/
+  Opacity_Path_1: /Users/shiki/DATA/feos_tables/He/
   Laser_Profile_Path: /Users/shiki/DATA/HKC_RELATED/init_data/copper_hohlraum/laser_profile.txt
   Init_Path: /Users/shiki/DATA/HKC_RELATED/init_data/copper_hohlraum/
   Out_Path: /Users/shiki/DATA/
@@ -71,14 +71,14 @@ Switches:
   CoupleOperatorSplit: false
   CoupleSubtract: false
   Exchange: true
-  FullyIonized: true 
+  FullyIonized: false
   HeatConduction: true
-  IdealGas: true
-  InvBrem: true
+  IdealGas: false
+  InvBrem: false 
   ImplicitHeatConduction: false
   IsothermalMode: false
   LoadInLaserProfile: false 
-  MultiMaterial: false
+  MultiMaterial: true
   RadDiffusion: true
   RadFreeFree: true
   RadPdVWork: false
@@ -87,9 +87,9 @@ Switches:
   SNBHeatFlow: false
   Velocity: true
   Viscosity: true
-  EoSTables: false
-  IonizationTables: false 
-  OpacityTables: false 
+  EoSTables: true
+  IonizationTables: true
+  OpacityTables: true
 TimeParameters:
   ElectronLimit: 0.5
   IonLimit: 0.5

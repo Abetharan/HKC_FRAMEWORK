@@ -7,18 +7,20 @@ class DivQ:
         self.limit_density = False
 
     def method(self, sh_heat_flow, vfp_heat_flow, laser_dir = None, **kwargs):
-        """ Purpose: Find Div.Q
-            Args:
-                electron_thermal_flux = SOL-KiT heat flux in SI
-                mass = areal mass.
-                step = A singel step represent index to next cell-wall. 
-                in the case of SOL-KiT where quantites are defiend in 
-                cell-centres and walls, require a step of two. In
-                HyKiCT quantites are only defined at one point, thus,
-                a step of 1 is sufficient. 
-                
-            Returns: Div.Q
-            NOTE: ONLY WORKS FOR SAME GRIDS
+        """        
+        Purpose: Calculate coupling parameter relevant to
+                the divq method. 
+        Args:
+            sh_heat_flow = Spitzer Harm Heat flow
+            vfp_heat_flow = VFP heat-flow
+            laser_dir = Laser direction for limit density method. 
+                    Laser dir acts as a pseudo switch to engage
+                    limit density search. Default None.
+            **Kwargs = Named optional. 
+            Required Optional = fluid cell mass
+        Notes:
+            DivQ method is a constant factor thermal conduction 
+            that replaces the thermal conduction of spizter-harm/snb.
         """
         ##Logic relevant only for Limit Density methods 
         heat_flow = vfp_heat_flow

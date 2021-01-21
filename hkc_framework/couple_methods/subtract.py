@@ -6,6 +6,22 @@ class Subtract:
     def __init__(self):
         self.limit_density = False
     def method(self,sh_heat_flow, vfp_heat_flow, laser_dir = None, **kwargs):
+        """
+        Purpose: Calculate coupling parameter relevant to
+                the subtract method. 
+        Args:
+            sh_heat_flow = Spitzer Harm Heat flow
+            vfp_heat_flow = VFP heat-flow
+            laser_dir = Laser direction for limit density method. 
+                    Laser dir acts as a pseudo switch to engage
+                    limit density search. Default None.
+            **Kwargs = Named optional. 
+            Required Optional = q_SNB. 
+        Notes:
+            Subtract method is a constant factor subtraction
+            (or addition however you look at it) to spitzer-harm/SNB
+            to get the VFP-heat flow.
+        """
         ##Logic relevant only for Limit Density methods 
         heat_flow = vfp_heat_flow
         q_snb = kwargs['q_snb']

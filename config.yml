@@ -4,34 +4,30 @@ Paths:
   K_src_dir: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./SOL-KiT/
   F_src_dir: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./HyKiCT/debug/apps/
   #Init_path:  /Users/shiki/DATA/HKC_RELATED/init_data/gd_hohlraum_hydra_20_0/
-  #Init_path:  /Users/shiki/DATA/HKC_RELATED/init_data/gorgon_10_steps_copper_hohlraum/
-  Init_path:  /Users/shiki/DATA/HKC_RELATED/init_data/step_problem_100_nx/
+  Init_path:  /Users/shiki/DATA/HKC_RELATED/init_data/step_problem_200_nx/
   F_config_path: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./HKC_FRAMEWORK/hkc_framework/couple_hykict/config.yml 
   K_config_path: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D.//HKC_FRAMEWORK/hkc_framework/couple_sol_kit/config.yml
 Codes:
   Kinetic_code: sol_kit
   Fluid_code: hykict
 Coupling_params:
-  Nx: 100
+  Nx: 200 
   Cycles: 3
   Eta: 0.1E-2
-  hdf5_output_freq: 2
-  t_fluid_operator: 0.1E-10
+  hdf5_output_freq: 1
+  t_cycle: 1.0E-16
 Mode:
-  Couple_divq: false 
-  Couple_multi: true 
+  Couple_divq: false
+  Couple_multi: true
   Couple_subtract : false
-  Couple_adaptive: false
   Couple_leap_frog: false
   Couple_operator_split: false
   Limit_density: false #Limit density to 10x critical
   Start_from_kinetic: true
   Load_f1: true
-  Start_coupled: false #Takes precedence over start from kinetic, assumes relevant quanties exist. Does not work with leap-frog
 Misc:
-  HDF5: false
+  HDF5: false 
   Convergence_monitoring: true
-  Zip: false
-  Continue: false 
-  HPC: false 
+  Continue: false
+  HPC: false
   Overwrite: true

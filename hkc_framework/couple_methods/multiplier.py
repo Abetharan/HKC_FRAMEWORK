@@ -91,6 +91,15 @@ class Multiplier:
         pre = None
         inf_mulitplier_index = np.where(np.isinf(self.q_vfp_q_sh_multipliers) == True)[0]
         diff_inf_index = np.diff(inf_mulitplier_index)
+
+        #This logic is to detect if there are infs present 
+        #anywhere besides the edges which is possible 
+        #when there are 0 gradient in a cell or two 
+        #If this is the case start the front/pre heat models
+        #from the middle and calculate fit params accordingly 
+        ##SEEMS LIKE this will overwrite multipliers?? 
+        ##NOT IDEAL I THINK! 
+        ##FIXME
         if any(diff_inf_index > 1):
             max_diff = np.argmax(diff_inf_index)
             if((inf_mulitplier_index[max_diff] < int(len(self.q_vfp_q_sh_multipliers)/2)) and 
@@ -104,11 +113,13 @@ class Multiplier:
         
             if any(abs(self.vfp_heat[:start_of_spitzer_harm_heat_flow_index]) > self.search_tolerance):
                 if(start_of_spitzer_harm_heat_flow_index == int(len(heat_flow)/2)):
+                    front_rough = True
                     front = self.frontHeatModel(rough = True)
                 else:
                     front = self.frontHeatModel()
             if(any(abs(self.vfp_heat[last_of_spitzer_harm_heat_flow_index:]) > self.search_tolerance)):
                 if(start_of_spitzer_harm_heat_flow_index == int(len(heat_flow)/2)):
+                    pre_rough = True
                     pre = self.preHeatModel(rough = True)
                 else:
                     pre = self.preHeatModel()
@@ -128,17 +139,35 @@ class Multiplier:
         if(any(np.isnan(self.q_vfp_q_sh_multipliers[1:-2])) #boundaries are always nan as we have 0 inflow conditions. 
             or any(np.isinf(self.q_vfp_q_sh_multipliers))):
             if any(abs(self.vfp_heat[:start_of_spitzer_harm_heat_flow_index]) > self.search_tolerance):
-                front = self.frontHeatModel()
+                front = self.frontHeatModel
             if(any(abs(self.vfp_heat[last_of_spitzer_harm_heat_flow_index:]) > self.search_tolerance)):
-                pre = self.preHeatModel()
+                pre = self.preHeatModel
 
-            self.q_vfp_q_sh_multipliers[np.isnan(self.q_vfp_q_sh_multipliers)] = 0
-            self.q_vfp_q_sh_multipliers[np.isinf(self.q_vfp_q_sh_multipliers)] = 0
+        self.q_vfp_q_sh_multipliers[np.isnan(self.q_vfp_q_sh_multipliers)] = 0
+        self.q_vfp_q_sh_multipliers[np.isinf(self.q_vfp_q_sh_multipliers)] = 0
+        if pre is not None:
+            pre = pre()
+        if front is not None:
+            front = front()
+
         return front, pre
 
     def method(self, sh_heat_flow, vfp_heat_flow, laser_dir = None, **kwargs):
-        """ Purpose: Find multipliers and exponentially extrapolate for pre-heat
-            Returns: Multipliers
+        """
+        Purpose: Calculate coupling parameter relevant to
+                the multiplier method. 
+        Args:
+            sh_heat_flow = Spitzer Harm Heat flow
+            vfp_heat_flow = VFP heat-flow
+            laser_dir = Laser direction for limit density method. 
+                    Laser dir acts as a pseudo switch to engage
+                    limit density search. Default None.
+            **Kwargs = Named optional. 
+            Required Optional = q_SNB and fluid cell wall coords.
+        Notes:
+            Multiplier method is a constant factor multiplier 
+            on the spitzer harm/SNB heat-flow. For pre-heat
+            in the case of Spitzer-Harm we fit exponentials.
         """
 
         self.spitzer_harm_heat = sh_heat_flow

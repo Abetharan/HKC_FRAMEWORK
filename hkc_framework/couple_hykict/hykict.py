@@ -54,6 +54,25 @@ class HyKiCT(Fluid):
         self.init.yaml_file['TimeParameters']['t_max'] = self.tmax
         self.init.yaml_file['Switches'][self.couple_mode] = True
 
+    def setNoCoupleSwitches(self):
+        """
+        Purpose: Sets switches to no coupling
+        """
+        self.init.yaml_file['Switches']['CoupleDivQ'] = False
+        self.init.yaml_file['Switches']['CoupleMulti'] = False 
+        self.init.yaml_file['Switches']['CoupleSubtract'] = False 
+        self.init.yaml_file['TimeParameters']['t_max'] = self.tmax
+
+    def setOperatorSplitSwitch(self):
+        """
+        Purpose: Sets the expected switches to Operator-
+                Split coupling
+        """
+        self.init.yaml_file['Switches'][self.couple_mode] = True
+        self.init.yaml_file['Switches']['CoupleOperatorSplit'] = True
+        self.init.yaml_file['TimeParameters']['t_max'] = self.tmax
+
+
     def setFiles(self):
         """ Purpose: Write out config.yml for each cycle"""
         yaml_dump_path = os.path.join(self.cycle_dump_path, 'config.yml')
@@ -105,7 +124,7 @@ class HyKiCT(Fluid):
         
         return(f_x_grid, f_x_centered_grid, f_v, f_ne, f_Te, f_Z, f_laser, mass, f_time)
     
-    def initHydro(self, next_fluid_input_path, qe = None, pre_params = None, front_params = None):
+    def initHydro(self, next_fluid_input_path, qe = None, pre_params = None, front_params = None): #Remove qe etc
         """
         Purpose: 
             Move fluid files
@@ -126,7 +145,7 @@ class HyKiCT(Fluid):
         #     if front_params is None:
         #         front_params = np.array([0])
         #     np.savetxt(os.path.join(next_fluid_input_path,"pre_heat_fit_param.txt"), pre_params)
-        #     np.savetxt(os.path.join(next_fluid_input_path,"front_heat_fit_param.txt"), front_params)
+            # np.savetxt(os.path.join(next_fluid_input_path,"front_heat_fit_param.txt"), front_params)
 
         #Standard init files. 
         #These files should correspond to the last state of the fluid step. 

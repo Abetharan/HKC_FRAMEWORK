@@ -30,13 +30,15 @@ class TestCoupling():
         q_sh = np.linspace(100, 1000, 101)
         q_sh[0] = 0
         q_sh[-1] = 0
-        q_vfp = 0.05*np.linspace(100, 1000, 101)
+        q_vfp = 0.05*q_sh
         cell_wall_coord = np.linspace(0, 10, 101)
         q_snb = None 
         multi_obj.method(q_sh, q_vfp,
                     laser_dir = None, cell_wall_coord = cell_wall_coord,
                     q_snb = q_snb)
         expected_multipliers = np.zeros(len(q_vfp)) + 0.05
+        expected_multipliers[0] = 0
+        expected_multipliers[-1] = 0
         assert q_sh == pytest.approx(multi_obj.spitzer_harm_heat)
         assert q_vfp == pytest.approx(multi_obj.vfp_heat)
         assert cell_wall_coord == pytest.approx(multi_obj.cell_wall_coord)
@@ -77,9 +79,9 @@ class TestCoupling():
         assert true_vfp_heat == pytest.approx(true_spitzer_harm + subtract_obj.subtract_factor)
         
 
-    # @pytest.mark.parametrize("method, laser_dir",[("subtract", "right"),
-    #  ("divq", "right"), ("multi", "right")])
-    def dddd_test_limit_density(self, method, laser_dir):
+    @pytest.mark.parametrize("method, laser_dir",[("subtract", "right"),
+     ("divq", "right"), ("multi", "right")])
+    def test_limit_density(self, method, laser_dir):
         hfct_obj = HeatFlowCouplingTools() 
         if method == "subtract":
             couple_obj = Subtract()
@@ -89,29 +91,29 @@ class TestCoupling():
             couple_obj = Multiplier()
 
         fluid_Te = np.loadtxt(os.path.join(myPath, 'test_limit_density/electron_temperature.txt'))
-        fluid_ne = np.loadtxt(os.path.join(myPath, 'test_limit_density//')) 
+        fluid_ne = np.loadtxt(os.path.join(myPath, 'test_limit_density/ne.txt')) 
         fluid_Z = np.loadtxt(os.path.join(myPath, 'test_limit_density/zbar.txt'))
         fluid_x_grid = np.loadtxt(os.path.join(myPath, 'test_limit_density/cell_wall_x.txt'))
         fluid_x_centered_grid = np.loadtxt(os.path.join(myPath, 'test_limit_density/cell_centre_x.txt')) 
         fluid_mass = np.loadtxt(os.path.join(myPath, 'test_limit_density/mass.txt'))
         vfp_heat = np.loadtxt(os.path.join(myPath, 'test_limit_density/vfp_heat_flow.txt'))
-        sh_heat = np.loadtxt(os.path.join(myPath, 'test_limit_density/sh_heat_flow.txt'))
+        sh_heat = -1*np.loadtxt(os.path.join(myPath, 'test_limit_density/sh_heat_flow.txt'))
         vfp_heat_conduction = np.loadtxt(os.path.join(myPath, 'test_limit_density/thermal_conduction.txt'))
 
-        hfct_obj.electron_temperature = fluid_Te
-        hfct_obj.electron_number_density = fluid_ne
-        hfct_obj.zbar = fluid_Z
-        hfct_obj.cell_wall_coord = fluid_x_grid
-        hfct_obj.cell_centered_coord = fluid_x_centered_grid
-        hfct_obj.mass = fluid_mass
-        hfct_obj.lambda_ei(hfct_obj.electron_temperature * (11594), 
-                            hfct_obj.electron_number_density,
-                            hfct_obj.zbar)
-        hfct_obj.spitzerHarmHeatFlow()
+        # hfct_obj.electron_temperature = fluid_Te
+        # hfct_obj.electron_number_density = fluid_ne
+        # hfct_obj.zbar = fluid_Z
+        # hfct_obj.cell_wall_coord = fluid_x_grid
+        # hfct_obj.cell_centered_coord = fluid_x_centered_grid
+        # hfct_obj.mass = fluid_mass
+        # hfct_obj.lambda_ei(hfct_obj.electron_temperature * (11594), 
+        #                     hfct_obj.electron_number_density,
+        #                     hfct_obj.zbar)
+        # hfct_obj.spitzerHarmHeatFlow()
 
-        assert sh_heat == pytest.approx(hfct_obj.spitzer_harm_heat)
+        # assert sh_heat == pytest.approx(hfct_obj.spitzer_harm_heat)
 
-        couple_obj.method(hfct_obj.spitzer_harm_heat, vfp_heat, 
+        couple_obj.method(sh_heat, vfp_heat, 
                         laser_dir = laser_dir, mass = fluid_mass, cell_wall_coord = fluid_x_grid,
                         q_snb = hfct_obj.q_snb)
 
