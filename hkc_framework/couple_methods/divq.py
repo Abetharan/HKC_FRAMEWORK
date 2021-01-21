@@ -1,8 +1,8 @@
 import numpy as np 
 import os
+from .coupling_method import CouplingMethod
 
-
-class DivQ:
+class DivQ(CouplingMethod):
     def __init__(self):
         self.limit_density = False
 

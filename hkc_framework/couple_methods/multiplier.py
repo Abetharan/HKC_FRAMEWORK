@@ -1,7 +1,7 @@
 import numpy as np 
 import os
-
-class Multiplier: 
+from .coupling_method import CouplingMethod
+class Multiplier(CouplingMethod): 
 
     def __init__(self):
         self.search_tolerance = 1e-9
@@ -243,10 +243,10 @@ class Multiplier:
 
     def setCoupleParams(self, save_path, **kwargs):
 
-        kwargs['fluid_yaml']['FixedParameters']['Preheat_StartIndex'] = self.pre_heat_start_index
-        kwargs['fluid_yaml']['FixedParameters']['Preheat_LastIndex'] = self.pre_heat_last_index
-        kwargs['fluid_yaml']['FixedParameters']['Frontheat_StartIndex'] = self.front_heat_start_index
-        kwargs['fluid_yaml']['FixedParameters']['Frontheat_LastIndex'] = self.front_heat_last_index
+        kwargs['fluid_yaml']['FixedParameters']['Preheat_StartIndex'] = int(self.pre_heat_start_index)
+        kwargs['fluid_yaml']['FixedParameters']['Preheat_LastIndex'] = int(self.pre_heat_last_index)
+        kwargs['fluid_yaml']['FixedParameters']['Frontheat_StartIndex'] = int(self.front_heat_start_index)
+        kwargs['fluid_yaml']['FixedParameters']['Frontheat_LastIndex'] = int(self.front_heat_last_index)
         if self.pre_heat_fit_params is not None or self.front_heat_fit_params is not None: 
             np.savetxt(os.path.join(save_path,"pre_heat_fit_param.txt"), self.pre_heat_fit_params)
             np.savetxt(os.path.join(save_path,"front_heat_fit_param.txt"), self.front_heat_fit_params)

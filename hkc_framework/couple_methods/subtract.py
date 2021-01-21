@@ -1,8 +1,7 @@
 import numpy as np 
 import os
-
-
-class Subtract:
+from .coupling_method import CouplingMethod
+class Subtract(CouplingMethod):
     def __init__(self):
         self.limit_density = False
     def method(self,sh_heat_flow, vfp_heat_flow, laser_dir = None, **kwargs):

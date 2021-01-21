@@ -40,6 +40,7 @@ class Coupler:
         self.fluid_time_taken = []
         self.cycle_time_taken = []
         self.init = util.Input(self.yml_init_file_path)
+        self.coupling_message = "No Method Chosen"
     def startprint(self, fluid_code, kinetic_code):
 
         ShowText = ('COUPLING ' + fluid_code + '-' 
@@ -137,7 +138,7 @@ class Coupler:
         self.kinetic_time_taken.append(tkin_end - tkin_start)
         return last_heat_flow
 
-    def fluidStep(self, outpath, next_input_path):
+    def fluidStep(self, outpath, next_input_path, no_copy = False):
         """
         Purpose: Sets Fluid files and RUns Fluid code
         Args:
@@ -172,11 +173,13 @@ class Coupler:
         self.logger.info("Start Fluid")
         self.fluid_obj.Run()
         self.logger.info("End Fluid")
-
         self.logger.info("Get Last Fluid Quants")
         (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
             fluid_Z, _, fluid_mass, sim_time) = self.fluid_obj.getLastStepQuants() 
-        self.logger.info("Copying files to next step Init")
+        if no_copy:
+            return ((fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
+            fluid_Z, _, fluid_mass, sim_time))
+        self.logger.info("Copying files to next step Init: {}".format(next_input_path))
         self.fluid_obj.initHydro(next_input_path)
         tfluid_end = time.time()
         self.fluid_time_taken.append(tfluid_end - tfluid_start)
@@ -186,7 +189,7 @@ class Coupler:
 
     def generalCoupling(self, cycle_no, cycles, fluid_output_path,
                          run_only_fluid = False, modifier_qe_path = None,
-                         modifier_next_fluid_input_path = None):
+                         modifier_next_fluid_input_path = None, **kwargs):
         """
         Purpose: Implements the General Coupling Algorithm
         Args:
@@ -202,13 +205,19 @@ class Coupler:
             -> Init coupling params to next fluid step
             -> Finish 
         """
+        no_copy = False
         if modifier_next_fluid_input_path is None: 
             next_fluid_input_path = self.io_obj.next_fluid_input_path 
         else:
             next_fluid_input_path = modifier_next_fluid_input_path
+
+        if cycle_no == cycles - 1: 
+            no_copy = True
+
         (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
         fluid_Z, _, fluid_mass, sim_time) = self.fluidStep(fluid_output_path,
-                                                            next_fluid_input_path)
+                                                            next_fluid_input_path,  
+                                                            no_copy = no_copy)
         if not run_only_fluid:
             self.logger.info("Set HFCT tools")
             self.hfct_obj.electron_temperature = fluid_Te
@@ -232,10 +241,34 @@ class Coupler:
                         fluid_x_grid, fluid_x_centered_grid, 
                                 fluid_Te, fluid_ne, fluid_Z)
 
+            #Modify Spitzer Harm to be equivalent to the original profile 
+            if len(kwargs.keys()) > 0:
+                if kwargs['leap_frog']:
+                    (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
+                fluid_Z, _, fluid_mass, sim_time)  = self.fluid_obj.returnInitValues()
+                    self.logger.info("Leap-Frog Set HFCT tools")
+                    self.hfct_obj.electron_temperature = fluid_Te
+                    self.hfct_obj.electron_number_density = fluid_ne
+                    self.hfct_obj.zbar = fluid_Z
+                    self.hfct_obj.cell_wall_coord = fluid_x_grid
+                    self.hfct_obj.cell_centered_coord = fluid_x_centered_grid
+                    self.hfct_obj.mass = fluid_mass
+                    self.hfct_obj.lambda_ei(self.hfct_obj.electron_temperature * (BOLTZMANN_CONSTANT/ELEMENTARY_CHARGE), 
+                                        self.hfct_obj.electron_number_density,
+                                        self.hfct_obj.zbar)
+                    self.logger.info("HFCT Spitzer Calculation")
+                    self.hfct_obj.spitzerHarmHeatFlow()
+                    conv_heat_flow = self.hfct_obj.spitzer_harm_heat
+                    if self.fluid_obj.init.yaml_file['Switches']['SNBHeatFlow']:
+                        self.hfct_obj.snb = True
+                        self.hfct_obj.snb_heat_flow(self.fluid_obj.init.yaml_file['FixedParameters']['ng'],self.fluid_obj.init.yaml_file['FixedParameters']['MaxE'], 2)
+                        conv_heat_flow = self.hfct_obj.q_snb 
+
             self.couple_obj.method(self.hfct_obj.spitzer_harm_heat, vfp_heat, 
                             laser_dir = self.laser_dir, mass = fluid_mass, cell_wall_coord = fluid_x_grid,
                             q_snb = self.hfct_obj.q_snb)
-
+            
+            self.logger.info(self.coupling_message)
             if modifier_qe_path is None:
                 self.couple_obj.setCoupleParams(self.io_obj.next_fluid_input_path, fluid_yaml = self.fluid_obj.init.yaml_file)
             else:
@@ -258,10 +291,12 @@ class Coupler:
             -> Finish 
         """
         self.fluid_obj.setNoCoupleSwitches()
-        self.generalCoupling(cycle_no, cycles,self.io_obj.intermediate_fluid_outpath,
-                             modifier_qe_path = self.io_obj.fluid_input_path)
+        self.generalCoupling(cycle_no, cycles,
+                            self.io_obj.intermediate_fluid_outpath,
+                            modifier_qe_path = self.io_obj.fluid_input_path,
+                            leap_frog = True)
         self.fluid_obj.revertStartKinSwitches()
-        _ = self.fluidStep(self.io_obj.fluid_output_path, self.io_obj.next_fluid_input_path)
+        _ = self.fluidStep(self.io_obj.fluid_output_path, self.io_obj.next_fluid_input_path, no_copy = True)
 
     def operatorSplit(self, cycle_no, cycles):
         """
@@ -371,10 +406,13 @@ class Coupler:
 
         if self.init.yaml_file['Mode']['Couple_divq']:
             self.couple_obj = DivQ()
+            self.coupling_message = 'Calculating Div.Q'
         elif self.init.yaml_file['Mode']['Couple_multi']:
             self.couple_obj = Multiplier()
+            self.coupling_message = 'Calculating Multiplier'
         elif self.init.yaml_file['Mode']['Couple_subtract']:
             self.couple_obj = Subtract()
+            self.coupling_message = 'Calculating Subtract'
         else:
             Exception('No Valid Base Mode Chosen')
 
@@ -395,11 +433,11 @@ class Coupler:
             fluid_time_path  = os.path.join(RUN_PATH, 'Fluid_CPU_time.txt')
             kin_time_path  = os.path.join(RUN_PATH, 'Kinetic_CPU_time.txt')
             if os.path.exists(cpu_time_path):
-                self.cycle_time_taken = [np.loadtxt(cpu_time_path).tolist()]
+                self.cycle_time_taken = np.loadtxt(cpu_time_path).tolist()
             if os.path.exists(fluid_time_path):
-                self.fluid_time_taken = [np.loadtxt(fluid_time_path).tolist()]
+                self.fluid_time_taken = np.loadtxt(fluid_time_path).tolist()
             if os.path.exists(cpu_time_path):
-                self.kinetic_time_taken = [np.loadtxt(kin_time_path).tolist()]
+                self.kinetic_time_taken = np.loadtxt(kin_time_path).tolist()
 
         self.logger.info("Initial Conditions")
         self.logger.info("Run path {}".format(RUN_PATH))
@@ -419,7 +457,7 @@ class Coupler:
 
         self.logger.info("Starting couple LOOP")
         self.first_pass = True
-        run_fluid_only = False
+        run_only_fluid = False
         np.savetxt(os.path.join(RUN_PATH, "status.txt"), np.array([0], dtype=np.int), fmt = '%1.1i')
 
         for cycle_no in range(start_cycle, cycles, 1):
@@ -446,9 +484,9 @@ class Coupler:
                 if (cycle_no == 1 and self.init.yaml_file['Mode']['Start_from_kinetic']):
                     self.fluid_obj.revertStartKinSwitches()
                 if (cycle_no == cycles - 1):
-                    run_fluid_only = True
+                    run_only_fluid = True
                 self.generalCoupling(cycle_no, cycles, self.io_obj.fluid_output_path,
-                            self.io_obj.next_fluid_input_path, run_fluid_only)
+                            run_only_fluid = run_only_fluid)
 
             if (self.init.yaml_file['Misc']['HDF5'] and 
                 cycle_no % self.init.yaml_file['Coupling_params']['hdf5_output_freq'] == 0

@@ -7,7 +7,7 @@ Norms:
 
 Params:
   Nx: 0 #handled internally
-  Nv: 50
+  Nv: 80
   Np: 1
   Dt: 0.9
   Dx: 0.5

@@ -12,13 +12,13 @@ Codes:
   Fluid_code: hykict
 Coupling_params:
   Nx: 200 
-  Cycles: 3
+  Cycles: 1
   Eta: 0.1E-2
   hdf5_output_freq: 1
   t_cycle: 1.0E-16
 Mode:
   Couple_divq: false
-  Couple_multi: true
+  Couple_multi: false
   Couple_subtract : false
   Couple_leap_frog: false
   Couple_operator_split: false
@@ -26,8 +26,8 @@ Mode:
   Start_from_kinetic: true
   Load_f1: true
 Misc:
-  HDF5: false 
+  HDF5: false
   Convergence_monitoring: true
-  Continue: false
+  Continue: false 
   HPC: false
   Overwrite: true
