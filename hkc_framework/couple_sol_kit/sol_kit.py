@@ -355,7 +355,6 @@ class SOL_KIT(Kinetic):
         
         #Require interpolation to get the centre quanties in SOL-KiT this is done via linear interpolations 
         #here we use cubic spline to smooth quanties. 
-        import matplotlib.pyplot as plt 
         sol_kit_inter_ne = np.interp(sol_kit_grid, sol_kit_x_centered_grid, sol_kit_ne)
         sol_kit_inter_te = np.interp(sol_kit_grid, sol_kit_x_centered_grid, sol_kit_te)
         sol_kit_inter_z =  np.interp(sol_kit_grid, sol_kit_x_centered_grid, sol_kit_z)
