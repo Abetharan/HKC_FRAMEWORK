@@ -41,6 +41,8 @@ class Coupler:
         self.cycle_time_taken = []
         self.init = util.Input(self.yml_init_file_path)
         self.coupling_message = "No Method Chosen"
+        self.critical_density = None
+        self.laser_dir = None
     def startprint(self, fluid_code, kinetic_code):
 
         ShowText = ('COUPLING ' + fluid_code + '-' 
@@ -218,6 +220,16 @@ class Coupler:
         fluid_Z, _, fluid_mass, sim_time) = self.fluidStep(fluid_output_path,
                                                             next_fluid_input_path,  
                                                             no_copy = no_copy)
+
+        if self.init.yaml_file['Mode']['Limit_density']:
+            self.critical_density = 10 * (1114326918632954.5 / pow(self.fluid_obj.init.yaml_file['LaserParams']['Wavelength'], 2)) #Hard-coded limit to 10*nc
+            if any(fluid_ne >= self.critical_density):
+                self.laser_dir = self.fluid_obj.laser_direction
+                self.couple_obj.limit_density = True
+            else:
+                self.critical_density = None
+                self.laser_dir = None
+
         if not run_only_fluid:
             self.logger.info("Set HFCT tools")
             self.hfct_obj.electron_temperature = fluid_Te
@@ -414,15 +426,8 @@ class Coupler:
             self.couple_obj = Subtract()
             self.coupling_message = 'Calculating Subtract'
         else:
-            Exception('No Valid Base Mode Chosen')
+            raise Exception('No Valid Base Mode Chosen')
 
-        if self.init.yaml_file['Mode']['Limit_density']:
-            self.critical_density = 10 * (1114326918632954.5 / pow(self.fluid_obj.init.yaml_file['LaserParams']['Wavelength'], 2)) #Hard-coded limit to 10*nc
-            self.laser_dir = self.fluid_obj.laser_direction
-            self.couple_obj.limit_density = True
-        else:
-            self.critical_density = None
-            self.laser_dir = None
         #Impact not ready
         # else:
             #self.kin_obj = IMPACT()

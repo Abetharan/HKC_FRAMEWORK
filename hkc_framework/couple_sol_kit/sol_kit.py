@@ -290,8 +290,8 @@ class SOL_KIT(Kinetic):
         Lagrangian Practice i.e. quantities are not defined at all points. 
         """
 
-
-        if critical_density is not None:
+        
+        if critical_density is not None and any(f_ne > critical_density):
             index_to_limit = np.where(f_ne >= critical_density)[0]
             if laser_dir == "right":
                 f_ne = f_ne[index_to_limit[-1] + 1:]
@@ -355,9 +355,13 @@ class SOL_KIT(Kinetic):
         
         #Require interpolation to get the centre quanties in SOL-KiT this is done via linear interpolations 
         #here we use cubic spline to smooth quanties. 
+        import matplotlib.pyplot as plt 
         sol_kit_inter_ne = np.interp(sol_kit_grid, sol_kit_x_centered_grid, sol_kit_ne)
         sol_kit_inter_te = np.interp(sol_kit_grid, sol_kit_x_centered_grid, sol_kit_te)
         sol_kit_inter_z =  np.interp(sol_kit_grid, sol_kit_x_centered_grid, sol_kit_z)
+        # plt.plot(f_x_centered_grid/self.normalised_values['lambda_mfp'], (f_te * (BOLTZMANN_CONSTANT/ELEMENTARY_CHARGE)) / self.normalised_values['Te'])
+        # plt.plot(sol_kit_grid, sol_kit_inter_te)
+        # plt.show()
         #SOL_KIT_inter_ne = spliner_ne(SOL_KIT_grid)
         #SOL_KIT_inter_Te = spliner_Te(SOL_KIT_grid)
         #SOL_KIT_inter_Z = spliner_Z(SOL_KIT_grid)

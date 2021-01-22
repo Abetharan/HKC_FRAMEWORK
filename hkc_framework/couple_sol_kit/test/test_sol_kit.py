@@ -98,18 +98,18 @@ class TestSOLKiT():
         kinetic_input = cycle_dump_path.mkdir("INPUT")
         restart_input = kinetic_input.mkdir("RESTART")
         k_obj = SOL_KIT(run_path, src_dir, str(kinetic_input), str(kinetic_output), 
-                         k_config_yml_file_path= myPath + '/Load_f_tests/config.yml', nx = 92)
-        k_obj.setFiles()
+                         k_config_yml_file_path= myPath + '/Load_f_tests/config.yml', nx = 200)
         k_obj.l_max = test_input
+        k_obj.setFiles()
         f_path = os.path.join(myPath, "Load_f_tests/init_data/FLUID_OUTPUT/")
-        f_x_grid = np.loadtxt(os.path.join(f_path, "CELL_WALL_X/CELL_WALL_X_1.txt"))
-        f_x_centered_grid = np.loadtxt(os.path.join(f_path, "CELL_CENTRE_X/CELL_CENTRE_X_1.txt"))
-        f_te = np.loadtxt(os.path.join(f_path, "ELECTRON_TEMPERATURE/ELECTRON_TEMPERATURE_1.txt"))
-        f_ne = np.loadtxt(os.path.join(f_path, "ELECTRON_NUMBER_DENSITY/ELECTRON_NUMBER_DENSITY_1.txt"))
-        f_z = np.loadtxt(os.path.join(f_path, "ZBAR/ZBAR_1.txt"))
-        f_sh = np.loadtxt(os.path.join(f_path, "ELECTRON_HEAT_FLOW_X/ELECTRON_HEAT_FLOW_X_1.txt"))
+        f_x_grid = np.loadtxt(os.path.join(f_path, "CELL_WALL_X/CELL_WALL_X_10.txt"))
+        f_x_centered_grid = np.loadtxt(os.path.join(f_path, "CELL_CENTRE_X/CELL_CENTRE_X_10.txt"))
+        f_te = np.loadtxt(os.path.join(f_path, "ELECTRON_TEMPERATURE/ELECTRON_TEMPERATURE_10.txt"))
+        f_ne = np.loadtxt(os.path.join(f_path, "ELECTRON_NUMBER_DENSITY/ELECTRON_NUMBER_DENSITY_10.txt"))
+        f_z = np.loadtxt(os.path.join(f_path, "ZBAR/ZBAR_10.txt"))
+        f_sh = np.loadtxt(os.path.join(f_path, "ELECTRON_HEAT_FLOW_X/ELECTRON_HEAT_FLOW_X_10.txt"))
         critical_density = 10 * (1114326918632954.5 / pow(0.351E-06, 2)) #Hard-coded limit to 10*nc
-        laser_dir = 'right'
+        laser_dir = None
         k_obj.sh_heat_flow = f_sh
         k_obj.previous_kinetic_output_path = os.path.join(myPath, "".join(
                                             ["Load_f_tests/init_data/kin_output/L_",
@@ -125,4 +125,4 @@ class TestSOLKiT():
         print(difference)
         # print(args)
         # print(difference[args])
-        assert(np.nanmax(difference) < 1e-15)
+        assert(np.nanmax(difference) < 1e-14)
