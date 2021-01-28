@@ -23,7 +23,7 @@ LaserParams:
   Wavelength: 0.351E-6 #0.351E-6 for gold
   Angle: 0
 Limiters:
-  heatflxlmE: 0.15
+  heatflxlmE: 0.2
   heatflxlmI: 1.0
   prrm: 1.0
   radabm: 1.0
@@ -55,10 +55,10 @@ Output:
   Viscosity: false
   Zbar: true
 Paths:
-  FEOS_Path_2: /Users/shiki/DATA/feos_tables/Gd/Gd
-  FEOS_Path_1: /Users/shiki/DATA/feos_tables/He/He
-  Opacity_Path_2: /Users/shiki/DATA/feos_tables/Cu/
-  Opacity_Path_1: /Users/shiki/DATA/feos_tables/He/
+  FEOS_Path_1: /Users/shiki/DATA/feos_tables/Gd/Gd
+  FEOS_Path_2: /Users/shiki/DATA/feos_tables/He/He
+  Opacity_Path_1: /Users/shiki/DATA/feos_tables/Cu/
+  Opacity_Path_2: /Users/shiki/DATA/feos_tables/He/
   Laser_Profile_Path: /Users/shiki/DATA/HKC_RELATED/init_data/copper_hohlraum/laser_profile.txt
   Init_Path: /Users/shiki/DATA/HKC_RELATED/init_data/copper_hohlraum/
   Out_Path: /Users/shiki/DATA/

@@ -123,8 +123,7 @@ class Coupler:
                 self.kin_obj.previous_kinetic_output_path = self.io_obj.all_kinetic_output_path[cycle_no - 1] 
                 self.kin_obj.load_f1 = True                                                              
         self.logger.info("Initialize Kinetic")
-        self.kin_obj.sh_heat_flow = conv_heat_flow 
-
+        self.kin_obj.sh_heat_flow = conv_heat_flow
 
         self.kin_obj.initFromHydro(fluid_x_grid, fluid_x_centered_grid, 
                             fluid_Te, fluid_ne, fluid_Z, critical_density = self.critical_density, laser_dir = self.laser_dir)
@@ -188,10 +187,34 @@ class Coupler:
 
         return (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
             fluid_Z, _, fluid_mass, sim_time) 
+    
+    def returnConvHeatFlow(self,fluid_x_grid,fluid_x_centered_grid, fluid_Te,fluid_ne , fluid_Z,fluid_mass ):
+        """
+        Purpose: Returns the convergence/coupling heat flows  
+        Args:
+            Grid + Thermodynamic quants
+        Notes:
+        """
+        self.hfct_obj.electron_temperature = fluid_Te
+        self.hfct_obj.electron_number_density = fluid_ne
+        self.hfct_obj.zbar = fluid_Z
+        self.hfct_obj.cell_wall_coord = fluid_x_grid
+        self.hfct_obj.cell_centered_coord = fluid_x_centered_grid
+        self.hfct_obj.mass = fluid_mass
+        self.hfct_obj.lambda_ei(self.hfct_obj.electron_temperature * (BOLTZMANN_CONSTANT/ELEMENTARY_CHARGE), 
+                            self.hfct_obj.electron_number_density,
+                            self.hfct_obj.zbar)
+        self.logger.info("HFCT Spitzer Calculation")
+        self.hfct_obj.spitzerHarmHeatFlow()
+        conv_heat_flow = self.hfct_obj.spitzer_harm_heat
+        if self.fluid_obj.init.yaml_file['Switches']['SNBHeatFlow']:
+            self.hfct_obj.snb = True
+            self.hfct_obj.snb_heat_flow(self.fluid_obj.init.yaml_file['FixedParameters']['ng'],self.fluid_obj.init.yaml_file['FixedParameters']['MaxE'], 2)
+            conv_heat_flow = self.hfct_obj.q_snb 
+        return conv_heat_flow
 
-    def generalCoupling(self, cycle_no, cycles, fluid_output_path,
-                         run_only_fluid = False, modifier_qe_path = None,
-                         modifier_next_fluid_input_path = None, **kwargs):
+    def generalCoupling(self, cycle_no, cycles,
+                         run_only_fluid = False):
         """
         Purpose: Implements the General Coupling Algorithm
         Args:
@@ -208,19 +231,13 @@ class Coupler:
             -> Finish 
         """
         no_copy = False
-        if modifier_next_fluid_input_path is None: 
-            next_fluid_input_path = self.io_obj.next_fluid_input_path 
-        else:
-            next_fluid_input_path = modifier_next_fluid_input_path
-
         if cycle_no == cycles - 1: 
             no_copy = True
 
         (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
-        fluid_Z, _, fluid_mass, sim_time) = self.fluidStep(fluid_output_path,
-                                                            next_fluid_input_path,  
+        fluid_Z, _, fluid_mass, sim_time) = self.fluidStep(self.io_obj.fluid_output_path,
+                                                            self.io_obj.next_fluid_input_path,  
                                                             no_copy = no_copy)
-
         if self.init.yaml_file['Mode']['Limit_density']:
             self.critical_density = 10 * (1114326918632954.5 / pow(self.fluid_obj.init.yaml_file['LaserParams']['Wavelength'], 2)) #Hard-coded limit to 10*nc
             if any(fluid_ne >= self.critical_density):
@@ -231,60 +248,19 @@ class Coupler:
                 self.laser_dir = None
 
         if not run_only_fluid:
-            self.logger.info("Set HFCT tools")
-            self.hfct_obj.electron_temperature = fluid_Te
-            self.hfct_obj.electron_number_density = fluid_ne
-            self.hfct_obj.zbar = fluid_Z
-            self.hfct_obj.cell_wall_coord = fluid_x_grid
-            self.hfct_obj.cell_centered_coord = fluid_x_centered_grid
-            self.hfct_obj.mass = fluid_mass
-            self.hfct_obj.lambda_ei(self.hfct_obj.electron_temperature * (BOLTZMANN_CONSTANT/ELEMENTARY_CHARGE), 
-                                self.hfct_obj.electron_number_density,
-                                self.hfct_obj.zbar)
-            self.logger.info("HFCT Spitzer Calculation")
-            self.hfct_obj.spitzerHarmHeatFlow()
-            conv_heat_flow = self.hfct_obj.spitzer_harm_heat
-            if self.fluid_obj.init.yaml_file['Switches']['SNBHeatFlow']:
-                self.hfct_obj.snb = True
-                self.hfct_obj.snb_heat_flow(self.fluid_obj.init.yaml_file['FixedParameters']['ng'],self.fluid_obj.init.yaml_file['FixedParameters']['MaxE'], 2)
-                conv_heat_flow = self.hfct_obj.q_snb
+            conv_heat_flow = self.returnConvHeatFlow(fluid_x_grid,fluid_x_centered_grid, 
+                                    fluid_Te,fluid_ne , fluid_Z,fluid_mass)
 
             vfp_heat = self.kineticStep(cycle_no, conv_heat_flow,
                         fluid_x_grid, fluid_x_centered_grid, 
                                 fluid_Te, fluid_ne, fluid_Z)
 
-            #Modify Spitzer Harm to be equivalent to the original profile 
-            if len(kwargs.keys()) > 0:
-                if kwargs['leap_frog']:
-                    (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
-                fluid_Z, _, fluid_mass, sim_time)  = self.fluid_obj.returnInitValues()
-                    self.logger.info("Leap-Frog Set HFCT tools")
-                    self.hfct_obj.electron_temperature = fluid_Te
-                    self.hfct_obj.electron_number_density = fluid_ne
-                    self.hfct_obj.zbar = fluid_Z
-                    self.hfct_obj.cell_wall_coord = fluid_x_grid
-                    self.hfct_obj.cell_centered_coord = fluid_x_centered_grid
-                    self.hfct_obj.mass = fluid_mass
-                    self.hfct_obj.lambda_ei(self.hfct_obj.electron_temperature * (BOLTZMANN_CONSTANT/ELEMENTARY_CHARGE), 
-                                        self.hfct_obj.electron_number_density,
-                                        self.hfct_obj.zbar)
-                    self.logger.info("HFCT Spitzer Calculation")
-                    self.hfct_obj.spitzerHarmHeatFlow()
-                    conv_heat_flow = self.hfct_obj.spitzer_harm_heat
-                    if self.fluid_obj.init.yaml_file['Switches']['SNBHeatFlow']:
-                        self.hfct_obj.snb = True
-                        self.hfct_obj.snb_heat_flow(self.fluid_obj.init.yaml_file['FixedParameters']['ng'],self.fluid_obj.init.yaml_file['FixedParameters']['MaxE'], 2)
-                        conv_heat_flow = self.hfct_obj.q_snb 
-
-            self.couple_obj.method(self.hfct_obj.spitzer_harm_heat, vfp_heat, 
+            self.couple_obj.method(conv_heat_flow, vfp_heat, 
                             laser_dir = self.laser_dir, mass = fluid_mass, cell_wall_coord = fluid_x_grid,
                             q_snb = self.hfct_obj.q_snb)
             
             self.logger.info(self.coupling_message)
-            if modifier_qe_path is None:
-                self.couple_obj.setCoupleParams(self.io_obj.next_fluid_input_path, fluid_yaml = self.fluid_obj.init.yaml_file)
-            else:
-                self.couple_obj.setCoupleParams(modifier_qe_path, fluid_yaml = self.fluid_obj.init.yaml_file)
+            self.couple_obj.setCoupleParams(self.io_obj.next_fluid_input_path, fluid_yaml = self.fluid_obj.init.yaml_file)
             
     def leapFrog(self, cycle_no, cycles):
         """
@@ -303,12 +279,45 @@ class Coupler:
             -> Finish 
         """
         self.fluid_obj.setNoCoupleSwitches()
-        self.generalCoupling(cycle_no, cycles,
-                            self.io_obj.intermediate_fluid_outpath,
-                            modifier_qe_path = self.io_obj.fluid_input_path,
-                            leap_frog = True)
+        no_copy = False
+        if cycle_no == cycles - 1: 
+            no_copy = True
+
+        (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
+        fluid_Z, _, fluid_mass, sim_time) = self.fluidStep(self.io_obj.intermediate_fluid_outpath,
+                                                            self.io_obj.next_fluid_input_path,  
+                                                            no_copy = no_copy)
+        conv_heat_flow = self.returnConvHeatFlow(fluid_x_grid,fluid_x_centered_grid, 
+                                fluid_Te,fluid_ne , fluid_Z,fluid_mass)
+        if self.init.yaml_file['Mode']['Limit_density']:
+            self.critical_density = 10 * (1114326918632954.5 / pow(self.fluid_obj.init.yaml_file['LaserParams']['Wavelength'], 2)) #Hard-coded limit to 10*nc
+            if any(fluid_ne >= self.critical_density):
+                self.laser_dir = self.fluid_obj.laser_direction
+                self.couple_obj.limit_density = True
+            else:
+                self.critical_density = None
+                self.laser_dir = None
+        vfp_heat = self.kineticStep(cycle_no, conv_heat_flow,
+                    fluid_x_grid, fluid_x_centered_grid, 
+                            fluid_Te, fluid_ne, fluid_Z)
+
+        (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
+    fluid_Z, _, fluid_mass, sim_time)  = self.fluid_obj.returnInitValues()
+
+        conv_heat_flow = self.returnConvHeatFlow(fluid_x_grid,fluid_x_centered_grid, 
+                                fluid_Te,fluid_ne , fluid_Z,fluid_mass)
+        
+        self.couple_obj.method(conv_heat_flow, vfp_heat, 
+                        laser_dir = self.laser_dir, mass = fluid_mass, cell_wall_coord = fluid_x_grid,
+                        q_snb = self.hfct_obj.q_snb)
+        
+        self.logger.info(self.coupling_message)
+        self.couple_obj.setCoupleParams(self.io_obj.fluid_input_path, fluid_yaml = self.fluid_obj.init.yaml_file)
+        
+        #Run Fluid in coupled config 
         self.fluid_obj.revertStartKinSwitches()
-        _ = self.fluidStep(self.io_obj.fluid_output_path, self.io_obj.next_fluid_input_path, no_copy = True)
+        _ = self.fluidStep(self.io_obj.fluid_output_path, self.io_obj.next_fluid_input_path, no_copy = no_copy)
+
 
     def operatorSplit(self, cycle_no, cycles):
         """
@@ -328,11 +337,49 @@ class Coupler:
             -> Finish 
         """
         self.fluid_obj.setNoCoupleSwitches()
-        self.generalCoupling(cycle_no, cycles,self.io_obj.intermediate_fluid_outpath,
-                             modifier_qe_path = self.io_obj.fluid_input_path,
-                             modifier_next_fluid_input_path=self.io_obj.fluid_input_path)
+        no_copy = False
+        if cycle_no == cycles - 1: 
+            no_copy = True
+
+        (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
+        fluid_Z, _, fluid_mass, sim_time) = self.fluidStep(self.io_obj.intermediate_fluid_outpath,
+                                                            self.io_obj.fluid_input_path, False
+                                                            )
+        
+        #Operator-split needs VFP-heat flow from original profile thus initialise kinetic 
+        #with initial values
+        (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
+    fluid_Z, _, fluid_mass, sim_time)  = self.fluid_obj.returnInitValues()
+        conv_heat_flow = self.returnConvHeatFlow(fluid_x_grid,fluid_x_centered_grid, 
+                                fluid_Te,fluid_ne , fluid_Z,fluid_mass)
+
+        if self.init.yaml_file['Mode']['Limit_density']:
+            self.critical_density = 10 * (1114326918632954.5 / pow(self.fluid_obj.init.yaml_file['LaserParams']['Wavelength'], 2)) #Hard-coded limit to 10*nc
+            if any(fluid_ne >= self.critical_density):
+                self.laser_dir = self.fluid_obj.laser_direction
+                self.couple_obj.limit_density = True
+            else:
+                self.critical_density = None
+                self.laser_dir = None
+
+        vfp_heat = self.kineticStep(cycle_no, conv_heat_flow,
+                    fluid_x_grid, fluid_x_centered_grid, 
+                            fluid_Te, fluid_ne, fluid_Z)
+
+        (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
+    fluid_Z, _, fluid_mass, sim_time)  = self.fluid_obj.getLastStepQuants()
+        self.logger.info("Operator-Split Set HFCT tools")
+        conv_heat_flow = self.returnConvHeatFlow(fluid_x_grid,fluid_x_centered_grid, 
+                                fluid_Te,fluid_ne , fluid_Z,fluid_mass)
+                                
+        self.couple_obj.method(conv_heat_flow, vfp_heat, 
+                        laser_dir = self.laser_dir, mass = fluid_mass, cell_wall_coord = fluid_x_grid,
+                        q_snb = self.hfct_obj.q_snb)
+            
+        self.logger.info(self.coupling_message)
+        self.couple_obj.setCoupleParams(self.io_obj.fluid_input_path, fluid_yaml = self.fluid_obj.init.yaml_file)
         self.fluid_obj.setOperatorSplitSwitch()
-        _ = self.fluidStep(self.io_obj.fluid_output_path, self.io_obj.next_fluid_input_path)
+        _ = self.fluidStep(self.io_obj.fluid_output_path, self.io_obj.next_fluid_input_path, no_copy = no_copy)
 
     def main(self):
         RUN_PATH = os.path.join(self.init.yaml_file['Paths']['Base_dir'],
@@ -490,7 +537,7 @@ class Coupler:
                     self.fluid_obj.revertStartKinSwitches()
                 if (cycle_no == cycles - 1):
                     run_only_fluid = True
-                self.generalCoupling(cycle_no, cycles, self.io_obj.fluid_output_path,
+                self.generalCoupling(cycle_no, cycles,
                             run_only_fluid = run_only_fluid)
 
             if (self.init.yaml_file['Misc']['HDF5'] and 
@@ -498,7 +545,7 @@ class Coupler:
                 or cycle_no == cycles - 1):
                 self.storeToHdf5(cycle_no)
 
-            self.logger.info('CYCLE COMPLETED UPDATING CONTINUE STEP ')
+            self.logger.info('CYCLE COMPLETED UPDATING CONTINUE STEP')
             np.savetxt(self.continue_step_path, np.array([cycle_no]), fmt = '%i')
 
             t1 = time.time()
