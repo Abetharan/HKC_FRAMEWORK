@@ -180,6 +180,7 @@ class Coupler:
         if no_copy:
             return ((fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
             fluid_Z, _, fluid_mass, sim_time))
+        self.fluid_obj.setTimes()
         self.logger.info("Copying files to next step Init: {}".format(next_input_path))
         self.fluid_obj.initHydro(next_input_path)
         tfluid_end = time.time()

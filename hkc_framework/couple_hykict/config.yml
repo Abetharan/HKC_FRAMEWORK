@@ -90,6 +90,7 @@ Switches:
   EoSTables: false
   IonizationTables: false
   OpacityTables: false
+  LoadInRadEnergy: false
 TimeParameters:
   ElectronLimit: 0.02
   IonLimit: 0.5
@@ -100,7 +101,7 @@ TimeParameters:
   dt: 1.0e-17 #5.608e-11
   dt_max: 1.0e-13
   dt_min: 1.0e-16
-  steps: 200
+  steps: 0
   t_max: 0
   t_init: 0
   AdapativeMethod: 0 #0 is BUCKY, >0 HYADES

@@ -27,11 +27,13 @@ class HyKiCT(Fluid):
         self.cycle_dump_path = ""
         self._copyHyKiCT()
         self.laser_direction = 'right'
-        self.tmax = tmax 
+        self.tmax = float(tmax)
+        self.cycle_step = float(tmax)
         self.init.yaml_file['TimeParameters']['steps'] = 0
         self.init.yaml_file['FixedParameters']['nx'] = nx 
         self.couple_mode = None
         self.cycle_no = 0
+        self.curr_time = 0
         for couple_mode, logic in kwargs.items():
             if logic:
                 self.couple_mode = couple_mode  
@@ -51,8 +53,8 @@ class HyKiCT(Fluid):
         Purpose: Sets the expected switches to HyKiCT which were
                 changed due to Start Kinetic Mode. 
         """
-        self.init.yaml_file['TimeParameters']['t_max'] = self.tmax
         self.init.yaml_file['Switches'][self.couple_mode] = True
+        self.setTimes()
 
     def setNoCoupleSwitches(self):
         """
@@ -72,6 +74,12 @@ class HyKiCT(Fluid):
         self.init.yaml_file['Switches']['CoupleOperatorSplit'] = True
         self.init.yaml_file['TimeParameters']['t_max'] = self.tmax
 
+    def setTimes(self):
+        """
+        Purpose: Updates times to keep track of what time fluid is running.
+        """
+        self.init.yaml_file['TimeParameters']['t_init'] = float(self.curr_time)
+        self.init.yaml_file['TimeParameters']['t_max'] = float(self.tmax)
 
     def setFiles(self):
         """ Purpose: Write out config.yml for each cycle"""
@@ -121,6 +129,9 @@ class HyKiCT(Fluid):
         f_time = np.loadtxt(os.path.join(self._fluid_output_path,
                "".join(["TIME/TIME_", str(last_index), ".txt"])), dtype = np.float64)
         mass = np.loadtxt(self._fluid_input_path + "/mass.txt")        
+        
+        self.curr_time = f_time
+        self.tmax = self.curr_time + self.cycle_step
         
         return(f_x_grid, f_x_centered_grid, f_v, f_ne, f_Te, f_Z, f_laser, mass, f_time)
     
@@ -190,7 +201,7 @@ class HyKiCT(Fluid):
         f_time = np.loadtxt(os.path.join(self._fluid_output_path,
                "".join(["TIME/TIME_", str(last_index), ".txt"])), dtype = np.float64)
         mass = np.loadtxt(self._fluid_input_path + "/mass.txt")        
-        
+
         return(f_x_grid, f_x_centered_grid, f_v, f_ne, f_Te, f_Z, f_laser, mass, f_time)
     def storeToHdf5(self, hdf5_file, cycle):
         """
