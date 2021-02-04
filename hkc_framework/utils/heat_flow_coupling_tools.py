@@ -71,7 +71,8 @@ class HeatFlowCouplingTools:
         HeatFlowE = np.zeros(nx + 1)
 
         for i in range(1, nx):
-            centered_ke = 0.5 * (kappaE[i] + kappaE[i - 1])
+            centered_ke = 2*(kappaE[i]*kappaE[i-1])/(kappaE[i]+kappaE[i-1])
+            #centered_ke = 0.5 * (kappaE[i] + kappaE[i - 1])
             HeatFlowE[i] = centered_ke *((self.electron_temperature[i] - self.electron_temperature[i - 1]) 
                             / (self.cell_centered_coord[i] - self.cell_centered_coord[i - 1]))
             
