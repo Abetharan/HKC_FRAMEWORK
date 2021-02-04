@@ -212,12 +212,6 @@ class Coupler:
             self.hfct_obj.snb = True
             self.hfct_obj.snb_heat_flow(self.fluid_obj.init.yaml_file['FixedParameters']['ng'],self.fluid_obj.init.yaml_file['FixedParameters']['MaxE'], 2)
             conv_heat_flow = self.hfct_obj.q_snb 
-        import matplotlib.pyplot as plt 
-        kk = np.loadtxt('/Users/shiki/DATA/HKC_RELATED/snb_Conv_test/CYCLE_0/FLUID_OUTPUT/ELECTRON_HEAT_FLOW_X/ELECTRON_HEAT_FLOW_X_0.txt')
-        plt.plot(-1*kk, label = 'hyki')
-        plt.plot(conv_heat_flow, label = 'hkc')
-        plt.legend()
-        plt.show()
         return conv_heat_flow
 
     def generalCoupling(self, cycle_no, cycles,
