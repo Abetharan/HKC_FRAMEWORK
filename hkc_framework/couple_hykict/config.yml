@@ -18,10 +18,11 @@ FixedParameters:
   Preheat_StartIndex: 0
 LaserParams:
   Duration: 2.0e-9 #Always relevant
-  Constant_Power: 1.0E20 #If load in laser profile is true this is ignored.
+  Constant_Power: 1.0E18 #If load in laser profile is true this is ignored.
   Wavelength: 0.351E-6 #0.351E-6 for gold
   Angle: 0
   Albedo: 0
+  CriticalLeak: 0.01
 Limiters:
   heatflxlmE: 1.0
   heatflxlmI: 1.0
@@ -71,14 +72,14 @@ Switches:
   CoupleOperatorSplit: false
   CoupleSubtract: false
   Exchange: true
-  FullyIonized: true
+  FullyIonized: false
   HeatConduction: true
-  IdealGas: true
+  IdealGas: false
   InvBrem: true
   ImplicitHeatConduction: false
   IsothermalMode: false
   LoadInLaserProfile: false 
-  MultiMaterial: true
+  MultiMaterial: True
   RadDiffusion: true
   RadFreeFree: true
   RadPdVWork: false

@@ -180,6 +180,19 @@ class HyKiCT(Fluid):
         Ar_new_path = os.path.join(next_fluid_input_path, "Ar.txt")
         if not os.path.exists(Ar_new_path):
             shutil.copyfile(Ar_copy_path, Ar_new_path)
+
+        laser_copy_path  = os.path.join(self._fluid_input_path, "laser_profile.txt")
+        laser_new_path = os.path.join(next_fluid_input_path, "laser_profile.txt")
+        if os.path.exists(laser_copy_path):
+            if not os.path.exists(laser_new_path):
+                shutil.copyfile(laser_copy_path, laser_new_path)
+
+        if self.init.yaml_file["Switches"]["RadiationTransport"]:
+            shutil.copyfile(os.path.join(self._fluid_output_path, "RAD_ENERGY_DENSITY/RAD_ENERGY_DENSITY_" + str(largest_fluid_index) +".txt")
+                                            ,os.path.join(next_fluid_input_path,"rad_energy_density.txt"))
+            if self.curr_time > 0:
+                self.init.yaml_file["Switches"]["LoadInRadEnergy"] = True
+
             
     def returnInitValues(self):
         last_index = 0
