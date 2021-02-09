@@ -38,7 +38,7 @@ BOHR_RADIUS = constants.value("Bohr radius")
 class SOL_KIT(Kinetic):
     
     def __init__(self,run_path,  k_src_dir, kinetic_input_path, kinetic_output_path,
-                k_config_yml_file_path, nx, convergence_monitoring = False, cx1 = False):
+                k_config_yml_file_path, nx, cycle, convergence_monitoring = False, cx1 = False):
         
         # config_yml_file_path = os.path.join(
         #                         pathlib.Path(__file__).parent.absolute(),
@@ -99,6 +99,7 @@ class SOL_KIT(Kinetic):
                                  self._run_path)
         else:
             Kinetic.__init__(self, cmd)
+        self.cycle = cycle
         self.convergence_tolerance = self.init.yaml_file["Params"]['Convergence']
         self.number_of_files_before_kill = self.init.yaml_file["Params"]['Files_allowed'] 
         self.status_path = os.path.join(self._sol_kit_output_path, "STATUS.txt")

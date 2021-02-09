@@ -460,6 +460,7 @@ class Coupler:
                             self.io_obj.kinetic_output_path,
                             self.init.yaml_file['Paths']['K_config_path'],
                             nx = self.init.yaml_file['Coupling_params']['Nx'],
+                            cycle = start_cycle,
                             convergence_monitoring = self.init.yaml_file['Misc']['Convergence_monitoring'],
                             cx1 = self.init.yaml_file['Misc']['HPC']
                             )
