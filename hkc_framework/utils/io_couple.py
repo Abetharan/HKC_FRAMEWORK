@@ -79,7 +79,10 @@ class IO:
         if os.path.exists(self._run_path):
             path_exists = True
             if self.__overwrite_ok:
-                shutil.rmtree(self._run_path)
+                text = input("Are you sure you want to delete all files(Y/N): ")
+                if(text.lower() == "y"):
+                    shutil.rmtree(self._run_path)
+
         else:
             #create base folder
             os.makedirs(self._run_path)
