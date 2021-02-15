@@ -14,7 +14,7 @@ class TestSOLKiT():
     def test_run(self, tmpdir):
         src_dir = os.environ["K_SRC_DIR"]
         p = tmpdir.mkdir('cycle')
-        k_obj = SOL_KIT(p,src_dir, p, p,  k_config_yml_file_path= myPath + '/test_run_dir/config.yml', nx = 100)
+        k_obj = SOL_KIT(p,src_dir, p, p,  k_config_yml_file_path= myPath + '/test_run_dir/config.yml', nx = 100,cycle = 0)
         k_obj.cycle_dump_path = tmpdir
         k_obj.setFiles()
         k_obj.Run()
@@ -24,7 +24,7 @@ class TestSOLKiT():
     def test_set(self, tmpdir): 
         src_dir = os.environ["K_SRC_DIR"]
         p = tmpdir.mkdir('cycle')
-        k_obj = SOL_KIT(p,src_dir, p, p,  k_config_yml_file_path= myPath + '/test_run_dir/config.yml',  nx = 100)
+        k_obj = SOL_KIT(p,src_dir, p, p,  k_config_yml_file_path= myPath + '/test_run_dir/config.yml',  nx = 100,cycle = 0)
         k_obj.setFiles()
         assert os.path.exists(os.path.join(p, 'INPUT/GRID_INPUT.txt'))
         assert os.path.exists(os.path.join(p, 'INPUT/NORMALIZATION_INPUT.txt'))
@@ -36,7 +36,7 @@ class TestSOLKiT():
     def test_init(self, tmpdir):
         src_dir = os.environ["K_SRC_DIR"]
         p = tmpdir.mkdir('cycle')
-        k_obj = SOL_KIT(p,src_dir, p, p,  k_config_yml_file_path= myPath + '/test_run_dir/config.yml', nx = 100)
+        k_obj = SOL_KIT(p,src_dir, p, p,  k_config_yml_file_path= myPath + '/test_run_dir/config.yml', nx = 100,cycle = 0)
         k_obj.setFiles()
         f_x_grid = np.linspace(0, 100, 101)
         f_x_centered_grid = np.array([(f_x_grid[i + 1] + f_x_grid[i]) / 2 for i in range(len(f_x_grid) - 1)])
@@ -62,7 +62,7 @@ class TestSOLKiT():
         kinetic_output = cycle_dump_path.mkdir("OUTPUT")
         kinetic_input = cycle_dump_path.mkdir("INPUT")
         k_obj = SOL_KIT(run_path, src_dir, str(kinetic_input), str(kinetic_output),
-                          k_config_yml_file_path= myPath + '/test_run_dir/config.yml', nx = 100)
+                          k_config_yml_file_path= myPath + '/test_run_dir/config.yml', nx = 100,cycle = 0)
         k_obj.setFiles()
         k_obj.moveFiles()
         assert os.path.exists(os.path.join(cycle_dump_path, 'INPUT'))
@@ -79,7 +79,7 @@ class TestSOLKiT():
         kinetic_output = cycle_dump_path.mkdir("OUTPUT")
         kinetic_input = cycle_dump_path.mkdir("INPUT")
         k_obj = SOL_KIT(run_path, src_dir, str(kinetic_input), str(kinetic_output), 
-                         k_config_yml_file_path= myPath + '/test_run_dir/config.yml', nx = 198)
+                         k_config_yml_file_path= myPath + '/test_run_dir/config.yml', nx = 198,cycle = 0)
         k_obj.setFiles()
         true_qe = np.random.rand(198)
         np.savetxt(os.path.join(k_obj._sol_kit_output_path, 'HEAT_FLOW_X/HEAT_FLOW_X_01000.txt'), true_qe)
@@ -98,7 +98,7 @@ class TestSOLKiT():
         kinetic_input = cycle_dump_path.mkdir("INPUT")
         restart_input = kinetic_input.mkdir("RESTART")
         k_obj = SOL_KIT(run_path, src_dir, str(kinetic_input), str(kinetic_output), 
-                         k_config_yml_file_path= myPath + '/Load_f_tests/config.yml', nx = 200)
+                         k_config_yml_file_path= myPath + '/Load_f_tests/config.yml', nx = 200,cycle = 0)
         k_obj.l_max = test_input
         k_obj.setFiles()
         f_path = os.path.join(myPath, "Load_f_tests/init_data/FLUID_OUTPUT/")

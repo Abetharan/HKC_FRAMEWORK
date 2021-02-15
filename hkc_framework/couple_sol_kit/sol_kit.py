@@ -76,7 +76,7 @@ class SOL_KIT(Kinetic):
         self._norm_Z = float(self.init.yaml_file['Norms']['Z'])
         self._norm_Ar = float(self.init.yaml_file['Norms']['Ar'])
         self._norm_ne = float(self.init.yaml_file['Norms']['Ne'])
-
+        self.skip_load_f1 = False
         self.copyAndCreateSOL_KiT()
         # self.setFiles()
         self.normalisation()
@@ -309,6 +309,8 @@ class SOL_KIT(Kinetic):
                 f_x_grid = f_x_grid[:index_to_limit[0] + 1]
                 self.sh_heat_flow = self.sh_heat_flow[:index_to_limit[0] + 1]
             self.grid['nx'] = len(f_te)
+            if self.nx != len(f_te):
+                self.skip_load_f1 = True
             self.nx = len(f_te)
             templating(tmpfilePath= os.path.join(self._run_path, 'INPUT/tmpSOL_KIT_GRID.txt'),
             writePath=self._sol_kit_input_path, fileName="GRID_INPUT.txt", parameters=self.grid)
@@ -366,7 +368,7 @@ class SOL_KIT(Kinetic):
         #SOL_KIT_inter_Te = spliner_Te(SOL_KIT_grid)
         #SOL_KIT_inter_Z = spliner_Z(SOL_KIT_grid)
 
-        if self.load_f1:
+        if self.load_f1 and not self.skip_load_f1:
             self.switches['RESTART'] = "T"
             templating(tmpfilePath= os.path.join(self._run_path, 'INPUT/tmpSOL_KIT_SWITCHES.txt'),
             writePath=self._sol_kit_input_path, fileName="SWITCHES_INPUT.txt", parameters=self.switches)
@@ -389,7 +391,7 @@ class SOL_KIT(Kinetic):
             np.savetxt(os.path.join(self._sol_kit_input_path, "X_GRID_INPUT.txt"), sol_kit_grid)
             # np.savetxt(os.path.join(self._SOL_KIT_INPUT_PATH, "ION_VEL_INPUT.txt"), SOL_KIT_grid)
             # np.savetxt(os.path.join(self._SOL_KIT_INPUT_PATH, "NEUT_HEAT_INPUT.txt"), SOL_KIT_heating)
-    
+        self.skip_load_f1 = False    
     def getLastHeatFlow(self):
         """ Purpose: Gets the last heat flow from SOL-KiT after run finishes.
             Returns: Last heat flow with assumed format of cell-wall only definition of heat flow
