@@ -488,10 +488,16 @@ class Coupler:
             kin_time_path  = os.path.join(RUN_PATH, 'Kinetic_CPU_time.txt')
             if os.path.exists(cpu_time_path):
                 self.cycle_time_taken = np.loadtxt(cpu_time_path).tolist()
+                if isinstance(self.cycle_time_taken, float):
+                    self.cycle_time_taken = [self.cycle_time_taken]
             if os.path.exists(fluid_time_path):
                 self.fluid_time_taken = np.loadtxt(fluid_time_path).tolist()
+                if isinstance(self.fluid_time_taken, float):
+                    self.fluid_time_taken = [self.fluid_time_taken]
             if os.path.exists(cpu_time_path):
                 self.kinetic_time_taken = np.loadtxt(kin_time_path).tolist()
+                if isinstance(self.kinetic_time_taken, float):
+                    self.kinetic_time_taken = [self.kinetic_time_taken]
 
         self.logger.info("Initial Conditions")
         self.logger.info("Run path {}".format(RUN_PATH))
