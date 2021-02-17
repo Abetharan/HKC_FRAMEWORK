@@ -23,6 +23,7 @@ LaserParams:
   Angle: 0
   Albedo: 0
   CriticalLeak: 0.01
+  CriticalDumpFraction: 0.01
 Limiters:
   heatflxlmE: 1.0
   heatflxlmI: 1.0
