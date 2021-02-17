@@ -383,6 +383,8 @@ class SOL_KIT(Kinetic):
             np.savetxt(os.path.join(self._sol_kit_input_path, "TEMPERATURE_INPUT.txt"), sol_kit_inter_te)    
             np.savetxt(os.path.join(self._sol_kit_input_path, "Z_PROFILE_INPUT.txt"), sol_kit_inter_z)    
             np.savetxt(os.path.join(self._sol_kit_input_path, "X_GRID_INPUT.txt"), sol_kit_grid)
+            self.skip_load_f1 = False    
+            return 0
 
         else:
             np.savetxt(os.path.join(self._sol_kit_input_path, "DENS_INPUT.txt"), sol_kit_inter_ne)    
@@ -391,7 +393,8 @@ class SOL_KIT(Kinetic):
             np.savetxt(os.path.join(self._sol_kit_input_path, "X_GRID_INPUT.txt"), sol_kit_grid)
             # np.savetxt(os.path.join(self._SOL_KIT_INPUT_PATH, "ION_VEL_INPUT.txt"), SOL_KIT_grid)
             # np.savetxt(os.path.join(self._SOL_KIT_INPUT_PATH, "NEUT_HEAT_INPUT.txt"), SOL_KIT_heating)
-        self.skip_load_f1 = False    
+            self.skip_load_f1 = False    
+            return 1
     def getLastHeatFlow(self):
         """ Purpose: Gets the last heat flow from SOL-KiT after run finishes.
             Returns: Last heat flow with assumed format of cell-wall only definition of heat flow

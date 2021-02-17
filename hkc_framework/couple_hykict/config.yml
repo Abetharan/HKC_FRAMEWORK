@@ -72,24 +72,24 @@ Switches:
   CoupleMulti: false
   CoupleOperatorSplit: false
   CoupleSubtract: false
-  Exchange: true
-  FullyIonized: false
+  Exchange: false
+  FullyIonized: true
   HeatConduction: true
-  IdealGas: false
-  InvBrem: true
+  IdealGas: true
+  InvBrem: false
   ImplicitHeatConduction: false
   IsothermalMode: false
   LoadInLaserProfile: false 
-  MultiMaterial: True
+  MultiMaterial: false
   RadDiffusion: true
   RadFreeFree: true
   RadPdVWork: false
-  RadiationTransport: true 
-  SingleTemperature: false 
+  RadiationTransport: false 
+  SingleTemperature: true 
   SNBHeatFlow: false
   Velocity: true
   Viscosity: true
-  EoSTables: true
+  EoSTables: false
   IonizationTables: true
   OpacityTables: true
   LoadInRadEnergy: false

@@ -125,8 +125,12 @@ class Coupler:
         self.logger.info("Initialize Kinetic")
         self.kin_obj.sh_heat_flow = conv_heat_flow
 
-        self.kin_obj.initFromHydro(fluid_x_grid, fluid_x_centered_grid, 
+        skipped = self.kin_obj.initFromHydro(fluid_x_grid, fluid_x_centered_grid, 
                             fluid_Te, fluid_ne, fluid_Z, critical_density = self.critical_density, laser_dir = self.laser_dir)
+        if skipped:
+            self.logger.info("FAILED TO Engage MODE: Load F1 DUE TO CHANGE IN GRID SIZE")
+
+
         self.logger.info("Start Kinetic")
         self.kin_obj.Run()
         self.logger.info("End Kinetic")
