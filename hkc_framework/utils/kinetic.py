@@ -18,7 +18,6 @@ class Kinetic():
         self.status_path = ""
         self.convergence_func = convergence_func
         self.monitor_convergence = convergence_monitoring
-        self.nx = 0
         self.cmd = cmd
         self.converged = False
         self.search_tolerance = 1e-16
@@ -107,6 +106,7 @@ class Kinetic():
                 self.logger.info('Latest path') 
                 self.logger.info(sorted_heat_flows[-1].path)
                 if os.access(sorted_heat_flows[-1].path, os.R_OK):
+                    time.sleep(0.1)
                     convergence_variable = self.convergence_func(sorted_heat_flows[-1].path)
                     #Possible occurence where files is read safe but nothing has been written to it.
                     if(len(convergence_variable) <= 0):

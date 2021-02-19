@@ -17,7 +17,7 @@ from utils import Input
 class HyKiCT(Fluid):
 
     def __init__(self, run_path = None, f_src_dir = None, f_input_path = None,
-                 f_config_yml_file_path = None):
+                 f_config_yml_file_path = None, nx = 0, tmax = 0, start_from_kin = True, **kwargs):
 
         self.init = Input(f_config_yml_file_path)
         self._fluid_src_dir = f_src_dir
@@ -27,10 +27,62 @@ class HyKiCT(Fluid):
         self.cycle_dump_path = ""
         self._copyHyKiCT()
         self.laser_direction = 'right'
-    
+        self.tmax = float(tmax)
+        self.cycle_step = float(tmax)
+        self.init.yaml_file['TimeParameters']['steps'] = 0
+        self.init.yaml_file['FixedParameters']['nx'] = nx 
+        self.couple_mode = None
+        self.cycle_no = 0
+        self.curr_time = 0
+        for couple_mode, logic in kwargs.items():
+            if logic:
+                self.couple_mode = couple_mode  
+                break
+
+        if start_from_kin:
+            self.init.yaml_file['TimeParameters']['t_max'] = 0
+            self.init.yaml_file['Switches']['CoupleDivQ'] = False
+            self.init.yaml_file['Switches']['CoupleMulti'] = False 
+            self.init.yaml_file['Switches']['CoupleSubtract'] = False 
+        else:
+            self.init.yaml_file['TimeParameters']['t_max'] = self.tmax
+            self.init.yaml_file['Switches'][self.couple_mode] = True
+
+    def revertStartKinSwitches(self):
+        """
+        Purpose: Sets the expected switches to HyKiCT which were
+                changed due to Start Kinetic Mode. 
+        """
+        self.init.yaml_file['Switches'][self.couple_mode] = True
+        self.setTimes()
+
+    def setNoCoupleSwitches(self):
+        """
+        Purpose: Sets switches to no coupling
+        """
+        self.init.yaml_file['Switches']['CoupleDivQ'] = False
+        self.init.yaml_file['Switches']['CoupleMulti'] = False 
+        self.init.yaml_file['Switches']['CoupleSubtract'] = False 
+        self.init.yaml_file['TimeParameters']['t_max'] = self.tmax
+
+    def setOperatorSplitSwitch(self):
+        """
+        Purpose: Sets the expected switches to Operator-
+                Split coupling
+        """
+        self.init.yaml_file['Switches'][self.couple_mode] = True
+        self.init.yaml_file['Switches']['CoupleOperatorSplit'] = True
+        self.init.yaml_file['TimeParameters']['t_max'] = self.tmax
+
+    def setTimes(self):
+        """
+        Purpose: Updates times to keep track of what time fluid is running.
+        """
+        self.init.yaml_file['TimeParameters']['t_init'] = float(self.curr_time)
+        self.init.yaml_file['TimeParameters']['t_max'] = float(self.tmax)
+
     def setFiles(self):
         """ Purpose: Write out config.yml for each cycle"""
-
         yaml_dump_path = os.path.join(self.cycle_dump_path, 'config.yml')
         with open(yaml_dump_path, 'w') as outfile: 
             yaml.dump(self.init.yaml_file, outfile)
@@ -53,7 +105,7 @@ class HyKiCT(Fluid):
         last_index = findLargestIndex(os.path.join(self._fluid_output_path, "TIME"))
         return(np.loadtxt(os.path.join(self._fluid_output_path,
                  "".join(['TIME/TIME', str(last_index), ".txt"]))))
-    def getLastStepQuants(self): 
+    def getLastStepQuants(self, update_time = True): 
         """
         Purpose: Get the last output from hykict ouput
         Return: Return numpy arrays of all required files
@@ -78,9 +130,13 @@ class HyKiCT(Fluid):
                "".join(["TIME/TIME_", str(last_index), ".txt"])), dtype = np.float64)
         mass = np.loadtxt(self._fluid_input_path + "/mass.txt")        
         
+        if update_time:
+            self.curr_time = float(f_time)
+            self.tmax = self.curr_time + float(self.cycle_step)
+        
         return(f_x_grid, f_x_centered_grid, f_v, f_ne, f_Te, f_Z, f_laser, mass, f_time)
     
-    def initHydro(self, next_fluid_input_path, qe = None, pre_params = None, front_params = None):
+    def initHydro(self, next_fluid_input_path): #Remove qe etc
         """
         Purpose: 
             Move fluid files
@@ -92,22 +148,11 @@ class HyKiCT(Fluid):
         """ 
         largest_fluid_index = findLargestIndex(os.path.join(self._fluid_output_path, "ELECTRON_TEMPERATURE"))
         #Properitary names for HyKiCT. Looks for these files when run in coupled mode
-        if qe is not None:
-            np.savetxt(os.path.join(next_fluid_input_path,"qe.txt"), qe)
-
-        if pre_params is not None or front_params is not None:
-            if pre_params is None:
-                pre_params = np.array([0])
-            if front_params is None:
-                front_params = np.array([0])
-            np.savetxt(os.path.join(next_fluid_input_path,"pre_heat_fit_param.txt"), pre_params)
-            np.savetxt(os.path.join(next_fluid_input_path,"front_heat_fit_param.txt"), front_params)
 
         #Standard init files. 
         #These files should correspond to the last state of the fluid step. 
         #In the case of HyKiCT these files are sufficient to init everything else. 
         #For other codes this might not be the case. 
-        #NOTE Maybe require radiation density to be loaded in. 
 
         shutil.copyfile(os.path.join(self._fluid_output_path, "CELL_WALL_X/CELL_WALL_X_" + str(largest_fluid_index) +".txt")    
                                         ,os.path.join(next_fluid_input_path,"coord.txt"))
@@ -137,6 +182,41 @@ class HyKiCT(Fluid):
         if not os.path.exists(Ar_new_path):
             shutil.copyfile(Ar_copy_path, Ar_new_path)
 
+        laser_copy_path  = os.path.join(self._fluid_input_path, "laser_profile.txt")
+        laser_new_path = os.path.join(next_fluid_input_path, "laser_profile.txt")
+        if os.path.exists(laser_copy_path):
+            if not os.path.exists(laser_new_path):
+                shutil.copyfile(laser_copy_path, laser_new_path)
+
+        if self.init.yaml_file["Switches"]["RadiationTransport"]:
+            shutil.copyfile(os.path.join(self._fluid_output_path, "RAD_ENERGY_DENSITY/RAD_ENERGY_DENSITY_" + str(largest_fluid_index) +".txt")
+                                            ,os.path.join(next_fluid_input_path,"rad_energy_density.txt"))
+            if self.curr_time > 0:
+                self.init.yaml_file["Switches"]["LoadInRadEnergy"] = True
+
+            
+    def returnInitValues(self):
+        last_index = 0
+        f_x_grid = np.loadtxt(os.path.join(self._fluid_output_path, 
+                            "".join(["CELL_WALL_X/CELL_WALL_X_", str(last_index), ".txt"])), dtype = np.float64)
+        f_x_centered_grid = np.loadtxt(os.path.join(self._fluid_output_path,
+                            "".join(["CELL_CENTRE_X/CELL_CENTRE_X_", str(last_index), ".txt"])), dtype = np.float64)
+        f_v = np.loadtxt(os.path.join(self._fluid_output_path,
+                "".join(["VELOCITY/VELOCITY_", str(last_index), ".txt"])), dtype = np.float64)
+        f_ne = np.loadtxt(os.path.join(self._fluid_output_path,
+                "".join(["ELECTRON_NUMBER_DENSITY/ELECTRON_NUMBER_DENSITY_", str(last_index), ".txt"])), dtype = np.float64)
+        f_Te = np.loadtxt(os.path.join(self._fluid_output_path,
+                "".join(["ELECTRON_TEMPERATURE/ELECTRON_TEMPERATURE_", str(last_index), ".txt"])),dtype = np.float64)
+        f_laser = np.loadtxt(os.path.join(self._fluid_output_path,
+                    "".join(["INVERSE_BREM/INVERSE_BREM_", str(last_index), ".txt"])),dtype = np.float64)
+#legacy        # f_brem = np.loadtxt(self._fluid_output_path + "BREM/BREM_" + str(last_index) + ".txt")
+        f_Z = np.loadtxt(os.path.join(self._fluid_output_path,
+               "".join(["ZBAR/ZBAR_", str(last_index), ".txt"])), dtype = np.float64)
+        f_time = np.loadtxt(os.path.join(self._fluid_output_path,
+               "".join(["TIME/TIME_", str(last_index), ".txt"])), dtype = np.float64)
+        mass = np.loadtxt(self._fluid_input_path + "/mass.txt")        
+
+        return(f_x_grid, f_x_centered_grid, f_v, f_ne, f_Te, f_Z, f_laser, mass, f_time)
     def storeToHdf5(self, hdf5_file, cycle):
         """
         Purpose: Store HyKiCT in/output to centralised hdf5
@@ -165,4 +245,4 @@ class HyKiCT(Fluid):
                     if var_dir.is_file():
                         tmp_read_file = np.loadtxt(var_dir.path)
                         hdf5_file.create_dataset("".join(["Cycle_", str(cycle), "/Fluid_Input/", var_dir.name]),
-                                                data = tmp_read_file, compression="gzip")
+                                                data = tmp_read_file)

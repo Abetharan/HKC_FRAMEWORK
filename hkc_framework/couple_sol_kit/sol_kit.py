@@ -38,7 +38,7 @@ BOHR_RADIUS = constants.value("Bohr radius")
 class SOL_KIT(Kinetic):
     
     def __init__(self,run_path,  k_src_dir, kinetic_input_path, kinetic_output_path,
-                k_config_yml_file_path, convergence_monitoring = False, cx1 = False):
+                k_config_yml_file_path, nx, cycle, convergence_monitoring = False, cx1 = False):
         
         # config_yml_file_path = os.path.join(
         #                         pathlib.Path(__file__).parent.absolute(),
@@ -53,7 +53,7 @@ class SOL_KIT(Kinetic):
         #objects
         self.heat_flow_tools = HeatFlowCouplingTools() 
         self.init = Input(k_config_yml_file_path)
-        
+        self.init.yaml_file['Params']['Nx'] = nx
         #paths
         self._run_path = run_path
         self._kinetic_input_path = kinetic_input_path
@@ -70,13 +70,13 @@ class SOL_KIT(Kinetic):
         self.normalised_values = None
         self.cx1 = cx1
         self._np = self.init.yaml_file['Params']['Np'] 
-
+        self.nx = nx 
         self.l_max = self.init.yaml_file['Params']['L_max']
         self._norm_Te = float(self.init.yaml_file['Norms']['Te'])
         self._norm_Z = float(self.init.yaml_file['Norms']['Z'])
         self._norm_Ar = float(self.init.yaml_file['Norms']['Ar'])
         self._norm_ne = float(self.init.yaml_file['Norms']['Ne'])
-
+        self.skip_load_f1 = False
         self.copyAndCreateSOL_KiT()
         # self.setFiles()
         self.normalisation()
@@ -99,6 +99,7 @@ class SOL_KIT(Kinetic):
                                  self._run_path)
         else:
             Kinetic.__init__(self, cmd)
+        self.cycle = cycle
         self.convergence_tolerance = self.init.yaml_file["Params"]['Convergence']
         self.number_of_files_before_kill = self.init.yaml_file["Params"]['Files_allowed'] 
         self.status_path = os.path.join(self._sol_kit_output_path, "STATUS.txt")
@@ -289,7 +290,7 @@ class SOL_KIT(Kinetic):
         the specific needs of the code being coupled. Here I assume commmon 
         Lagrangian Practice i.e. quantities are not defined at all points. 
         """
-        if critical_density is not None:
+        if critical_density is not None and any(f_ne > critical_density):
             index_to_limit = np.where(f_ne >= critical_density)[0]
             if laser_dir == "right":
                 f_ne = f_ne[index_to_limit[-1] + 1:]
@@ -306,13 +307,15 @@ class SOL_KIT(Kinetic):
                 f_x_grid = f_x_grid[:index_to_limit[0] + 1]
                 self.sh_heat_flow = self.sh_heat_flow[:index_to_limit[0] + 1]
             self.grid['nx'] = len(f_te)
+            if self.nx != len(f_te):
+                self.skip_load_f1 = True
             self.nx = len(f_te)
             templating(tmpfilePath= os.path.join(self._run_path, 'INPUT/tmpSOL_KIT_GRID.txt'),
             writePath=self._sol_kit_input_path, fileName="GRID_INPUT.txt", parameters=self.grid)
         else:
-            if self.grid['nx'] != str(len(self.sh_heat_flow) - 1):
-                self.grid['nx'] = len(self.sh_heat_flow) - 1
-                self.nx = len(self.sh_heat_flow) - 1
+            if self.grid['nx'] != str(len(f_te)):
+                self.grid['nx'] = str(len(f_te)) 
+                self.nx = str(len(f_te))
                 templating(tmpfilePath= os.path.join(self._run_path, 'INPUT/tmpSOL_KIT_GRID.txt'),
                 writePath=self._sol_kit_input_path, fileName="GRID_INPUT.txt", parameters=self.grid)
 
@@ -356,11 +359,14 @@ class SOL_KIT(Kinetic):
         sol_kit_inter_ne = np.interp(sol_kit_grid, sol_kit_x_centered_grid, sol_kit_ne)
         sol_kit_inter_te = np.interp(sol_kit_grid, sol_kit_x_centered_grid, sol_kit_te)
         sol_kit_inter_z =  np.interp(sol_kit_grid, sol_kit_x_centered_grid, sol_kit_z)
+        # plt.plot(f_x_centered_grid/self.normalised_values['lambda_mfp'], (f_te * (BOLTZMANN_CONSTANT/ELEMENTARY_CHARGE)) / self.normalised_values['Te'])
+        # plt.plot(sol_kit_grid, sol_kit_inter_te)
+        # plt.show()
         #SOL_KIT_inter_ne = spliner_ne(SOL_KIT_grid)
         #SOL_KIT_inter_Te = spliner_Te(SOL_KIT_grid)
         #SOL_KIT_inter_Z = spliner_Z(SOL_KIT_grid)
 
-        if self.load_f1:
+        if self.load_f1 and not self.skip_load_f1:
             self.switches['RESTART'] = "T"
             templating(tmpfilePath= os.path.join(self._run_path, 'INPUT/tmpSOL_KIT_SWITCHES.txt'),
             writePath=self._sol_kit_input_path, fileName="SWITCHES_INPUT.txt", parameters=self.switches)
@@ -375,6 +381,8 @@ class SOL_KIT(Kinetic):
             np.savetxt(os.path.join(self._sol_kit_input_path, "TEMPERATURE_INPUT.txt"), sol_kit_inter_te)    
             np.savetxt(os.path.join(self._sol_kit_input_path, "Z_PROFILE_INPUT.txt"), sol_kit_inter_z)    
             np.savetxt(os.path.join(self._sol_kit_input_path, "X_GRID_INPUT.txt"), sol_kit_grid)
+            self.skip_load_f1 = False    
+            return 0
 
         else:
             np.savetxt(os.path.join(self._sol_kit_input_path, "DENS_INPUT.txt"), sol_kit_inter_ne)    
@@ -383,7 +391,8 @@ class SOL_KIT(Kinetic):
             np.savetxt(os.path.join(self._sol_kit_input_path, "X_GRID_INPUT.txt"), sol_kit_grid)
             # np.savetxt(os.path.join(self._SOL_KIT_INPUT_PATH, "ION_VEL_INPUT.txt"), SOL_KIT_grid)
             # np.savetxt(os.path.join(self._SOL_KIT_INPUT_PATH, "NEUT_HEAT_INPUT.txt"), SOL_KIT_heating)
-    
+            self.skip_load_f1 = False    
+            return 1
     def getLastHeatFlow(self):
         """ Purpose: Gets the last heat flow from SOL-KiT after run finishes.
             Returns: Last heat flow with assumed format of cell-wall only definition of heat flow

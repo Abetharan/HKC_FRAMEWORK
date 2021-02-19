@@ -1,23 +1,23 @@
 Norms:
   #NORMALISATION
   Te: 270
-  Ne: 5.1E+29
-  Z: 36.5
-  Ar: 157.5
+  Ne: 5.1E+28
+  Z: 4
+  Ar: 9
 
 Params:
   Nx: 0 #handled internally
-  Nv: 100
+  Nv: 80
   Np: 1
   Dt: 0.9
   Dx: 0.5
   Dv: 0.0307
   Dv_multi: 1.03
-  Nt: 100
+  Nt: 10
   Pre_step_nt: 0
   Pre_step_dt: 0.001
   L_max: 1
-  Output_freq: 10
+  Output_freq: 1
   Convergence: 0.05
   Files_allowed: 1
 

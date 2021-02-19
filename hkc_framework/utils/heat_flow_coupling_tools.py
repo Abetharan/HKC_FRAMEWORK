@@ -35,6 +35,7 @@ class HeatFlowCouplingTools:
         self.q_vfp_q_sh_multipliers = np.array([])
         self.search_tolerance = 1e-9
         self.snb = False
+        self.q_snb = None
 
     def lambda_ei(self, T_norm , n_norm, Z_norm, return_arg = False, return_array = False):
         coulomb_logs = []
@@ -65,12 +66,13 @@ class HeatFlowCouplingTools:
         """
         Purpose: Models Spitzer Harm heat flow 
         """
-        kappaE =  13.6*((self.zbar+0.24)/(self.zbar+4.24))*5.759614586E-11* pow(self.electron_temperature, 2.5) * pow(self.coulomb_log, -1) *  pow(self.zbar, -1)
+        kappaE =  13.6*((self.zbar+0.24)/(self.zbar+4.2))*5.759614586E-11* pow(self.electron_temperature, 2.5) * pow(self.coulomb_log, -1) *  pow(self.zbar, -1)
         nx = len(self.electron_temperature)
         HeatFlowE = np.zeros(nx + 1)
 
         for i in range(1, nx):
-            centered_ke = 0.5 * (kappaE[i] + kappaE[i - 1])
+            centered_ke = 2*(kappaE[i]*kappaE[i-1])/(kappaE[i]+kappaE[i-1])
+            #centered_ke = 0.5 * (kappaE[i] + kappaE[i - 1])
             HeatFlowE[i] = centered_ke *((self.electron_temperature[i] - self.electron_temperature[i - 1]) 
                             / (self.cell_centered_coord[i] - self.cell_centered_coord[i - 1]))
             
