@@ -519,15 +519,6 @@ class Coupler:
         self.logger.info("Tmax is {}".format(self.fluid_obj.init.yaml_file['TimeParameters']['t_max']))
 
 
-<<<<<<< HEAD
-        if start_cycle > 0 and fluid_obj.init.yaml_file['Switches']['CoupleMulti']:
-            pre_heat_start_index = np.array([fluid_obj.init.yaml_file['FixedParameters']['Preheat_StartIndex']]) 
-            pre_heat_last_index = np.array([fluid_obj.init.yaml_file['FixedParameters']['Preheat_LastIndex']]) 
-            front_heat_start_index = np.array([fluid_obj.init.yaml_file['FixedParameters']['Frontheat_StartIndex']]) 
-            front_heat_last_index = np.array([fluid_obj.init.yaml_file['FixedParameters']['Frontheat_LastIndex']])
-        #Coupling loop
-=======
->>>>>>> cleaning_and_testing
         self.logger.info("Starting couple LOOP")
         self.first_pass = True
         run_only_fluid = False
