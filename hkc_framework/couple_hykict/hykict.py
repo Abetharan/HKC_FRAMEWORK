@@ -105,7 +105,7 @@ class HyKiCT(Fluid):
         last_index = findLargestIndex(os.path.join(self._fluid_output_path, "TIME"))
         return(np.loadtxt(os.path.join(self._fluid_output_path,
                  "".join(['TIME/TIME', str(last_index), ".txt"]))))
-    def getLastStepQuants(self): 
+    def getLastStepQuants(self, update_time = True): 
         """
         Purpose: Get the last output from hykict ouput
         Return: Return numpy arrays of all required files
@@ -130,8 +130,9 @@ class HyKiCT(Fluid):
                "".join(["TIME/TIME_", str(last_index), ".txt"])), dtype = np.float64)
         mass = np.loadtxt(self._fluid_input_path + "/mass.txt")        
         
-        self.curr_time = f_time
-        self.tmax = self.curr_time + self.cycle_step
+        if update_time:
+            self.curr_time = float(f_time)
+            self.tmax = self.curr_time + float(self.cycle_step)
         
         return(f_x_grid, f_x_centered_grid, f_v, f_ne, f_Te, f_Z, f_laser, mass, f_time)
     
@@ -244,4 +245,4 @@ class HyKiCT(Fluid):
                     if var_dir.is_file():
                         tmp_read_file = np.loadtxt(var_dir.path)
                         hdf5_file.create_dataset("".join(["Cycle_", str(cycle), "/Fluid_Input/", var_dir.name]),
-                                                data = tmp_read_file, compression="gzip")
+                                                data = tmp_read_file)

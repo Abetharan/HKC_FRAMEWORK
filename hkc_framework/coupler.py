@@ -127,7 +127,7 @@ class Coupler:
 
         skipped = self.kin_obj.initFromHydro(fluid_x_grid, fluid_x_centered_grid, 
                             fluid_Te, fluid_ne, fluid_Z, critical_density = self.critical_density, laser_dir = self.laser_dir)
-        if skipped:
+        if skipped and cycle_no > 0:
             self.logger.info("FAILED TO Engage MODE: Load F1 DUE TO CHANGE IN GRID SIZE")
 
 
@@ -143,7 +143,7 @@ class Coupler:
         self.kinetic_time_taken.append(tkin_end - tkin_start)
         return last_heat_flow
 
-    def fluidStep(self, outpath, next_input_path, no_copy = False):
+    def fluidStep(self, outpath, next_input_path, no_copy = False, update_time = True):
         """
         Purpose: Sets Fluid files and RUns Fluid code
         Args:
@@ -180,7 +180,7 @@ class Coupler:
         self.logger.info("End Fluid")
         self.logger.info("Get Last Fluid Quants")
         (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
-            fluid_Z, _, fluid_mass, sim_time) = self.fluid_obj.getLastStepQuants() 
+            fluid_Z, _, fluid_mass, sim_time) = self.fluid_obj.getLastStepQuants(update_time) 
         if no_copy:
             return ((fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
             fluid_Z, _, fluid_mass, sim_time))
@@ -291,7 +291,7 @@ class Coupler:
         (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
         fluid_Z, _, fluid_mass, sim_time) = self.fluidStep(self.io_obj.intermediate_fluid_outpath,
                                                             self.io_obj.next_fluid_input_path,  
-                                                            no_copy = no_copy)
+                                                            no_copy = no_copy, update_time = False)
         conv_heat_flow = self.returnConvHeatFlow(fluid_x_grid,fluid_x_centered_grid, 
                                 fluid_Te,fluid_ne , fluid_Z,fluid_mass)
         if self.init.yaml_file['Mode']['Limit_density']:

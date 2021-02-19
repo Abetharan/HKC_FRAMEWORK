@@ -13,15 +13,15 @@ Codes:
   Fluid_code: hykict
 Coupling_params:
   Nx: 200
-  Cycles: 6
+  Cycles: 3
   Eta: 0.1E-2
   hdf5_output_freq: 1
   t_cycle: 1.0E-14
 Mode:
   Couple_divq: false
-  Couple_multi: false
-  Couple_subtract : true
-  Couple_leap_frog: false
+  Couple_multi: true
+  Couple_subtract : false
+  Couple_leap_frog: false 
   Couple_operator_split: false 
   Limit_density: false #Limit density to 10x critical
   Start_from_kinetic: true
