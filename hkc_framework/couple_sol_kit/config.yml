@@ -36,6 +36,7 @@ Switches:
   Local_init: false
   Cold_ion_fluid: false
   f_0_maintain: true
+  Rescale_init : true
 
 Output:
   Density: true

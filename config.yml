@@ -13,7 +13,7 @@ Codes:
   Fluid_code: hykict
 Coupling_params:
   Nx: 200
-  Cycles: 3
+  Cycles: 4
   Eta: 0.1E-2
   hdf5_output_freq: 1
   t_cycle: 1.0E-14
@@ -25,7 +25,8 @@ Mode:
   Couple_operator_split: false 
   Limit_density: false #Limit density to 10x critical
   Start_from_kinetic: true
-  Load_f1: true
+  Load_f1: false       #Previous F1 with MB f0
+  Rescale_init_f0: true  #Previous f_l rescaled f0. Takes precedence if load_f1 isare true
 Misc:
   HDF5: false
   Convergence_monitoring: true

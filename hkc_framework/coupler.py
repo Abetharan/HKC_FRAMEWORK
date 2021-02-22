@@ -116,12 +116,19 @@ class Coupler:
         self.logger.info("Kinetic input path {}".format(self.io_obj.kinetic_input_path))
         self.logger.info("Kinetic output path {}".format(self.io_obj.kinetic_output_path))
 
-        if self.init.yaml_file['Mode']['Load_f1']:
+        if self.init.yaml_file['Mode']['Rescale_init_f0']:
+            if cycle_no > 0:
+                self.logger.info("Engaging MODE: Rescale f0 and load in previous f_l")
+                #all_kinetic_output_paths contain all paths for kinetic output, require last cycle for load F1, thus cycle_no - 1
+                self.kin_obj.previous_kinetic_output_path = self.io_obj.all_kinetic_output_path[cycle_no - 1] 
+                self.kin_obj.rescale_f0_init = True                                                              
+        elif self.init.yaml_file['Mode']['Load_f1']:
             if cycle_no > 0:
                 self.logger.info("Engaging MODE: Load F1")
                 #all_kinetic_output_paths contain all paths for kinetic output, require last cycle for load F1, thus cycle_no - 1
                 self.kin_obj.previous_kinetic_output_path = self.io_obj.all_kinetic_output_path[cycle_no - 1] 
                 self.kin_obj.load_f1 = True                                                              
+            
         self.logger.info("Initialize Kinetic")
         self.kin_obj.sh_heat_flow = conv_heat_flow
 
