@@ -94,4 +94,4 @@
                        FLUID_START_SWITCH =              F     Start from fluid mode when run in coupling
                         RESCALE_F0_SWITCH =              F     Rescale f0 from last kinetic timestep when moving from fluid to kinetic
                        MAINTAIN_F0_SWITCH =              $MAINTAIN     Rescale f0 from last kinetic timestep when moving from fluid to kinetic
-
+                   INIT_RESCALE_F0_SWITCH =              $INITRESCALE     Rescale f0 from last kinetic timestep when moving from fluid to kinetic

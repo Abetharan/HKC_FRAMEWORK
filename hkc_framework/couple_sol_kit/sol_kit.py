@@ -237,6 +237,7 @@ class SOL_KIT(Kinetic):
                             IMPACTMODE = self.init.yaml_file['Switches']['Local_init'], 
                             COLDIONS = self.init.yaml_file['Switches']['Cold_ion_fluid'],
                             MAINTAIN = self.init.yaml_file['Switches']['f_0_maintain'],
+                            
                             OUTPUT_TEMPERATURE = self.init.yaml_file['Output']['Temperature'],
                             OUTPUT_DENSITY= self.init.yaml_file['Output']['Density'], 
                             OUTPUT_VELOCITY= self.init.yaml_file['Output']['Velocity'],
