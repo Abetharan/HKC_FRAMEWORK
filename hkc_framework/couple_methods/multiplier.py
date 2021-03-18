@@ -201,7 +201,9 @@ class Multiplier(CouplingMethod):
                 heat_flow = heat_flow[:len_vfp] 
         self.q_vfp_q_sh_multipliers = np.array(self.vfp_heat/heat_flow)
 
-            
+
+       #REF DISABLED THE FIT MODELS#
+        ################################
         if laser_dir is not None and self.q_snb is None:
             if laser_dir == "right":
                 self.q_vfp_q_sh_multipliers[-1] = 0
@@ -213,14 +215,14 @@ class Multiplier(CouplingMethod):
             self.q_vfp_q_sh_multipliers[-1] = 0
             front, pre = self._detectAnamalousHeat()
 
-        if front is not None:
-            (self.front_heat_start_index, 
-            self.front_heat_last_index, 
-            self.front_heat_fit_params) = front
-        if pre is not None:
-            (self.pre_heat_start_index,
-            self.pre_heat_last_index,
-            self.pre_heat_fit_params) = pre
+        # if front is not None:
+        #     (self.front_heat_start_index, 
+            # self.front_heat_last_index, 
+            # self.front_heat_fit_params) = front
+        # if pre is not None:
+        #     (self.pre_heat_start_index,
+            # self.pre_heat_last_index,
+            # self.pre_heat_fit_params) = pre
 
         if laser_dir is not None:
             padding = limit_index - len_vfp
@@ -251,9 +253,18 @@ class Multiplier(CouplingMethod):
             np.savetxt(os.path.join(save_path,"pre_heat_fit_param.txt"), self.pre_heat_fit_params)
             np.savetxt(os.path.join(save_path,"front_heat_fit_param.txt"), self.front_heat_fit_params)
 
+        if(kwargs['no_negative']):
+            self.pacifyMultiplier(kwargs['Te'])
         np.savetxt(os.path.join(save_path,"qe.txt"), self.q_vfp_q_sh_multipliers)
 
 
+    def pacifyMultiplier(self, temperature):
+        temperature /= 11594.0
+        for i in range(len(temperature) - 1): 
+            walled_Te = (temperature[i + 1] + temperature[i]) / 2
+            if walled_Te < 350.0:
+                if self.q_vfp_q_sh_multipliers[i + 1] < 0:
+                    self.q_vfp_q_sh_multipliers[i + 1] = 1.0
     # def preHeatModel(self):
     #     """ 
     #     Purpose: Model Pre-heat using an exponential fitting parameter, fit parameter

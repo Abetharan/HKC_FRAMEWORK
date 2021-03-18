@@ -85,6 +85,7 @@ class Coupler:
         self.kin_obj.storeToHdf5(self.io_obj.hdf5_file, cycle_no)
         self.io_obj.hdf5_file.close()
     
+    
     def kineticStep(self, cycle_no, conv_heat_flow,
                         fluid_x_grid, fluid_x_centered_grid, 
                                 fluid_Te, fluid_ne, fluid_Z):
@@ -272,7 +273,7 @@ class Coupler:
                             q_snb = self.hfct_obj.q_snb)
             
             self.logger.info(self.coupling_message)
-            self.couple_obj.setCoupleParams(self.io_obj.next_fluid_input_path, fluid_yaml = self.fluid_obj.init.yaml_file)
+            self.couple_obj.setCoupleParams(self.io_obj.next_fluid_input_path, fluid_yaml = self.fluid_obj.init.yaml_file, Te = fluid_Te, no_negative = self.init.yaml_file['Mode']["no_negative_multiplier"])
             
     def leapFrog(self, cycle_no, cycles):
         """

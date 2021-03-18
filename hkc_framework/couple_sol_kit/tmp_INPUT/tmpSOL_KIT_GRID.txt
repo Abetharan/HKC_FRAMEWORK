@@ -22,4 +22,6 @@ Time:
                                  fluid_dt =         0.2                         Coupling fluid timestep size
                           c_kinetic_max_t =    20000                            Maximum kinetic number of timesteps before switching to fluid
                             c_fluid_max_t =    20000                            Maximum fluid number of timesteps before switching to kinetic
+                           maintain_start =  1                                   What step to start Maintaining the profile back to original
+                       maintain_frequency =  1                                   How often to rescale
 

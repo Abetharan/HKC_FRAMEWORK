@@ -1,7 +1,7 @@
 BoundaryConditions:
   Hydro_Right_Boundary: f  
-  Rad_Left_Boundary: r
-  Rad_Right_Boundary: d 
+  Rad_Left_Boundary: v
+  Rad_Right_Boundary: r
   Rad_Dirichlet_Left: 0
   Rad_Dirichlet_Right: 0
   Rad_Source_Right: 0
@@ -57,7 +57,7 @@ Output:
   Viscosity: false
   Zbar: true
 Paths:
-  FEOS_Path_1: /Users/shiki/DATA/feos_tables/Gd/Gd
+  FEOS_Path_1: /Users/shiki/DATA/feos_tables/Cu/Cu
   FEOS_Path_2: /Users/shiki/DATA/feos_tables/He/He
   Opacity_Path_1: /Users/shiki/DATA/feos_tables/Cu/
   Opacity_Path_2: /Users/shiki/DATA/feos_tables/He/
@@ -72,11 +72,11 @@ Switches:
   CoupleMulti: false
   CoupleOperatorSplit: false
   CoupleSubtract: false
-  Exchange: false
-  FullyIonized: true
+  Exchange: true
+  FullyIonized: false
   HeatConduction: true
-  IdealGas: true
-  InvBrem: false
+  IdealGas: false
+  InvBrem: true
   ImplicitHeatConduction: false
   IsothermalMode: false
   LoadInLaserProfile: false 
@@ -84,12 +84,12 @@ Switches:
   RadDiffusion: true
   RadFreeFree: true
   RadPdVWork: false
-  RadiationTransport: false 
-  SingleTemperature: true 
+  RadiationTransport: true 
+  SingleTemperature: false 
   SNBHeatFlow: false
   Velocity: true
   Viscosity: true
-  EoSTables: false
+  EoSTables: true
   IonizationTables: true
   OpacityTables: true
   LoadInRadEnergy: false

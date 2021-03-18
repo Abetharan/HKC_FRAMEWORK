@@ -1,9 +1,9 @@
 Norms:
   #NORMALISATION
-  Te: 100
-  Ne: 1.0E+19
-  Z: 1
-  Ar: 1
+  Te: 270
+  Ne: 8.1E+27
+  Z: 29.0
+  Ar: 64.0
 
 Params:
   Nx: 0 #handled internally
