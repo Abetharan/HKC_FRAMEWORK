@@ -5,18 +5,19 @@ Paths:
   F_src_dir: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./HyKiCT/debug/apps/
   #Init_path:  /Users/shiki/DATA/HKC_RELATED/init_data/gd_copper_hohlraum/gd_copper_hohlraum_20_0_reversed/
   #Init_path:  /Users/shiki/DATA/HKC_RELATED/init_data/Be_planar_1_e_10s/
-  Init_path:  /Users/shiki/DATA/HKC_RELATED/init_data/test_problems_LSA/step_problem_200_nx/
+  #Init_path:  /Users/shiki/DATA/HKC_RELATED/init_data/test_problems_LSA/step_problem_200_nx/
+  Init_path: /Users/shiki/DATA/HKC_RELATED/init_data/linear_problem/0_0075/
   F_config_path: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./HKC_FRAMEWORK/hkc_framework/couple_hykict/config.yml 
   K_config_path: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D.//HKC_FRAMEWORK/hkc_framework/couple_sol_kit/config.yml
 Codes:
   Kinetic_code: sol_kit
   Fluid_code: hykict
 Coupling_params:
-  Nx: 200
-  Cycles: 4
+  Nx: 63
+  Cycles: 5
   Eta: 0.1E-2
   hdf5_output_freq: 1
-  t_cycle: 1.0E-14
+  t_cycle: 1.0E-13
 Mode:
   Couple_divq: false
   Couple_multi: true

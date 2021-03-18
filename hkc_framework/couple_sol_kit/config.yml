@@ -1,9 +1,9 @@
 Norms:
   #NORMALISATION
-  Te: 270
-  Ne: 5.1E+28
-  Z: 4
-  Ar: 9
+  Te: 100
+  Ne: 1.0E+19
+  Z: 1
+  Ar: 1
 
 Params:
   Nx: 0 #handled internally
@@ -18,7 +18,7 @@ Params:
   Pre_step_dt: 0.001
   L_max: 1
   Output_freq: 1
-  Convergence: 0.05
+  Convergence: 0.005
   Files_allowed: 1
 
 Boundary:
@@ -43,4 +43,4 @@ Output:
   Temperature: true
   Velocity: false
   E_field: true
-  Sh_test: false
+  Sh_test: true
