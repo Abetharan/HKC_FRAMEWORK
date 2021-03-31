@@ -105,6 +105,14 @@ class HyKiCT(Fluid):
         last_index = findLargestIndex(os.path.join(self._fluid_output_path, "TIME"))
         return(np.loadtxt(os.path.join(self._fluid_output_path,
                  "".join(['TIME/TIME', str(last_index), ".txt"]))))
+    def updateTime(self, curr_time = None, new_cycle_step = None):
+        if curr_time is not None:
+            self.curr_time = float(curr_time)
+        if new_cycle_step is None:
+            self.tmax = self.curr_time + float(self.cycle_step)
+        else: 
+            self.tmax = self.curr_time + float(new_cycle_step)
+
     def getLastStepQuants(self, update_time = True): 
         """
         Purpose: Get the last output from hykict ouput
@@ -129,12 +137,14 @@ class HyKiCT(Fluid):
         f_time = np.loadtxt(os.path.join(self._fluid_output_path,
                "".join(["TIME/TIME_", str(last_index), ".txt"])), dtype = np.float64)
         mass = np.loadtxt(self._fluid_input_path + "/mass.txt")        
+
+        f_specific_heat = np.loadtxt(os.path.join(self._fluid_output_path,
+                    "".join(["ELECTRON_SPECIFIC_HEAT/ELECTRON_SPECIFIC_HEAT_", str(last_index), ".txt"])),dtype = np.float64)
         
         if update_time:
-            self.curr_time = float(f_time)
-            self.tmax = self.curr_time + float(self.cycle_step)
+            self.updateTime(curr_time = f_time)
         
-        return(f_x_grid, f_x_centered_grid, f_v, f_ne, f_Te, f_Z, f_laser, mass, f_time)
+        return(f_x_grid, f_x_centered_grid, f_v, f_ne, f_Te, f_Z, f_laser, mass, f_time, f_specific_heat)
     
     def initHydro(self, next_fluid_input_path): #Remove qe etc
         """

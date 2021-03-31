@@ -98,16 +98,16 @@ class HeatFlowCouplingTools:
         heat_flow = self.vfp_heat
 
         #Start limit-density
-        limit_index = len(heat_flow)
-        if laser_dir is not None:
-            if laser_dir == "right":
-                len_sh = len(self.spitzer_harm_heat)
-                append_index = len_sh - limit_index + 1
-                heat_flow = heat_flow[1:]
-                heat_flow =  np.append(self.spitzer_harm_heat[:append_index], heat_flow)
-            else:
-                heat_flow = heat_flow[:-1]
-                heat_flow = np.append(heat_flow, self.spitzer_harm_heat[limit_index - 1:])
+        # limit_index = len(heat_flow)
+        # if laser_dir is not None:
+            # if laser_dir == "right":
+            #     len_sh = len(self.spitzer_harm_heat)
+            #     append_index = len_sh - limit_index + 1
+            #     heat_flow = heat_flow[1:]
+            #     heat_flow =  np.append(self.spitzer_harm_heat[:append_index], heat_flow)
+            # else:
+                # heat_flow = heat_flow[:-1]
+                # heat_flow = np.append(heat_flow, self.spitzer_harm_heat[limit_index - 1:])
         #End
 
         nx = len(heat_flow) 

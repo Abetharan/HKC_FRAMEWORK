@@ -40,11 +40,11 @@ Output:
   CreateOutputFolder: false
   Exchange: true 
   HeatFlow: true
-  InternalEnergy: false
+  InternalEnergy: false 
   InverseBrem: true
   MassDensity: true
   NumberDensity: true
-  PlasmaParameters: false 
+  PlasmaParameters: true 
   Pressure: true 
   RadDiffusion: false
   RadEnergyDensity: true
@@ -59,8 +59,8 @@ Output:
 Paths:
   FEOS_Path_1: /Users/shiki/DATA/feos_tables/Cu/Cu
   FEOS_Path_2: /Users/shiki/DATA/feos_tables/He/He
-  Opacity_Path_1: /Users/shiki/DATA/feos_tables/Cu/
-  Opacity_Path_2: /Users/shiki/DATA/feos_tables/He/
+  Opacity_Path_1: /Users/shiki/DATA/feos_tables/Cu/Gray/
+  Opacity_Path_2: /Users/shiki/DATA/feos_tables/He/Gray/
   Laser_Profile_Path: /Users/shiki/DATA/HKC_RELATED/init_data/copper_hohlraum/laser_profile.txt
   Init_Path: /Users/shiki/DATA/HKC_RELATED/init_data/gd_copper_hohlraum/gd_copper_hohlraum_20_0_reversed/
   Out_Path: /Users/shiki/DATA/

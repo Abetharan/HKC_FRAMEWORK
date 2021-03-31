@@ -26,7 +26,7 @@ class TestHyKiCT():
         f_obj._fluid_output_path = output_path
         f_obj._fluid_input_path = input_path
          
-        (f_x_grid, f_x_centered_grid, f_v, f_ne, f_Te, f_Z, f_laser, mass, f_time) = f_obj.getLastStepQuants()
+        (f_x_grid, f_x_centered_grid, f_v, f_ne, f_Te, f_Z, f_laser, mass, f_time, f_specific_heat) = f_obj.getLastStepQuants()
 
         f_x_grid == pytest.approx(np.loadtxt(os.path.join(output_path, 'CELL_WALL_X/CELL_WALL_X_1.txt')))
         f_x_centered_grid == pytest.approx(np.loadtxt(os.path.join(output_path, 'CELL_CENTRE_X/CELL_CENTRE_X_1.txt')))
@@ -35,6 +35,7 @@ class TestHyKiCT():
         f_Te == pytest.approx(np.loadtxt(os.path.join(output_path, 'ELECTRON_TEMPERATURE/ELECTRON_TEMPERATURE_1.txt')))
         f_Z == pytest.approx(np.loadtxt(os.path.join(output_path, 'ZBAR/ZBAR_1.txt')))
         mass == pytest.approx(np.loadtxt(os.path.join(input_path, 'mass.txt')))
+        f_specific_heat == pytest.approx(np.loadtxt(os.path.join(output_path, 'ELECTRON_SPECIFIC_HEAT/ELECTRON_SPECIFIC_HEAT_1.txt')))
 
     
     def test_nextInit(self, tmpdir):

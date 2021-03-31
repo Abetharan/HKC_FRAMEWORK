@@ -22,6 +22,7 @@ from couple_sol_kit.sol_kit import SOL_KIT
 from couple_hykict.hykict import HyKiCT
 from couple_methods import Multiplier, DivQ, Subtract
 from scipy import constants
+# import time_stepper as time_step 
 BOLTZMANN_CONSTANT = constants.value("Boltzmann constant")
 ELECTRON_MASS = constants.value("electron mass")
 PROTON_MASS = constants.value("proton mass")
@@ -188,7 +189,7 @@ class Coupler:
         self.logger.info("End Fluid")
         self.logger.info("Get Last Fluid Quants")
         (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
-            fluid_Z, _, fluid_mass, sim_time) = self.fluid_obj.getLastStepQuants(update_time) 
+            fluid_Z, _, fluid_mass, sim_time, f_specific_heat) = self.fluid_obj.getLastStepQuants(update_time) 
         if no_copy:
             return ((fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
             fluid_Z, _, fluid_mass, sim_time))
@@ -199,7 +200,7 @@ class Coupler:
         self.fluid_time_taken.append(tfluid_end - tfluid_start)
 
         return (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
-            fluid_Z, _, fluid_mass, sim_time) 
+            fluid_Z, _, fluid_mass,f_specific_heat, sim_time) 
     
     def returnConvHeatFlow(self,fluid_x_grid,fluid_x_centered_grid, fluid_Te,fluid_ne , fluid_Z,fluid_mass ):
         """
@@ -248,7 +249,7 @@ class Coupler:
             no_copy = True
 
         (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
-        fluid_Z, _, fluid_mass, sim_time) = self.fluidStep(self.io_obj.fluid_output_path,
+        fluid_Z, _, fluid_mass, fluid_specific_heat, sim_time) = self.fluidStep(self.io_obj.fluid_output_path,
                                                             self.io_obj.next_fluid_input_path,  
                                                             no_copy = no_copy)
         if self.init.yaml_file['Mode']['Limit_density']:
@@ -274,6 +275,16 @@ class Coupler:
             
             self.logger.info(self.coupling_message)
             self.couple_obj.setCoupleParams(self.io_obj.next_fluid_input_path, fluid_yaml = self.fluid_obj.init.yaml_file, Te = fluid_Te, no_negative = self.init.yaml_file['Mode']["no_negative_multiplier"])
+
+        if self.init.yaml_file['Mode']['AdaptiveTimeStep']:
+            if self.init.yaml_file['Mode']['Couple_divq']:
+                dtmax = self.time_stepper.divqtimestepper(fluid_Te, fluid_specific_heat,self.couple_obj.HeatConductionE)
+            elif self.init.yaml_file['Mode']['Couple_multi']:
+                dtmax = self.time_stepper.multitimestepper(fluid_x_grid,fluid_x_centered_grid, fluid_Te, fluid_ne, fluid_Z, fluid_specific_heat, fluid_mass, self.couple_obj.q_vfp_q_sh_multipliers)
+                self.logger.info("t_cycle is {}".format(dtmax))
+            self.fluid_obj.updateTime(new_cycle_step = dtmax)
+            self.fluid_obj.setTimes()
+
             
     def leapFrog(self, cycle_no, cycles):
         """
@@ -422,6 +433,7 @@ class Coupler:
                 self.init.yaml_file['Mode']['Start_from_kinetic'] = False
 
         self.hfct_obj = util.HeatFlowCouplingTools()
+        self.time_stepper = util.TimeStepper(self.init.yaml_file['Coupling_params']['t_cycle'])
         self.io_obj = util.IO(
                         self.init.yaml_file['Paths']['Run_name'],
                         self.init.yaml_file['Paths']['Base_dir'], 
@@ -476,7 +488,6 @@ class Coupler:
                             convergence_monitoring = self.init.yaml_file['Misc']['Convergence_monitoring'],
                             cx1 = self.init.yaml_file['Misc']['HPC']
                             )
-
         if self.init.yaml_file['Mode']['Couple_divq']:
             self.couple_obj = DivQ()
             self.coupling_message = 'Calculating Div.Q'
