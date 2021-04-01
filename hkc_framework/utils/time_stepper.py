@@ -40,24 +40,52 @@ class TimeStepper():
         self.hfct_obj.cell_wall_coord = x_wall
         self.hfct_obj.cell_centered_coord = x_cent
         self.hfct_obj.mass = mass
-        self.hfct_obj.lambda_ei(self.hfct_obj.electron_temperature * (BOLTZMANN_CONSTANT/ELEMENTARY_CHARGE), 
-                            self.hfct_obj.electron_number_density,
-                            self.hfct_obj.zbar)
-        self.hfct_obj.spitzerHarmHeatFlow()
+        n_iter_limit = 100
+        i = 0
+        drop_dec_val = False 
+        drop_val = 0.07
+        drop_inc_val = False 
+        inc_val = 1.04
         while(True):
             evolved_Te = Te 
             dt = tmax * 0.01
             steps = int(tmax / dt)
             for _ in range(steps):
+                self.hfct_obj.electron_temperature = evolved_Te
+                self.hfct_obj.lambda_ei(self.hfct_obj.electron_temperature * (BOLTZMANN_CONSTANT/ELEMENTARY_CHARGE), 
+                                    self.hfct_obj.electron_number_density,
+                                    self.hfct_obj.zbar)
+                self.hfct_obj.spitzerHarmHeatFlow()
                 heat_flow = self.hfct_obj.spitzer_harm_heat  * multi
                 heatconduc = self.conduct(heat_flow, mass)
                 evolved_Te = evolved_Te + heatconduc*dt / cv
-                self.hfct_obj.electron_temperature = evolved_Te
-                self.hfct_obj.spitzerHarmHeatFlow()
+                if any(np.isnan(evolved_Te)):
+                    break
 
             reldiff = abs(evolved_Te - Te) / Te
+            # if any(reldiff > 0.1) or any(np.isnan(reldiff)):
+            #     tmax *= 0.05
+            # elif i > n_iter_limit:
+                # tmax = self.guess_time #The timestepper failed to converge just set it to original 
+                # break;
+            # else:
+                # break
             if any(reldiff > 0.1) or any(np.isnan(reldiff)):
-                tmax *= 0.05
+                if drop_dec_val: 
+                    drop_val *=1.2
+                    drop_dec_val = False
+                    drop_inc_val = True
+                tmax *= drop_val
+            elif (np.max(reldiff) < 0.09):
+                if drop_inc_val: 
+                    inc_val -= inc_val*0.001
+                    drop_inc_val = False 
+                tmax *=inc_val
+                drop_dec_val = True
             else:
                 break
+
+            if i > n_iter_limit:
+                break
+            i += 1
         return tmax

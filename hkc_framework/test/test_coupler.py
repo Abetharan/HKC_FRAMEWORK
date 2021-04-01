@@ -9,6 +9,7 @@ from coupler import Coupler
 
 class TestCoupler:
 
+    @pytest.mark.skip(reason="no way of currently testing this")
     def test_step(self, tmpdir):
         src_dir = os.environ["F_SRC_DIR"]
         p = tmpdir.mkdir('cycle')
