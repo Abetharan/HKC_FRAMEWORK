@@ -76,12 +76,15 @@ class TimeStepper():
                     drop_dec_val = False
                     drop_inc_val = True
                 tmax *= drop_val
-            elif (np.max(reldiff) < 0.09):
-                if drop_inc_val: 
-                    inc_val -= inc_val*0.001
-                    drop_inc_val = False 
-                tmax *=inc_val
-                drop_dec_val = True
+            # elif (np.max(reldiff) < 0.09):
+                # if drop_inc_val: 
+                #     inc_val -= inc_val*0.001
+                #     drop_inc_val = False 
+                # tmax *=inc_val
+                # drop_dec_val = True
+                # if tmax > self.guess_time:
+                #     tmax = self.guess_time
+                #     break
             else:
                 break
 
