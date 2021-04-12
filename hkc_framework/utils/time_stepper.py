@@ -45,7 +45,7 @@ class TimeStepper():
         drop_dec_val = False 
         drop_val = 0.07
         drop_inc_val = False 
-        inc_val = 1.04
+        inc_val = 1.02
         while(True):
             evolved_Te = Te 
             dt = tmax * 0.01
@@ -63,32 +63,24 @@ class TimeStepper():
                     break
 
             reldiff = abs(evolved_Te - Te) / Te
-            # if any(reldiff > 0.1) or any(np.isnan(reldiff)):
-            #     tmax *= 0.05
-            # elif i > n_iter_limit:
-                # tmax = self.guess_time #The timestepper failed to converge just set it to original 
-                # break;
-            # else:
-                # break
             if any(reldiff > 0.1) or any(np.isnan(reldiff)):
                 if drop_dec_val: 
                     drop_val *=1.2
                     drop_dec_val = False
                     drop_inc_val = True
                 tmax *= drop_val
-            # elif (np.max(reldiff) < 0.09):
-                # if drop_inc_val: 
-                #     inc_val -= inc_val*0.001
-                #     drop_inc_val = False 
-                # tmax *=inc_val
-                # drop_dec_val = True
-                # if tmax > self.guess_time:
-                #     tmax = self.guess_time
-                #     break
+            elif (np.max(reldiff) < 0.09):
+                if drop_inc_val: 
+                    inc_val -= inc_val*0.001
+                    drop_inc_val = False 
+                tmax *=inc_val
+                drop_dec_val = True
             else:
                 break
 
             if i > n_iter_limit:
                 break
             i += 1
+        if tmax > self.guess_time:
+            tmax = self.guess_time 
         return tmax
