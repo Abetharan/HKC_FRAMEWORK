@@ -20,8 +20,8 @@ Coupling_params:
   t_cycle: 1.0E-13
 Mode:
   AdaptiveTimeStep: true 
-  Couple_divq: false
-  Couple_multi: true
+  Couple_divq: true 
+  Couple_multi: false
   Couple_subtract : false
   Couple_leap_frog: false 
   Couple_operator_split: false 

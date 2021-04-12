@@ -16,13 +16,18 @@ class TimeStepper():
         self.hfct_obj = hfct.HeatFlowCouplingTools()
     def divqtimestepper(self, Te, cv, divq):
         tmax = self.guess_time
+        n_iter_limit = 100
+        i = 0
         while(True): 
             evolved_Te = Te + divq*tmax / cv
             reldiff = abs(evolved_Te - Te) / Te
-            if any(reldiff > 0.05):
+            if any(reldiff > 0.05) or any(np.isnan(reldiff)):
                 tmax *= 0.05 
             else:
                 break
+            if i > n_iter_limit:
+                break;
+            i += 1
         return tmax
 
     def conduct(self, heat_flow, mass): 
