@@ -33,7 +33,7 @@ class HyKiCT(Fluid):
         self.init.yaml_file['FixedParameters']['nx'] = nx 
         self.couple_mode = None
         self.cycle_no = 0
-        self.curr_time = 0
+        self.curr_time = self.init.yaml_file['TimeParameters']['t_init'] 
         for couple_mode, logic in kwargs.items():
             if logic:
                 self.couple_mode = couple_mode  
@@ -101,10 +101,15 @@ class HyKiCT(Fluid):
                 self.cycle_dump_path+'/config.yml']
         super().Execute(cmd, self.cycle_dump_path)
 
-    def getPhysicalRunTime(self):
-        last_index = findLargestIndex(os.path.join(self._fluid_output_path, "TIME"))
-        return(np.loadtxt(os.path.join(self._fluid_output_path,
-                 "".join(['TIME/TIME', str(last_index), ".txt"]))))
+    def getPhysicalRunTime(self, given_path = None):
+        if given_path is None:
+            last_index = findLargestIndex(os.path.join(self._fluid_output_path, "TIME"))
+            return(np.loadtxt(os.path.join(self._fluid_output_path,
+                    "".join(['TIME/TIME', str(last_index), ".txt"]))))
+        else:
+            last_index = findLargestIndex(os.path.join(given_path, "TIME"))
+            return(np.loadtxt(os.path.join(given_path,
+                    "".join(['TIME/TIME_', str(last_index), ".txt"]))))
     def updateTime(self, curr_time = None, new_cycle_step = None):
         if curr_time is not None:
             self.curr_time = float(curr_time)

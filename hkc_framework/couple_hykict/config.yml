@@ -8,6 +8,8 @@ BoundaryConditions:
   Rad_Source_Left: 0
 FixedParameters:
   nx: 92
+  np: 1
+  RadNg: 1
   ng: 20
   MaxE: 0
   FixedOpacityValue: 0

@@ -33,6 +33,6 @@ Mode:
 Misc:
   HDF5: false
   Convergence_monitoring: true
-  Continue: false 
+  Continue: true  
   HPC: false
   Overwrite: true

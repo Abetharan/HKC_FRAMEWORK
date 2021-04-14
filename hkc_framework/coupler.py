@@ -476,8 +476,9 @@ class Coupler:
                             CoupleSubtract = self.init.yaml_file['Mode']['Couple_subtract'],
                             )
         #Adds the tmax to the init time. 
-        if self.init.yaml_file['Misc']['Continue']:
-            self.fluid_obj.updateTime()
+        if self.init.yaml_file['Misc']['Continue'] and start_cycle > 1:
+            last_time = self.fluid_obj.getPhysicalRunTime(self.io_obj.all_fluid_output_path[start_cycle - 1])
+            self.fluid_obj.updateTime(curr_time = last_time)
 
         if(self.init.yaml_file['Codes']['Kinetic_code'] == 'sol_kit'):
             self.kin_obj = SOL_KIT(
