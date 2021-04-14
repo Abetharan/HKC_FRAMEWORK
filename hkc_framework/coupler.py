@@ -479,6 +479,7 @@ class Coupler:
         if self.init.yaml_file['Misc']['Continue'] and start_cycle > 1:
             last_time = self.fluid_obj.getPhysicalRunTime(self.io_obj.all_fluid_output_path[start_cycle - 1])
             self.fluid_obj.updateTime(curr_time = last_time)
+            self.fluid_obj.setTimes()
 
         if(self.init.yaml_file['Codes']['Kinetic_code'] == 'sol_kit'):
             self.kin_obj = SOL_KIT(
