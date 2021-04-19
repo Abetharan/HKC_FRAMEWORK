@@ -20,19 +20,19 @@ Coupling_params:
   t_cycle: 1.0E-13
 Mode:
   AdaptiveTimeStep: true 
-  Couple_divq: true 
-  Couple_multi: false
+  Couple_divq: false 
+  Couple_multi: true
   Couple_subtract : false
-  Couple_leap_frog: false 
+  Couple_leap_frog: true 
   Couple_operator_split: false 
   Limit_density: true #Limit density to 10x critical
-  Start_from_kinetic: true
+  Start_from_kinetic: false
   Load_f1: false       #Previous F1 with MB f0
   Rescale_init_f0: false  #Previous f_l rescaled f0. Takes precedence if load_f1 isare true
   no_negative_multiplier: false
 Misc:
   HDF5: false
   Convergence_monitoring: true
-  Continue: true  
+  Continue: false
   HPC: false
   Overwrite: true

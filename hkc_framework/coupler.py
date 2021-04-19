@@ -308,7 +308,7 @@ class Coupler:
             no_copy = True
 
         (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
-        fluid_Z, _, fluid_mass, sim_time) = self.fluidStep(self.io_obj.intermediate_fluid_outpath,
+        fluid_Z, _, fluid_mass, fluid_specific_heat, sim_time) = self.fluidStep(self.io_obj.intermediate_fluid_outpath,
                                                             self.io_obj.next_fluid_input_path,  
                                                             no_copy = no_copy, update_time = False)
         conv_heat_flow = self.returnConvHeatFlow(fluid_x_grid,fluid_x_centered_grid, 
@@ -336,7 +336,7 @@ class Coupler:
                         q_snb = self.hfct_obj.q_snb)
         
         self.logger.info(self.coupling_message)
-        self.couple_obj.setCoupleParams(self.io_obj.fluid_input_path, fluid_yaml = self.fluid_obj.init.yaml_file)
+        self.couple_obj.setCoupleParams(self.io_obj.fluid_input_path, fluid_yaml = self.fluid_obj.init.yaml_file,Te = fluid_Te, no_negative = self.init.yaml_file['Mode']["no_negative_multiplier"])
         
         #Run Fluid in coupled config 
         self.fluid_obj.revertStartKinSwitches()
@@ -366,7 +366,7 @@ class Coupler:
             no_copy = True
 
         (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
-        fluid_Z, _, fluid_mass, sim_time) = self.fluidStep(self.io_obj.intermediate_fluid_outpath,
+        fluid_Z, _, fluid_mass, fluid_specific_heat, sim_time) = self.fluidStep(self.io_obj.intermediate_fluid_outpath,
                                                             self.io_obj.fluid_input_path, False
                                                             )
         
@@ -391,7 +391,7 @@ class Coupler:
                             fluid_Te, fluid_ne, fluid_Z)
 
         (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
-    fluid_Z, _, fluid_mass, sim_time)  = self.fluid_obj.getLastStepQuants()
+    fluid_Z, _, fluid_mass, sim_time, _)  = self.fluid_obj.getLastStepQuants()
         self.logger.info("Operator-Split Set HFCT tools")
         conv_heat_flow = self.returnConvHeatFlow(fluid_x_grid,fluid_x_centered_grid, 
                                 fluid_Te,fluid_ne , fluid_Z,fluid_mass)
