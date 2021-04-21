@@ -33,7 +33,7 @@ class HyKiCT(Fluid):
         self.init.yaml_file['FixedParameters']['nx'] = nx 
         self.couple_mode = None
         self.cycle_no = 0
-        self.curr_time = self.init.yaml_file['TimeParameters']['t_init'] 
+        self.curr_time = float(self.init.yaml_file['TimeParameters']['t_init'])
         for couple_mode, logic in kwargs.items():
             if logic:
                 self.couple_mode = couple_mode  

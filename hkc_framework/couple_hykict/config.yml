@@ -88,7 +88,7 @@ Switches:
   RadPdVWork: false
   RadiationTransport: true 
   SingleTemperature: false 
-  SNBHeatFlow: true
+  SNBHeatFlow: false
   Velocity: true
   Viscosity: true
   EoSTables: true
@@ -107,5 +107,5 @@ TimeParameters:
   dt_min: 1.0e-16
   steps: 0
   t_max: 0
-  t_init: 0
+  t_init: 1e-13
   AdapativeMethod: 0 #0 is BUCKY, >0 HYADES
