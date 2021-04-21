@@ -262,7 +262,7 @@ class Multiplier(CouplingMethod):
         temperature /= 11594.0
         for i in range(len(temperature) - 1): 
             walled_Te = (temperature[i + 1] + temperature[i]) / 2
-            if walled_Te < 350.0:
+            if walled_Te < 350.0 or self.q_snb is not None:
                 if self.q_vfp_q_sh_multipliers[i + 1] < 0:
                     self.q_vfp_q_sh_multipliers[i + 1] = 1.0
     # def preHeatModel(self):

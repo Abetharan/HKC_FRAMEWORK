@@ -2,7 +2,7 @@ Paths:
   Run_name: snb_Conv_test
   Base_dir: /Users/shiki/DATA/HKC_RELATED/ 
   K_src_dir: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./SOL-KiT/
-  F_src_dir: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./HyKiCT/debug/apps/
+  F_src_dir: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./HyKiCT/beta/apps/
   Init_path:  /Users/shiki/DATA/HKC_RELATED/init_data/gd_copper_hohlraum/gd_copper_hohlraum_20_0_reversed/
   #Init_path:  /Users/shiki/DATA/HKC_RELATED/init_data/Be_planar_9_e_10s/
   #Init_path:  /Users/shiki/DATA/HKC_RELATED/init_data/test_problems_LSA/step_problem_200_nx/
@@ -19,17 +19,17 @@ Coupling_params:
   hdf5_output_freq: 1
   t_cycle: 1.0E-13
 Mode:
-  AdaptiveTimeStep: true 
+  AdaptiveTimeStep: false 
   Couple_divq: false 
   Couple_multi: true
   Couple_subtract : false
-  Couple_leap_frog: true 
+  Couple_leap_frog: false 
   Couple_operator_split: false 
   Limit_density: true #Limit density to 10x critical
-  Start_from_kinetic: false
+  Start_from_kinetic: true
   Load_f1: false       #Previous F1 with MB f0
   Rescale_init_f0: false  #Previous f_l rescaled f0. Takes precedence if load_f1 isare true
-  no_negative_multiplier: false
+  no_negative_multiplier: true
 Misc:
   HDF5: false
   Convergence_monitoring: true
