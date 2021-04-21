@@ -45,7 +45,7 @@ class HyKiCT(Fluid):
             self.init.yaml_file['Switches']['CoupleMulti'] = False 
             self.init.yaml_file['Switches']['CoupleSubtract'] = False 
         else:
-            self.init.yaml_file['TimeParameters']['t_max'] = self.tmax
+            self.init.yaml_file['TimeParameters']['t_max'] = self.tmax + self.curr_time
             self.init.yaml_file['Switches'][self.couple_mode] = True
 
     def revertStartKinSwitches(self):
