@@ -410,6 +410,9 @@ class SOL_KIT(Kinetic):
             np.savetxt(os.path.join(self._sol_kit_input_path, "TEMPERATURE_INPUT.txt"), sol_kit_inter_te)    
             np.savetxt(os.path.join(self._sol_kit_input_path, "Z_PROFILE_INPUT.txt"), sol_kit_inter_z)    
             np.savetxt(os.path.join(self._sol_kit_input_path, "X_GRID_INPUT.txt"), sol_kit_grid)
+            self.switches['RESTART'] = "F"
+            templating(tmpfilePath= os.path.join(self._run_path, 'INPUT/tmpSOL_KIT_SWITCHES.txt'),
+            writePath=self._sol_kit_input_path, fileName="SWITCHES_INPUT.txt", parameters=self.switches)
             # np.savetxt(os.path.join(self._SOL_KIT_INPUT_PATH, "ION_VEL_INPUT.txt"), SOL_KIT_grid)
             # np.savetxt(os.path.join(self._SOL_KIT_INPUT_PATH, "NEUT_HEAT_INPUT.txt"), SOL_KIT_heating)
             self.skip_load = False    
