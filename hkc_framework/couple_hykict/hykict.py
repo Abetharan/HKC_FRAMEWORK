@@ -48,6 +48,11 @@ class HyKiCT(Fluid):
             self.init.yaml_file['TimeParameters']['t_max'] = self.tmax + self.curr_time
             self.init.yaml_file['Switches'][self.couple_mode] = True
 
+        if self.init.yaml_file["Switches"]["RadiationTransport"]:
+            if self.init.yaml_file["FixedParameters"]["RadNg"] > 1:
+                if not self.init.yaml_file['Output']["RadMultiGroupEnergy"]:
+                   self.init.yaml_file['Output']["RadMultiGroupEnergy"] = True 
+                   
     def revertStartKinSwitches(self):
         """
         Purpose: Sets the expected switches to HyKiCT which were
@@ -204,8 +209,12 @@ class HyKiCT(Fluid):
                 shutil.copyfile(laser_copy_path, laser_new_path)
 
         if self.init.yaml_file["Switches"]["RadiationTransport"]:
-            shutil.copyfile(os.path.join(self._fluid_output_path, "RAD_ENERGY_DENSITY/RAD_ENERGY_DENSITY_" + str(largest_fluid_index) +".txt")
-                                            ,os.path.join(next_fluid_input_path,"rad_energy_density.txt"))
+            if self.init.yaml_file["FixedParameters"]["RadNg"] > 1:
+                shutil.copyfile(os.path.join(self._fluid_output_path, "RAD_MULTI_GROUP/RAD_MULTI_GROUP_" + str(largest_fluid_index) +".txt")
+                                                ,os.path.join(next_fluid_input_path,"rad_energy_density.txt"))
+            else:
+                shutil.copyfile(os.path.join(self._fluid_output_path, "RAD_ENERGY_DENSITY/RAD_ENERGY_DENSITY_" + str(largest_fluid_index) +".txt")
+                                                ,os.path.join(next_fluid_input_path,"rad_energy_density.txt"))
             if self.curr_time > 0:
                 self.init.yaml_file["Switches"]["LoadInRadEnergy"] = True
 
