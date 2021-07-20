@@ -8,7 +8,7 @@ BoundaryConditions:
   Rad_Source_Left: 0
 FixedParameters:
   nx: 92
-  ng: 15
+  ng: 20
   np: 1
   RadNg: 10
   MaxE: 12
@@ -18,8 +18,11 @@ FixedParameters:
   Output_Frequency: 10000
   Preheat_LastIndex: 0
   Preheat_StartIndex: 0
+  leakMaterial: 1
+  leakArea1: 8.6e-5 #3.6e-4
+  leakArea2: 4.5e-4  #0.5e-4
 LaserParams:
-  Duration: 23.6e-9 #Always relevant
+  Duration: 21.7e-9 #Always relevant
   Constant_Power: 3.2E19 #If load in laser profile is true this is ignored.
   Wavelength: 0.35E-6 #1E-6 for gold
   Angle: 0
@@ -37,6 +40,10 @@ Limiters:
   radesm: 1.0
   radflxlm: 1.0
   larsen: 2.0
+  sphecamE: 2.7
+  sphecamI: 2.7
+  opamP: 5.4
+  opamR: 5.4
 Output:
   Coordinates: true
   CreateOutputFolder: false 
@@ -68,8 +75,11 @@ Paths:
   #Opacity_Path_2: /Users/shiki/DATA/feos_tables/He/SPK_Gray/
   #Laser_Profile_Path: /Users/shiki/DATA/HKC_RELATED/init_data/Be_planar/laser_profile.txt
   Laser_Profile_Path: /Users/shiki/DATA/HKC_RELATED/init_data/higher_hykict_copper_init/laser_profile.txt
+  Leak_Profile_Path: /Users/shiki/DATA/HKC_RELATED/init_data/higher_hykict_copper_init/leak_profile.txt
   #Init_Path: /Users/shiki/DATA/HKC_RELATED/init_data/higher_hykict_copper_init/
-  Init_Path: /Users/shiki/DATA/HKC_RELATED/init_data/NIC_MG_copper_hohl_18_3ns_init/
+  Init_Path: /Users/shiki/DATA/HKC_RELATED/init_data/NIC_hykict_copper_init/
+  #Init_Path: /Users/shiki/DATA/HKC_RELATED/init_data/NIC_MG_copper_hohl_18_3ns_init/
+  #Init_Path: /Users/shiki/DATA/HKC_RELATED/init_data/NIC_HYDRA_INIT_18_3/
   #Init_Path: /Users/shiki/DATA/HKC_RELATED/init_data/new_copper_hohl_snb_init/
   Out_Path: /Users/shiki/DATA/HKC_RELATED/
 Switches:
@@ -91,7 +101,7 @@ Switches:
    IsothermalMode: false
    LeakSource: true
    LoadInLaserProfile: true
-   LoadInRadEnergy: true
+   LoadInRadEnergy: false
    MultiMaterial: true
    RadDiffusion: true
    RadFreeFree: true
@@ -102,15 +112,15 @@ Switches:
    Viscosity: true
 TimeParameters:
    AdapativeMethod: 0
-   ElectronLimit: 0.005
-   IonLimit: 0.005
+   ElectronLimit: 0.002
+   IonLimit: 0.002
    PVLimit: 0.01
-   RadLimit: 0.005
+   RadLimit: 0.002
    VolLimit: 0.01
-   cfl: 0.85
+   cfl: 0.75
    dt: 1.0e-17
    dt_max: 1.0e-12
    dt_min: 1.0e-19
    steps:  0 
-   t_init: 0.0e-9
-   t_max: 18.3e-9
+   t_init: 18.2268458450217965e-9
+   t_max: 24.3e-9

@@ -2,19 +2,21 @@ Paths:
   Run_name: snb_Conv_test
   Base_dir: /Users/shiki/DATA/HKC_RELATED/ 
   K_src_dir: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./SOL-KiT/
-  F_src_dir: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./HyKiCT/debug/apps/
-  Init_path: /Users/shiki/DATA/HKC_RELATED/init_data/NIC_MG_copper_hohl_18_3ns_init/
+  F_src_dir: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./HyKiCT/betaSPK/apps/
+  Init_path: /Users/shiki/DATA/HKC_RELATED/init_data/NIC_Better_model_18ns/
   F_config_path: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./HKC_FRAMEWORK/hkc_framework/couple_hykict/config.yml 
   K_config_path: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D.//HKC_FRAMEWORK/hkc_framework/couple_sol_kit/config.yml
 Codes:
   Kinetic_code: sol_kit
   Fluid_code: hykict
 Coupling_params:
-  Nx: 92 
+  Nx: 193 
   Cycles: 5
   Eta: 0.1E-2
   hdf5_output_freq: 1
   t_cycle: 1.0E-13
+  nlower_limit: 1000
+  nupper_limit: 5000 
 Mode:
   AdaptiveTimeStep: false 
   Couple_divq: false 
@@ -24,7 +26,7 @@ Mode:
   Couple_operator_split: false 
   Limit_density: true #Limit density to 10x critical
   Start_from_kinetic: true
-  Load_f1: false       #Previous F1 with MB f0
+  Load_f1: true      #Previous F1 with MB f0
   Rescale_init_f0: false  #Previous f_l rescaled f0. Takes precedence if load_f1 isare true
   no_negative_multiplier: true
 Misc:

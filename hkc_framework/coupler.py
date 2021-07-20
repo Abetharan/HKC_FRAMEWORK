@@ -504,6 +504,9 @@ class Coupler:
             self.coupling_message = 'Calculating Subtract'
         else:
             raise Exception('No Valid Base Mode Chosen')
+        if self.init.yaml_file['Mode']['no_negative_multiplier']:
+            self.couple_obj.lower_limit = self.init.yaml_file['Coupling_params']['nlower_limit']
+            self.couple_obj.upper_limit = self.init.yaml_file['Coupling_params']['nupper_limit']
 
         #Impact not ready
         # else:
