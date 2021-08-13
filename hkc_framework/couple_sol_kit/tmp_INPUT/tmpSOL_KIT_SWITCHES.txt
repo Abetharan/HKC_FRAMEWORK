@@ -86,7 +86,7 @@
        PART_SOURCE_BACKGROUND_TEMP_SWITCH =              F     Set particle source temperature to background electron temperature
 
  Other switches: 
-                 ADAPTIVE_TIMESTEP_SWITCH =              F     Use adaptive timestep (rescale dt with min(T^(3/2)/n))
+                 ADAPTIVE_TIMESTEP_SWITCH =              T     Use adaptive timestep (rescale dt with min(T^(3/2)/n))
                           FULL_FLUID_MODE =              F     Run code in fluid mode, both electrons and ions
                       Z_PROFILE_FROM_FILE =              T     Load ionization profile from file
                          X_GRID_FROM_FILE =              T     Load spatial grid from file

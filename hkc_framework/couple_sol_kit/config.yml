@@ -1,7 +1,7 @@
 Norms:
   #NORMALISATION
   Te: 270
-  Ne: 5.1E+29
+  Ne: 5.1E+28
   Z: 29.0
   Ar: 64.0
 
@@ -9,11 +9,11 @@ Params:
   Nx: 0 #handled internally
   Nv: 80
   Np: 1
-  Dt: 0.9
+  Dt: 0.8
   Dx: 0.5
   Dv: 0.0307
-  Dv_multi: 1.03
-  Nt: 10
+  Dv_multi: 1.033
+  Nt: 500
   Pre_step_nt: 0
   Pre_step_dt: 0.001
   L_max: 1

@@ -253,7 +253,7 @@ class Coupler:
                                                             self.io_obj.next_fluid_input_path,  
                                                             no_copy = no_copy)
         if self.init.yaml_file['Mode']['Limit_density']:
-            self.critical_density = 10 * (1114326918632954.5 / pow(self.fluid_obj.init.yaml_file['LaserParams']['Wavelength'], 2)) #Hard-coded limit to 10*nc
+            self.critical_density = self.init.yaml_file['Coupling_params']['nc_multiplier']* (1114326918632954.5 / pow(self.fluid_obj.init.yaml_file['LaserParams']['Wavelength'], 2)) #Hard-coded limit to 10*nc
             if any(fluid_ne >= self.critical_density):
                 self.laser_dir = self.fluid_obj.laser_direction
                 self.couple_obj.limit_density = True
@@ -475,6 +475,9 @@ class Coupler:
                             CoupleMulti = self.init.yaml_file['Mode']['Couple_multi'],
                             CoupleSubtract = self.init.yaml_file['Mode']['Couple_subtract'],
                             )
+
+        if self.fluid_obj.curr_time > 0 and not self.fluid_obj.init.yaml_file['Switches']['LoadInRadEnergy']:
+           self.fluid_obj.init.yaml_file['Switches']['LoadInRadEnergy'] = True  
         #Adds the tmax to the init time. 
         if self.init.yaml_file['Misc']['Continue'] and start_cycle > 1:
             last_time = self.fluid_obj.getPhysicalRunTime(self.io_obj.all_fluid_output_path[start_cycle - 1])
