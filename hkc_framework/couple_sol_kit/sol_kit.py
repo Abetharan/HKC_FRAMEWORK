@@ -134,8 +134,27 @@ class SOL_KIT(Kinetic):
         """
         os.chdir(self._run_path)
         heat_flow_path = os.path.join(self._run_path, 'OUTPUT/HEAT_FLOW_X/')
-        super().Execute(heat_flow_path)
-    
+        err = super().Execute(heat_flow_path)
+        if err and not self.converged:
+            #Err is denoted as 1
+            #Read status file created by SOL-KiT 
+            err = 0
+            if os.path.exists(self.status_path):
+                if(os.access(self.status_path, os.R_OK)):
+                    err = np.genfromtxt(self.status_path, skip_footer=2)
+            if bool(err):
+                self.logger.warning("Kinetic code failed see log")
+                self.logger.debug("HAS IT CONVERGED:")
+                self.logger.debug(self.converged)
+                if not os.path.exists("SOL-KiT"):
+                    self.logger.debug("SOL KIT NO LONGER EXISTS")
+                path_obj = pathlib.Path(self.cycle_dump_path)
+                root_path = path_obj.parent
+                np.savetxt(os.path.join(root_path, "status.txt"), np.array([1], dtype=np.int), fmt = '%1.1i')
+                self.moveFiles()
+                sys.exit(0)
+            self.converged = False
+
     def getPhysicalRunTime(self):
         step = self.init.yaml_file['Params']['Nt'] 
         dt = self.init.yaml_file['Params']['Dt']

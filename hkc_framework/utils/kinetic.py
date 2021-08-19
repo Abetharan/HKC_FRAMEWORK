@@ -198,22 +198,4 @@ class Kinetic():
         #If exception safely exit thread. Using stop event.
         if self.__process.poll() is not None and self.monitor_convergence:
             stop_event.set()
-        
-        if err and not self.converged:
-            #Err is denoted as 1
-            #Read status file created by SOL-KiT 
-            err = 0
-            if os.path.exists(self.status_path):
-                if(os.access(self.status_path, os.R_OK)):
-                    err = np.genfromtxt(self.status_path, skip_footer=2)
-            if bool(err):
-                self.logger.warning("Kinetic code failed see log")
-                self.logger.debug("HAS IT CONVERGED:")
-                self.logger.debug(self.converged)
-                if not os.path.exists("SOL-KiT"):
-                    self.logger.debug("SOL KIT NO LONGER EXISTS")
-                path_obj = pathlib.Path(self.cycle_dump_path)
-                root_path = path_obj.parent
-                np.savetxt(os.path.join(root_path, "status.txt"), np.array([1], dtype=np.int), fmt = '%1.1i')
-                sys.exit(0)
-            self.converged = False
+        return err 
