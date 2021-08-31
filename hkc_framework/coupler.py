@@ -189,10 +189,10 @@ class Coupler:
         self.logger.info("End Fluid")
         self.logger.info("Get Last Fluid Quants")
         (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
-            fluid_Z, _, fluid_mass, sim_time, f_specific_heat) = self.fluid_obj.getLastStepQuants(update_time) 
+            fluid_Z, _, fluid_mass, sim_time, f_specific_heat, f_Ar) = self.fluid_obj.getLastStepQuants(update_time) 
         if no_copy:
             return ((fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
-            fluid_Z, _, fluid_mass, sim_time))
+            fluid_Z, _, fluid_mass, f_specific_heat, f_Ar, sim_time))
         self.fluid_obj.setTimes()
         self.logger.info("Copying files to next step Init: {}".format(next_input_path))
         self.fluid_obj.initHydro(next_input_path)
@@ -200,7 +200,7 @@ class Coupler:
         self.fluid_time_taken.append(tfluid_end - tfluid_start)
 
         return (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
-            fluid_Z, _, fluid_mass,f_specific_heat, sim_time) 
+            fluid_Z, _, fluid_mass,f_specific_heat,f_Ar, sim_time) 
     
     def returnConvHeatFlow(self,fluid_x_grid,fluid_x_centered_grid, fluid_Te,fluid_ne , fluid_Z,fluid_mass ):
         """
@@ -249,7 +249,7 @@ class Coupler:
             no_copy = True
 
         (fluid_x_grid, fluid_x_centered_grid, _, fluid_ne, fluid_Te,
-        fluid_Z, _, fluid_mass, fluid_specific_heat, sim_time) = self.fluidStep(self.io_obj.fluid_output_path,
+        fluid_Z, _, fluid_mass, fluid_specific_heat,fluid_Ar, sim_time) = self.fluidStep(self.io_obj.fluid_output_path,
                                                             self.io_obj.next_fluid_input_path,  
                                                             no_copy = no_copy)
         if self.init.yaml_file['Mode']['Limit_density']:
@@ -274,7 +274,9 @@ class Coupler:
                             q_snb = self.hfct_obj.q_snb)
             
             self.logger.info(self.coupling_message)
-            self.couple_obj.setCoupleParams(self.io_obj.next_fluid_input_path, fluid_yaml = self.fluid_obj.init.yaml_file, Te = fluid_Te, no_negative = self.init.yaml_file['Mode']["no_negative_multiplier"])
+            self.couple_obj.setCoupleParams(self.io_obj.next_fluid_input_path, fluid_yaml = self.fluid_obj.init.yaml_file, Te = fluid_Te,
+                                        no_negative = self.init.yaml_file['Mode']["no_negative_multiplier"], nn_via_material = self.init.yaml_file['Mode']["nn_via_material"],
+                                        Ar = fluid_Ar, material = self.init.yaml_file['Coupling_params']["material_Ar_pacify"])
 
         if self.init.yaml_file['Mode']['AdaptiveTimeStep']:
             if self.init.yaml_file['Mode']['Couple_divq']:

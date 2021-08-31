@@ -256,8 +256,18 @@ class Multiplier(CouplingMethod):
             np.savetxt(os.path.join(save_path,"front_heat_fit_param.txt"), self.front_heat_fit_params)
 
         if(kwargs['no_negative']):
-            self.pacifyMultiplier(kwargs['Te'])
+            if(kwargs['nn_via_material']):
+                self.pacifyMultiplierViaMaterial(kwargs['Ar'], kwargs['material'])
+            else:
+                self.pacifyMultiplier(kwargs['Te'])
         np.savetxt(os.path.join(save_path,"qe.txt"), self.q_vfp_q_sh_multipliers)
+
+    def pacifyMultiplierViaMaterial(self,ar, material):
+        for i in range(len(ar) - 1): 
+            walled_ar = (ar[i + 1] + ar[i]) / 2
+            if walled_ar == material: 
+                if self.q_vfp_q_sh_multipliers[i + 1] < 0:
+                    self.q_vfp_q_sh_multipliers[i + 1] = 1.0
 
 
     def pacifyMultiplier(self, temperature):

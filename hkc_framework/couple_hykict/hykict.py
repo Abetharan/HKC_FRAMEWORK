@@ -150,11 +150,11 @@ class HyKiCT(Fluid):
 
         f_specific_heat = np.loadtxt(os.path.join(self._fluid_output_path,
                     "".join(["ELECTRON_SPECIFIC_HEAT/ELECTRON_SPECIFIC_HEAT_", str(last_index), ".txt"])),dtype = np.float64)
-        
+        f_Ar = np.loadtxt(os.path.join(self._fluid_input_path, "Ar.txt"))
         if update_time:
             self.updateTime(curr_time = f_time)
         
-        return(f_x_grid, f_x_centered_grid, f_v, f_ne, f_Te, f_Z, f_laser, mass, f_time, f_specific_heat)
+        return(f_x_grid, f_x_centered_grid, f_v, f_ne, f_Te, f_Z, f_laser, mass, f_time, f_specific_heat, f_Ar)
     
     def initHydro(self, next_fluid_input_path): #Remove qe etc
         """
