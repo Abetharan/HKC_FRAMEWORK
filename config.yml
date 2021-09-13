@@ -4,7 +4,7 @@ Paths:
   K_src_dir: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./SOL-KiT/
   F_src_dir: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./HyKiCT/beta/apps/
   #Init_path: /Users/shiki/DATA/HKC_RELATED/init_data/NIC_Better_model_7ns/
-  Init_path: /Users/shiki/DATA/HKC_RELATED/test_coupling_failure/
+  Init_path: /Users/shiki/DATA/HKC_RELATED/init_data/hkc_hohl_benchmark_problem/
   F_config_path: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./HKC_FRAMEWORK/hkc_framework/couple_hykict/config.yml 
   K_config_path: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D.//HKC_FRAMEWORK/hkc_framework/couple_sol_kit/config.yml
 Codes:
@@ -28,7 +28,7 @@ Mode:
   Couple_leap_frog: false 
   Couple_operator_split: false 
   Limit_density: true #Limit density to 10x critical
-  Start_from_kinetic: false
+  Start_from_kinetic: true
   Load_f1: true      #Previous F1 with MB f0
   Rescale_init_f0: false  #Previous f_l rescaled f0. Takes precedence if load_f1 isare true
   no_negative_multiplier: true

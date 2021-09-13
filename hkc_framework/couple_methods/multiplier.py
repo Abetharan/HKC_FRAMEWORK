@@ -206,16 +206,16 @@ class Multiplier(CouplingMethod):
 
        #REF DISABLED THE FIT MODELS#
         ################################
-        if laser_dir is not None and self.q_snb is None:
-            if laser_dir == "right":
-                self.q_vfp_q_sh_multipliers[-1] = 0
-            else:
-                self.q_vfp_q_sh_multipliers[0] = 0
-            front, pre = self._limitDetectAnamalousHeat(heat_flow)
-        else:
-            self.q_vfp_q_sh_multipliers[0] = 0
-            self.q_vfp_q_sh_multipliers[-1] = 0
-            front, pre = self._detectAnamalousHeat()
+        # if laser_dir is not None and self.q_snb is None:
+        #     if laser_dir == "right":
+            #     self.q_vfp_q_sh_multipliers[-1] = 0
+            # else:
+            #     self.q_vfp_q_sh_multipliers[0] = 0
+            # front, pre = self._limitDetectAnamalousHeat(heat_flow)
+        # else:
+        #     self.q_vfp_q_sh_multipliers[0] = 0
+            # self.q_vfp_q_sh_multipliers[-1] = 0
+            # front, pre = self._detectAnamalousHeat()
 
         # if front is not None:
         #     (self.front_heat_start_index, 

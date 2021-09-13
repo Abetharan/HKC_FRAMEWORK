@@ -7,7 +7,7 @@ BoundaryConditions:
   Rad_Source_Right: 0
   Rad_Source_Left: 0
 FixedParameters:
-  nx: 92
+  nx: 193
   ng: 15
   np: 1
   RadNg: 10
@@ -15,20 +15,21 @@ FixedParameters:
   FixedOpacityValue: 0
   Frontheat_LastIndex: 0
   Frontheat_StartIndex: 0
-  Output_Frequency: 10000
+  Output_Frequency: 2000
   Preheat_LastIndex: 0
   Preheat_StartIndex: 0
   leakMaterial: 1
-  leakArea1: 8.6e-5 #3.6e-4
-  leakArea2: 4.5e-4  #0.5e-4
+  leakArea1: 9.5e-6 #7.67596925911667e-06 #06 
+  leakArea2: 7.2e-5 #5.279207620861008e-05 #05
 LaserParams:
   Duration: 21.7e-9 #Always relevant
   Constant_Power: 3.2E19 #If load in laser profile is true this is ignored.
-  Wavelength: 0.35E-6 #1E-6 for gold
+  Wavelength: 0.351E-6 #1E-6 for gold
   Angle: 0
   Albedo: 0
   CriticalLeak: 0.0
   CriticalDumpFraction: 0.01
+  StartIndex: 84
 Limiters:
   heatflxlmE: 0.15
   heatflxlmI: 0.15
@@ -38,12 +39,16 @@ Limiters:
   radcmm: 1.0
   raddfm: 1.0
   radesm: 1.0
-  radflxlm: 1.0
+  radflxlm: 0.0
   larsen: 2.0
-  sphecamE: 2.7
-  sphecamI: 2.7
-  opamP: 5.4
-  opamR: 5.4
+  sphecamE1: 1.0 
+  sphecamI1: 2.0 
+  opamP1: 1.0 #5.4
+  opamR1: 1.0 #5.4
+  sphecamE2: 1.0 
+  sphecamI2: 1.0 
+  opamP2: 1.0
+  opamR2: 1.0
 Output:
   Coordinates: true
   CreateOutputFolder: false 
@@ -71,16 +76,19 @@ Paths:
   #FEOS_Path_2: /Users/shiki/DATA/feos_tables/He_SpK/He
   Opacity_Path_1: /Users/shiki/DATA/feos_tables/Cu/SPK_MG/
   Opacity_Path_2: /Users/shiki/DATA/feos_tables/He/SPK_MG/
+  #Opacity_Path_1: /Users/shiki/DATA/feos_tables/Cu/SPK_MG_More_Groups/
+  #Opacity_Path_2: /Users/shiki/DATA/feos_tables/He/SPK_MG_More_Groups/
   #Opacity_Path_1: /Users/shiki/DATA/feos_tables/Cu/SPK_Gray/
   #Opacity_Path_2: /Users/shiki/DATA/feos_tables/He/SPK_Gray/
   #Laser_Profile_Path: /Users/shiki/DATA/HKC_RELATED/init_data/Be_planar/laser_profile.txt
-  Laser_Profile_Path: /Users/shiki/DATA/HKC_RELATED/init_data/higher_hykict_copper_init/laser_profile.txt
+  Laser_Profile_Path: /Users/shiki/DATA/HKC_RELATED/init_data/NIC_super_res_hykict_init/laser_profile.txt
   Leak_Profile_Path: /Users/shiki/DATA/HKC_RELATED/init_data/higher_hykict_copper_init/leak_profile.txt
-  #Init_Path: /Users/shiki/DATA/HKC_RELATED/init_data/higher_hykict_copper_init/
-  Init_Path: /Users/shiki/DATA/HKC_RELATED/init_data/NIC_hykict_copper_init/
-  #Init_Path: /Users/shiki/DATA/HKC_RELATED/init_data/NIC_MG_copper_hohl_18_3ns_init/
-  #Init_Path: /Users/shiki/DATA/HKC_RELATED/init_data/NIC_HYDRA_INIT_18_3/
-  #Init_Path: /Users/shiki/DATA/HKC_RELATED/init_data/new_copper_hohl_snb_init/
+  #Init_Path: /Users/shiki/DATA/HKC_RELATED/init_data/test_problems_LSA/100_nx_tanh_hohlraum
+  #Init_Path: /Users/shiki/DATA/HKC_RELATED/init_data/NIC_hykict_copper_init/
+  Init_Path: /Users/shiki/DATA/HKC_RELATED/init_data/hkc_hohl_benchmark_problem/
+  #Init_Path: /Users/shiki/DATA/HKC_RELATED/init_data/NIC_high_res_hykict_init/
+  #Init_Path: /Users/shiki/DATA/HKC_RELATED/init_data/NIC_super_res_hykict_init/
+  #Init_Path: /Users/shiki/DATA/HKC_RELATED/init_data/test_problems_LSA/100_nx_energy_check_hohlraum
   Out_Path: /Users/shiki/DATA/HKC_RELATED/
 Switches:
    AdapativeTimeStep: true
@@ -90,37 +98,37 @@ Switches:
    CoupleMulti: false
    CoupleOperatorSplit: false
    CoupleSubtract: false
-   EoSTables: true 
-   Exchange: true
-   FullyIonized: false
+   EoSTables: false
+   Exchange: false
+   FullyIonized: true
    HeatConduction: true
-   IdealGas: false
+   IdealGas: true
    ImplicitHeatConduction: false
-   InvBrem: true
-   IonizationTables: true
+   InvBrem: false
+   IonizationTables: false
    IsothermalMode: false
-   LeakSource: true
-   LoadInLaserProfile: true
-   LoadInRadEnergy: false 
+   LeakSource: false
+   LoadInLaserProfile: false
+   LoadInRadEnergy: false
    MultiMaterial: true
    RadDiffusion: true
    RadFreeFree: true
-   RadiationTransport: true
-   SNBHeatFlow: false 
-   SingleTemperature: false
-   Velocity: true
-   Viscosity: true
+   RadiationTransport: false
+   SNBHeatFlow: true
+   SingleTemperature: true
+   Velocity: false
+   Viscosity: false
 TimeParameters:
    AdapativeMethod: 0
-   ElectronLimit: 0.002
-   IonLimit: 0.002
-   PVLimit: 0.01
-   RadLimit: 0.002
+   ElectronLimit: 0.01
+   IonLimit: 0.01
+   PVLimit: 0.05
+   RadLimit: 0.005
    VolLimit: 0.01
-   cfl: 0.75
+   cfl: 0.85
    dt: 1.0e-17
    dt_max: 1.0e-12
    dt_min: 1.0e-19
-   steps:  0 
-   t_init: 1.38521e-08
-   t_max: 24.3e-9
+   steps: 0 
+   t_init: 0.0e-11
+   t_max: 2.34e-8
