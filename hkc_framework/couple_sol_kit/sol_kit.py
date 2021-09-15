@@ -212,7 +212,7 @@ class SOL_KIT(Kinetic):
             Args: self.run_path 
             LOGIC: TO copy sol-kit or not.
         """
-        shutil.copy(self._kinetic_src_dir + '/SOL-KiT', self._run_path)
+        shutil.copy(self._kinetic_src_dir, os.path.join(self._run_path, "SOL-KiT"))
 
     def setFiles(self):
         """ Purpose: Set all neccessary SOL-KiT Files: Switches, norms, tolerances, grid_input

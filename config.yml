@@ -1,8 +1,8 @@
 Paths:
   Run_name: snb_Conv_test
   Base_dir: /Users/shiki/DATA/HKC_RELATED/ 
-  K_src_dir: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./SOL-KiT/
-  F_src_dir: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./HyKiCT/beta/apps/
+  K_src_dir: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./SOL-KiT/SOL-KiT
+  F_src_dir: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./HyKiCT/beta/apps/OST_HyKiCT
   #Init_path: /Users/shiki/DATA/HKC_RELATED/init_data/NIC_Better_model_7ns/
   Init_path: /Users/shiki/DATA/HKC_RELATED/init_data/hkc_hohl_benchmark_problem/
   F_config_path: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./HKC_FRAMEWORK/hkc_framework/couple_hykict/config.yml 

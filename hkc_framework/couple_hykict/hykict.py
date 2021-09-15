@@ -96,7 +96,7 @@ class HyKiCT(Fluid):
         """ Purpose: Copy HyKiCT exe. """
 
         if not os.path.exists(os.path.join(self._run_path, 'HyKiCT')):
-            shutil.copy(self._fluid_src_dir+ '/HyKiCT', self._run_path)
+            shutil.copy(self._fluid_src_dir, os.path.join(self._run_path, "HyKiCT"))
     
     def Run(self):
         """ Purpose: Run HyKiCT with parameters set previously"""

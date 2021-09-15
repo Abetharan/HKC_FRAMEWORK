@@ -114,7 +114,7 @@ Switches:
    RadDiffusion: true
    RadFreeFree: true
    RadiationTransport: false
-   SNBHeatFlow: true
+   SNBHeatFlow: true 
    SingleTemperature: true
    Velocity: false
    Viscosity: false
