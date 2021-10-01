@@ -276,7 +276,8 @@ class Coupler:
             self.logger.info(self.coupling_message)
             self.couple_obj.setCoupleParams(self.io_obj.next_fluid_input_path, fluid_yaml = self.fluid_obj.init.yaml_file, Te = fluid_Te,
                                         no_negative = self.init.yaml_file['Mode']["no_negative_multiplier"], nn_via_material = self.init.yaml_file['Mode']["nn_via_material"],
-                                        Ar = fluid_Ar, material = self.init.yaml_file['Coupling_params']["material_Ar_pacify"])
+                                        nn_via_interpolation = self.init.yaml_file['Mode']['nn_via_interpolation'],x = fluid_x_grid, Ar = fluid_Ar, 
+                                        material = self.init.yaml_file['Coupling_params']["material_Ar_pacify"])
 
         if self.init.yaml_file['Mode']['AdaptiveTimeStep']:
             if self.init.yaml_file['Mode']['Couple_divq']:

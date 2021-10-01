@@ -4,38 +4,41 @@ Paths:
   K_src_dir: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./SOL-KiT/SOL-KiT
   F_src_dir: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./HyKiCT/beta/apps/OST_HyKiCT
   #Init_path: /Users/shiki/DATA/HKC_RELATED/init_data/NIC_Better_model_7ns/
-  Init_path: /Users/shiki/DATA/HKC_RELATED/init_data/hkc_hohl_benchmark_problem/
+  Init_path: /Users/shiki/DATA/HKC_RELATED/Results/BF_Hohlraum/BF_1_5ns_init
+  #Init_path: /Users/shiki/DATA/HKC_RELATED/init_data/test_problems_LSA/100_nx_tanh_hohlraum
   F_config_path: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./HKC_FRAMEWORK/hkc_framework/couple_hykict/config.yml 
   K_config_path: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D.//HKC_FRAMEWORK/hkc_framework/couple_sol_kit/config.yml
 Codes:
   Kinetic_code: sol_kit
   Fluid_code: hykict
-Coupling_params:
-  Nx: 193 
-  Cycles: 5
-  Eta: 0.1E-2
-  hdf5_output_freq: 1
-  t_cycle: 1.0E-13
-  nlower_limit: 1000
-  nupper_limit: 5000 
-  nc_multiplier: 5
-  material_Ar_pacify: 4
-Mode:
-  AdaptiveTimeStep: false 
-  Couple_divq: false 
-  Couple_multi: true
-  Couple_subtract : false
-  Couple_leap_frog: false 
-  Couple_operator_split: false 
-  Limit_density: true #Limit density to 10x critical
-  Start_from_kinetic: true
-  Load_f1: true      #Previous F1 with MB f0
-  Rescale_init_f0: false  #Previous f_l rescaled f0. Takes precedence if load_f1 isare true
-  no_negative_multiplier: true
-  nn_via_material : false
 Misc:
-  HDF5: false
+  Continue: false 
   Convergence_monitoring: true
-  Continue: false
-  HPC: false
+  HDF5: true
+  HPC: true
   Overwrite: true
+Mode:
+  AdaptiveTimeStep: false
+  Couple_divq: false
+  Couple_leap_frog: false
+  Couple_multi: true
+  Couple_operator_split: false
+  Couple_subtract: false
+  Limit_density: true
+  Load_f1: true
+  Rescale_init_f0: false
+  Start_from_kinetic: true
+  nn_via_material: false
+  no_negative_multiplier: true
+  nn_via_interpolation : true
+Coupling_params:
+  Cycles: 5
+  Eta: 0.001
+  Nx: 193
+  hdf5_output_freq: 1
+  material_Ar_pacify: 4
+  nc_multiplier: 5
+  nlower_limit: 0
+  nupper_limit: 5000
+  t_cycle: 4.0e-11
+

@@ -19,8 +19,8 @@ FixedParameters:
   Preheat_LastIndex: 0
   Preheat_StartIndex: 0
   leakMaterial: 1
-  leakArea1: 9.5e-6 #7.67596925911667e-06 #06 
-  leakArea2: 7.2e-5 #5.279207620861008e-05 #05
+  leakArea1: 1.5e-5 #7.67596925911667e-06 #06 
+  leakArea2: 8.2e-5 #5.279207620861008e-05 #05
 LaserParams:
   Duration: 21.7e-9 #Always relevant
   Constant_Power: 3.2E19 #If load in laser profile is true this is ignored.
@@ -28,12 +28,13 @@ LaserParams:
   Angle: 0
   Albedo: 0
   CriticalLeak: 0.0
-  CriticalDumpFraction: 0.01
-  StartIndex: 84
+  CriticalDumpFraction: 0.1
+  StartIndex: 173
 Limiters:
   heatflxlmE: 0.15
   heatflxlmI: 0.15
-  prrm: 1.0
+  prrm1: 1.00
+  prrm2: 1.4  #1.5
   radabm: 1.0
   radbrm: 1.0
   radcmm: 1.0
@@ -41,10 +42,10 @@ Limiters:
   radesm: 1.0
   radflxlm: 0.0
   larsen: 2.0
-  sphecamE1: 1.0 
-  sphecamI1: 2.0 
-  opamP1: 1.0 #5.4
-  opamR1: 1.0 #5.4
+  sphecamE1: 2.5 
+  sphecamI1: 2.5 
+  opamP1: 4.8 #5.4
+  opamR1: 4.8 #5.4
   sphecamE2: 1.0 
   sphecamI2: 1.0 
   opamP2: 1.0
@@ -72,24 +73,13 @@ Output:
 Paths:
   FEOS_Path_1: /Users/shiki/DATA/feos_tables/Cu/Cu
   FEOS_Path_2: /Users/shiki/DATA/feos_tables/He/He
-  #FEOS_Path_1: /Users/shiki/DATA/feos_tables/Cu_SpK/Cu
-  #FEOS_Path_2: /Users/shiki/DATA/feos_tables/He_SpK/He
+  Init_Path: /Users/shiki/DATA/HKC_RELATED/init_data/NIC_hykict_copper_init/
+  Laser_Profile_Path: /Users/shiki/DATA/HKC_RELATED/init_data/higher_hykict_copper_init/laser_profile.txt
+  Leak_Profile_Path: /Users/shiki/DATA/HKC_RELATED/init_data/higher_hykict_copper_init/leak_profile.txt
   Opacity_Path_1: /Users/shiki/DATA/feos_tables/Cu/SPK_MG/
   Opacity_Path_2: /Users/shiki/DATA/feos_tables/He/SPK_MG/
-  #Opacity_Path_1: /Users/shiki/DATA/feos_tables/Cu/SPK_MG_More_Groups/
-  #Opacity_Path_2: /Users/shiki/DATA/feos_tables/He/SPK_MG_More_Groups/
-  #Opacity_Path_1: /Users/shiki/DATA/feos_tables/Cu/SPK_Gray/
-  #Opacity_Path_2: /Users/shiki/DATA/feos_tables/He/SPK_Gray/
-  #Laser_Profile_Path: /Users/shiki/DATA/HKC_RELATED/init_data/Be_planar/laser_profile.txt
-  Laser_Profile_Path: /Users/shiki/DATA/HKC_RELATED/init_data/NIC_super_res_hykict_init/laser_profile.txt
-  Leak_Profile_Path: /Users/shiki/DATA/HKC_RELATED/init_data/higher_hykict_copper_init/leak_profile.txt
-  #Init_Path: /Users/shiki/DATA/HKC_RELATED/init_data/test_problems_LSA/100_nx_tanh_hohlraum
-  #Init_Path: /Users/shiki/DATA/HKC_RELATED/init_data/NIC_hykict_copper_init/
-  Init_Path: /Users/shiki/DATA/HKC_RELATED/init_data/hkc_hohl_benchmark_problem/
-  #Init_Path: /Users/shiki/DATA/HKC_RELATED/init_data/NIC_high_res_hykict_init/
-  #Init_Path: /Users/shiki/DATA/HKC_RELATED/init_data/NIC_super_res_hykict_init/
-  #Init_Path: /Users/shiki/DATA/HKC_RELATED/init_data/test_problems_LSA/100_nx_energy_check_hohlraum
   Out_Path: /Users/shiki/DATA/HKC_RELATED/
+
 Switches:
    AdapativeTimeStep: true
    AdiabaticMode: false
@@ -98,14 +88,14 @@ Switches:
    CoupleMulti: false
    CoupleOperatorSplit: false
    CoupleSubtract: false
-   EoSTables: false
-   Exchange: false
-   FullyIonized: true
+   EoSTables: true
+   Exchange: true
+   FullyIonized: false
    HeatConduction: true
-   IdealGas: true
+   IdealGas: false
    ImplicitHeatConduction: false
    InvBrem: false
-   IonizationTables: false
+   IonizationTables: true
    IsothermalMode: false
    LeakSource: false
    LoadInLaserProfile: false
@@ -114,21 +104,22 @@ Switches:
    RadDiffusion: true
    RadFreeFree: true
    RadiationTransport: false
-   SNBHeatFlow: true 
-   SingleTemperature: true
-   Velocity: false
-   Viscosity: false
+   SNBHeatFlow: false 
+   LeeMore: false
+   SingleTemperature: false
+   Velocity: true
+   Viscosity: true
 TimeParameters:
    AdapativeMethod: 0
    ElectronLimit: 0.01
    IonLimit: 0.01
    PVLimit: 0.05
-   RadLimit: 0.005
+   RadLimit: 0.01
    VolLimit: 0.01
    cfl: 0.85
    dt: 1.0e-17
    dt_max: 1.0e-12
    dt_min: 1.0e-19
    steps: 0 
-   t_init: 0.0e-11
-   t_max: 2.34e-8
+   t_init: 1.11269e-9
+   t_max: 7.5e-9
