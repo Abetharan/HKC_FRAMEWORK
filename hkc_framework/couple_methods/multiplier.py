@@ -259,7 +259,7 @@ class Multiplier(CouplingMethod):
             if(kwargs['nn_via_material']):
                 self.pacifyMultiplierViaMaterial(kwargs['Ar'], kwargs['material'])
             if(kwargs['nn_via_interpolation']):
-                self.pacifyMultiplierViaInterpolation(kwargs['x'])
+                self.pacifyMultiplierViaInterpolation(kwargs['x'], kwargs['Ar'], kwargs['material'])
             else:
                 self.pacifyMultiplier(kwargs['Te'])
         np.savetxt(os.path.join(save_path,"qe.txt"), self.q_vfp_q_sh_multipliers)
@@ -283,12 +283,13 @@ class Multiplier(CouplingMethod):
                 if self.q_vfp_q_sh_multipliers[i + 1] < 0:
                     self.q_vfp_q_sh_multipliers[i + 1] = 1.0
 
-    def pacifyMultiplierViaInterpolation(self, x):
-        for i in range(len(self.q_vfp_q_sh_multipliers)):
-            if((i > 1) and (i < len(self.q_vfp_q_sh_multipliers) - 1)):
+    def pacifyMultiplierViaInterpolation(self, x, ar, material):
+        for i in range(1, len( self.q_vfp_q_sh_multipliers) - 1):
                 if(self.q_vfp_q_sh_multipliers[i] < 0):
-                    weight = (x[i] - x[i - 1]) / (x[i + 1] - x[i - 1])
-                    self.q_vfp_q_sh_multipliers[i] = self.q_vfp_q_sh_multipliers[i - 1] * (1 - weight) + self.q_vfp_q_sh_multipliers[i + 1] * weight
+                    walled_ar = (ar[i] + ar[i - 1]) / 2
+                    if(walled_ar == material):
+                        weight = (x[i] - x[i - 1]) / (x[i + 1] - x[i - 1])
+                        self.q_vfp_q_sh_multipliers[i] = self.q_vfp_q_sh_multipliers[i - 1] * (1 - weight) + self.q_vfp_q_sh_multipliers[i + 1] * weight
 
     # def preHeatModel(self):
     #     """ 
