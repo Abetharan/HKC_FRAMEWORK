@@ -42,7 +42,7 @@ class Coupler:
         self.cycle_time_taken = []
         self.init = util.Input(self.yml_init_file_path)
         self.coupling_message = "No Method Chosen"
-        self.critical_density = None
+        self.critical_value = None
         self.laser_dir = None
     def startprint(self, fluid_code, kinetic_code):
 
@@ -135,7 +135,7 @@ class Coupler:
         self.kin_obj.sh_heat_flow = conv_heat_flow
 
         skipped = self.kin_obj.initFromHydro(fluid_x_grid, fluid_x_centered_grid, 
-                            fluid_Te, fluid_ne, fluid_Z, critical_density = self.critical_density, laser_dir = self.laser_dir)
+                            fluid_Te, fluid_ne, fluid_Z, critical_density = self.critical_value, laser_dir = self.laser_dir)
         if skipped and cycle_no > 0:
             self.logger.info("FAILED TO Engage MODE: Load F1 DUE TO CHANGE IN GRID SIZE")
 
@@ -252,14 +252,25 @@ class Coupler:
         fluid_Z, _, fluid_mass, fluid_specific_heat,fluid_Ar, sim_time) = self.fluidStep(self.io_obj.fluid_output_path,
                                                             self.io_obj.next_fluid_input_path,  
                                                             no_copy = no_copy)
-        if self.init.yaml_file['Mode']['Limit_density']:
-            self.critical_density = self.init.yaml_file['Coupling_params']['nc_multiplier']* (1114326918632954.5 / pow(self.fluid_obj.init.yaml_file['LaserParams']['Wavelength'], 2)) #Hard-coded limit to 10*nc
-            if any(fluid_ne >= self.critical_density):
+        if self.init.yaml_file['Mode']['Limit_density']: # Limit via having density <  limit_value * critical Density
+            self.critical_value = self.init.yaml_file['Coupling_params']['limit_value']* (1114326918632954.5 / pow(self.fluid_obj.init.yaml_file['LaserParams']['Wavelength'], 2)) 
+            if any(fluid_ne >= self.critical_value):
                 self.laser_dir = self.fluid_obj.laser_direction
                 self.couple_obj.limit_density = True
             else:
-                self.critical_density = None
+                self.critical_value = None
                 self.laser_dir = None
+        elif self.init.yaml_file['Mode']['Limit_plasmaparam']: #Limit via having a plasma parameter < limit_value.
+            debye = pow((VACUUM_PERMITTIVITY*BOLTZMANN_CONSTANT * fluid_Te) / (fluid_ne * ELEMENTARY_CHARGE *ELEMENTARY_CHARGE), 0.5)
+            plasma_parameter = 1/(fluid_ne * pow(debye, 3))
+            self.critical_value = self.init.yaml_file['Coupling_params']['limit_value'] 
+            if any(plasma_parameter >= self.critical_value):
+                self.laser_dir = self.fluid_obj.laser_direction
+                self.couple_obj.limit_density = True
+            else:
+                self.critical_value = None
+                self.laser_dir = None
+
 
         if not run_only_fluid:
             conv_heat_flow = self.returnConvHeatFlow(fluid_x_grid,fluid_x_centered_grid, 
@@ -317,12 +328,12 @@ class Coupler:
         conv_heat_flow = self.returnConvHeatFlow(fluid_x_grid,fluid_x_centered_grid, 
                                 fluid_Te,fluid_ne , fluid_Z,fluid_mass)
         if self.init.yaml_file['Mode']['Limit_density']:
-            self.critical_density = 10 * (1114326918632954.5 / pow(self.fluid_obj.init.yaml_file['LaserParams']['Wavelength'], 2)) #Hard-coded limit to 10*nc
-            if any(fluid_ne >= self.critical_density):
+            self.critical_value = 10 * (1114326918632954.5 / pow(self.fluid_obj.init.yaml_file['LaserParams']['Wavelength'], 2)) #Hard-coded limit to 10*nc
+            if any(fluid_ne >= self.critical_value):
                 self.laser_dir = self.fluid_obj.laser_direction
                 self.couple_obj.limit_density = True
             else:
-                self.critical_density = None
+                self.critical_value = None
                 self.laser_dir = None
         vfp_heat = self.kineticStep(cycle_no, conv_heat_flow,
                     fluid_x_grid, fluid_x_centered_grid, 
@@ -381,12 +392,12 @@ class Coupler:
                                 fluid_Te,fluid_ne , fluid_Z,fluid_mass)
 
         if self.init.yaml_file['Mode']['Limit_density']:
-            self.critical_density = 10 * (1114326918632954.5 / pow(self.fluid_obj.init.yaml_file['LaserParams']['Wavelength'], 2)) #Hard-coded limit to 10*nc
-            if any(fluid_ne >= self.critical_density):
+            self.critical_value = 10 * (1114326918632954.5 / pow(self.fluid_obj.init.yaml_file['LaserParams']['Wavelength'], 2)) #Hard-coded limit to 10*nc
+            if any(fluid_ne >= self.critical_value):
                 self.laser_dir = self.fluid_obj.laser_direction
                 self.couple_obj.limit_density = True
             else:
-                self.critical_density = None
+                self.critical_value = None
                 self.laser_dir = None
 
         vfp_heat = self.kineticStep(cycle_no, conv_heat_flow,

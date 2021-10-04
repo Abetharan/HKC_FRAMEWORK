@@ -203,29 +203,6 @@ class Multiplier(CouplingMethod):
                 heat_flow = heat_flow[:len_vfp] 
         self.q_vfp_q_sh_multipliers = np.array(self.vfp_heat/heat_flow)
 
-
-       #REF DISABLED THE FIT MODELS#
-        ################################
-        # if laser_dir is not None and self.q_snb is None:
-        #     if laser_dir == "right":
-            #     self.q_vfp_q_sh_multipliers[-1] = 0
-            # else:
-            #     self.q_vfp_q_sh_multipliers[0] = 0
-            # front, pre = self._limitDetectAnamalousHeat(heat_flow)
-        # else:
-        #     self.q_vfp_q_sh_multipliers[0] = 0
-            # self.q_vfp_q_sh_multipliers[-1] = 0
-            # front, pre = self._detectAnamalousHeat()
-
-        # if front is not None:
-        #     (self.front_heat_start_index, 
-            # self.front_heat_last_index, 
-            # self.front_heat_fit_params) = front
-        # if pre is not None:
-        #     (self.pre_heat_start_index,
-            # self.pre_heat_last_index,
-            # self.pre_heat_fit_params) = pre
-
         if laser_dir is not None:
             padding = limit_index - len_vfp
             if laser_dir == "right":

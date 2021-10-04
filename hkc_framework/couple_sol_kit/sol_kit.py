@@ -300,7 +300,6 @@ class SOL_KIT(Kinetic):
                     for var_txt in os.scandir(var_folder):
                         if not var_txt.name.startswith('.') and var_txt.is_file():
                             os.unlink(var_txt.path)
-        
     def initFromHydro(self, f_x_grid, f_x_centered_grid, f_te, f_ne, f_z, f_laser = 0, f_rad = 0, laser_dir = None, critical_density = None):
         """ Purpose: Initilise all SOL-KiT load in files from HYDRO
         Here the SOL-KiT specifics are done, SOL-KiT requires quantities to be defined at all 
@@ -310,8 +309,14 @@ class SOL_KIT(Kinetic):
         the specific needs of the code being coupled. Here I assume commmon 
         Lagrangian Practice i.e. quantities are not defined at all points. 
         """
-        if critical_density is not None and any(f_ne > critical_density):
-            index_to_limit = np.where(f_ne >= critical_density)[0]
+        if(critical_density < 100):
+            debye = pow((VACUUM_PERMITTIVITY*BOLTZMANN_CONSTANT * f_te) / (f_ne * ELEMENTARY_CHARGE *ELEMENTARY_CHARGE), 0.5)
+            plasma_parameter = 1/(f_ne * pow(debye, 3))
+            comp_val = plasma_parameter
+        else:
+            comp_val = f_ne
+        if critical_density is not None and any(comp_val > critical_density):
+            index_to_limit = np.where(comp_val >= critical_density)[0]
             if laser_dir == "right":
                 f_ne = f_ne[index_to_limit[-1] + 1:]
                 f_te = f_te[index_to_limit[-1] + 1:]
