@@ -235,7 +235,7 @@ class Multiplier(CouplingMethod):
         if(kwargs['no_negative']):
             if(kwargs['nn_via_material']):
                 self.pacifyMultiplierViaMaterial(kwargs['Ar'], kwargs['material'])
-            if(kwargs['nn_via_interpolation']):
+            elif(kwargs['nn_via_interpolation']):
                 self.pacifyMultiplierViaInterpolation(kwargs['x'], kwargs['Ar'], kwargs['material'])
             else:
                 self.pacifyMultiplier(kwargs['Te'])
