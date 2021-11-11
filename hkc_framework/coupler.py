@@ -222,6 +222,7 @@ class Coupler:
         self.hfct_obj.spitzerHarmHeatFlow()
         conv_heat_flow = self.hfct_obj.spitzer_harm_heat
         if self.fluid_obj.init.yaml_file['Switches']['SNBHeatFlow']:
+            self.logger.info("HFCT SNB Calculation")
             self.hfct_obj.snb = True
             self.hfct_obj.snb_heat_flow(self.fluid_obj.init.yaml_file['FixedParameters']['ng'],self.fluid_obj.init.yaml_file['FixedParameters']['MaxE'], 2)
             conv_heat_flow = self.hfct_obj.q_snb 

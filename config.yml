@@ -5,7 +5,7 @@ Paths:
   F_src_dir: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./HyKiCT/beta/apps/OST_HyKiCT
   #Init_path: /Users/shiki/DATA/HKC_RELATED/init_data/NIC_Better_model_7ns/
   #Init_path: /Users/shiki/DATA/HKC_RELATED/Results/BF_Hohlraum/BF_1_5ns_init
-  Init_path: /Users/shiki/DATA/HKC_RELATED/Results/NIC_Hohlraum/NIC_13_8ns_init
+  Init_path: /Users/shiki/DATA/HKC_RELATED/Results/National_Ignition_Campaign/init
   #Init_path: /Users/shiki/DATA/HKC_RELATED/init_data/test_problems_LSA/100_nx_tanh_hohlraum
   F_config_path: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D./HKC_FRAMEWORK/hkc_framework/couple_hykict/config.yml 
   K_config_path: /Users/shiki/Documents/Documents – Abetharan’s MacBook Pro/Imperial_College_London/Ph.D.//HKC_FRAMEWORK/hkc_framework/couple_sol_kit/config.yml
@@ -25,8 +25,8 @@ Mode:
   Couple_multi: true
   Couple_operator_split: false
   Couple_subtract: false
-  Limit_density: true
-  Limit_plasmaparam: false
+  Limit_density: false
+  Limit_plasmaparam: true
   Load_f1: true
   Rescale_init_f0: false
   Start_from_kinetic: true
@@ -39,7 +39,7 @@ Coupling_params:
   Nx: 193
   hdf5_output_freq: 1
   material_Ar_pacify: 4
-  limit_value: 5
+  limit_value: 10
   nlower_limit: 0
   nupper_limit: 5000
   t_cycle: 4.0e-11
