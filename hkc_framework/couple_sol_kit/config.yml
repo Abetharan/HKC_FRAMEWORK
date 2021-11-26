@@ -6,12 +6,12 @@ Norms:
   Ar: 64.0
 Params:
   Nx: 0 #handled internally
-  Nv: 80
+  Nv: 100
   Np: 1
   Dt: 0.9
   Dx: 0.5
-  Dv: 0.0307
-  Dv_multi: 1.033
+  Dv: 0.0200
+  Dv_multi: 1.03
   Nt: 100
   Pre_step_nt: 0
   Pre_step_dt: 0.001

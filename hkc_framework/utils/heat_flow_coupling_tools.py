@@ -427,21 +427,26 @@ class HeatFlowCouplingTools:
 
     def getLambStar(self, beta):
         nx,ng = np.shape(beta)
-        vt_bx = np.sqrt(kb*self.inter_te/me)
+        vt_bx = np.sqrt(2*kb*self.inter_te/me)
         log_lam_ei = self.lambda_ei(T_norm = self.inter_te * (kb/e), n_norm = self.inter_ne, Z_norm = self.inter_z, return_array = True)
         Y = 4*np.pi*(e**2/(4 * np.pi * epsilon_0 * me))**2
         tau_ei_bx = vt_bx**3/(Y* self.inter_z * self.inter_ne * log_lam_ei)
 
         lambda_ei_bx = vt_bx*tau_ei_bx
-        zeta = (self.inter_z + 0.24) / (self.inter_z + 4.2) # Brodrick
+        #zeta = (self.inter_z + 0.24) / (self.inter_z + 4.2) # Brodrick
+        zeta = (self.inter_z + 0.24) / (self.inter_z + 4.2) 
+        zeta_ee = self.inter_z/2
         # lambda_e_bx = np.sqrt(Z)*lambda_ei_bx
         lambda_e_bx = zeta * lambda_ei_bx
+        lambda_ee_bx = zeta_ee * lambda_ei_bx
         lambda_g_bx = np.zeros((nx,ng))
+        lambda_g_bx_ee = np.zeros((nx,ng))
         lambda_g_c =  np.zeros((nx,ng))
 
         for i in range(ng):
-            lambda_g_bx[:,i] = 2*pow(beta[:,i], 2)*lambda_e_bx #Defined everywhere in space,  energy centered 
-        return lambda_g_bx
+            lambda_g_bx[:,i] = pow(beta[:,i], 2)*lambda_e_bx #Defined everywhere in space,  energy centered 
+            lambda_g_bx_ee[:,i] = pow(beta[:,i], 2)*lambda_ee_bx #Defined everywhere in space,  energy centered 
+        return lambda_g_bx, lambda_g_bx_ee
 
     def createMatrix(self, A, B, C):
         """
@@ -499,7 +504,7 @@ class HeatFlowCouplingTools:
     def getH(self, dx_wall, dx_centered, lambda_star, lambda_E, U, r, Z):
         nx, nv = np.shape(lambda_star)
         H = np.zeros((nx, nv))
-        r = np.zeros(nx) + r#  tunable parameter
+        r = np.zeros(nx) + 1#  tunable parameter
         for j in range(nv):
             A = np.zeros(nx) #off diagonal n -1
             B = np.zeros(nx) # leading diagonal
@@ -509,19 +514,19 @@ class HeatFlowCouplingTools:
                 if i == 0:
                     dx_diff = dx_centered[i]#dx_wall[1] + dx_wall[0] #
                     A[i] = None #0 #lambda_E[i - 1]/(3*dx_k_diff*dx_k)
-                    B[i] = 1 * (lambda_E[i, j]/(3*dx_wall[i] * dx_diff) + r[i] / (lambda_star[i, j] * Z[i]))
+                    B[i] = 1 * (lambda_E[i, j]/(3*dx_wall[i] * dx_diff) + r[i] / (lambda_star[i, j]))
                     C[i] = -1*lambda_E[i, j]/(3*dx_wall[i] * dx_diff)
                     S[i] = -1* U[i, j] / (dx_centered[i])
                 elif i == nx - 1:           
                     dx_diff = dx_centered[i]#dx_wall[-1] + dx_wall[-2] #
                     A[i] = -1*lambda_E[i - 1, j]/(3*dx_wall[i - 1] * dx_diff)
-                    B[i] = 1 * (lambda_E[i - 1, j]/(3*dx_wall[i - 1] * dx_diff) + r[i] / (lambda_star[i, j] * Z[i]))
+                    B[i] = 1 * (lambda_E[i - 1, j]/(3*dx_wall[i - 1] * dx_diff) + r[i] / (lambda_star[i, j]))
                     C[i] = None #lambda_E[i]/(3*pow(dx_k)
                     S[i] = 1*U[i - 1, j] / (dx_centered[-1])
                 else:
                     dx_diff = dx_centered[i]# dx_wall[i + 1] + dx_wall[i] 
                     A[i] = -1*lambda_E[i - 1, j]/(3*dx_wall[i - 1] * dx_diff)
-                    B[i] = 1 * (lambda_E[i, j]/(3*dx_wall[i] * dx_diff) + lambda_E[i - 1, j]/(3*dx_wall[i - 1] * dx_diff) + r[i] / (lambda_star[i, j] * Z[i]))
+                    B[i] = 1 * (lambda_E[i, j]/(3*dx_wall[i] * dx_diff) + lambda_E[i - 1, j]/(3*dx_wall[i - 1] * dx_diff) + r[i] / (lambda_star[i, j]))
                     C[i] = -1*lambda_E[i, j]/(3*dx_wall[i] * dx_diff)
                     S[i] = -1 * (U[i, j] - U[i - 1, j]) / dx_centered[i]
 
@@ -568,14 +573,39 @@ class HeatFlowCouplingTools:
         _, dbeta = self.getBeta(e_grid_wall, self.inter_te)
 
         E_field = self.electric_field(dx_wall)
-        lambda_star = self.getLambStar(beta)
+        lambda_star, lambdar_star_ee = self.getLambStar(beta)
         lamb_E = self.lambda_E(lambda_star[1::2], E_field, e_grid_centre)
         
         # q_sh = spitzer_harm_heat(x_centered, Te, ne, Z) # local 
         U = self.getSource(self.spitzer_harm_heat[1:-1], beta[1::2, :], dbeta[1::2, :])
-        H = self.getH(dx_wall, dx_centered, lambda_star[::2], lamb_E, U, r, self.zbar)
+        H = self.getH(dx_wall, dx_centered, lambdar_star_ee[::2], lamb_E, U, r, self.zbar)
         q_nl = self.getDqnl(H, lamb_E, dx_wall)
         
         self.q_snb = self.spitzer_harm_heat[1:-1]  - q_nl
         self.q_snb = np.append(self.q_snb, 0)
         self.q_snb = np.insert(self.q_snb, 0 ,0)
+
+
+if __name__ == "__main__":
+    nx = 1
+    fluid_Te = np.zeros(nx)
+    fluid_ne = np.zeros(nx)
+    fluid_Z = np.zeros(nx)
+    fluid_x_grid = np.zeros(nx + 1)
+    fluid_x_centered_grid = np.array([(fluid_x_grid[i+1] + fluid_x_grid[i]) /2 for i in range(len(fluid_x_grid) -1)])
+    hfct_obj = HeatFlowCouplingTools()
+
+    hfct_obj.electron_temperature = fluid_Te
+    hfct_obj.electron_number_density = fluid_ne
+    hfct_obj.zbar = fluid_Z
+    hfct_obj.cell_wall_coord = fluid_x_grid
+    hfct_obj.cell_centered_coord = fluid_x_centered_grid
+    # hfct_obj.mass = fluid_mass
+    # hfct_obj.lambda_ei(hfct_obj.electron_temperature * (kb/e), 
+    #                     hfct_obj.electron_number_density,
+                        # hfct_obj.zbar)
+    hfct_obj.spitzerHarmHeatFlow()
+    conv_heat_flow = hfct_obj.spitzer_harm_heat
+    # hfct_obj.snb = True
+    # hfct_obj.snb_heat_flow(50,12, 1)
+    # conv_heat_flow = hfct_obj.q_snb
